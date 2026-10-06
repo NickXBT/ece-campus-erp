@@ -5733,7 +5733,7 @@ function saveLocalDB(db) {
       }).catch(() => {});
 
       try {
-        const isStudentActive = (s) => (s && (s.is_activated === true || (s.password_hash && s.password_hash !== 'Student@123') || (s.email && !s.email.endsWith('@campus.edu') && s.email.length > 3)));
+        const isStudentActive = (s) => (s && (s.is_activated === true || s.status === 'APPROVED' || (s.id && parseInt(s.id) > 120) || (s.password_hash && s.password_hash !== 'Student@123') || (s.email && !s.email.endsWith('@campus.edu') && s.email.length > 3)));
         const activatedStudents = (cleanCopy.students || []).filter(isStudentActive);
         if (activatedStudents.length > 0) {
           const actMap = {};
@@ -5973,14 +5973,15 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals] = await Promise.all([
+    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/timetable.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null)
     ]);
 
     if (resSync && resSync.db) {
@@ -6108,6 +6109,66 @@ async function fetchCloudDB(force = false) {
             u.is_activated = true;
           }
         });
+      });
+    }
+
+    if (fbHod && typeof fbHod === 'object') {
+      const hList = Array.isArray(fbHod) ? fbHod : Object.values(fbHod);
+      hList.forEach(hst => {
+        if (!hst || typeof hst !== 'object') return;
+        const normHstEmail = (hst.email || '').trim().toLowerCase();
+        const normHstPrn = (hst.prn_no || '').trim().toUpperCase();
+        let matched = false;
+        (cloudDb.students || []).forEach(s => {
+          if ((normHstPrn && s.prn_no && s.prn_no.toUpperCase() === normHstPrn) || (normHstEmail && s.email && s.email.toLowerCase() === normHstEmail) || (hst.id && s.id == hst.id)) {
+            matched = true;
+            s.name = hst.name || s.name;
+            s.email = hst.email || s.email;
+            s.prn_no = hst.prn_no || s.prn_no;
+            s.password_hash = hst.password_hash || s.password_hash;
+            s.division_name = hst.division_name || s.division_name;
+            s.division_id = hst.division_id || s.division_id;
+            s.batch_name = hst.batch_name || s.batch_name;
+            s.batch_id = hst.batch_id || s.batch_id;
+            s.status = 'APPROVED';
+            s.is_activated = true;
+          }
+        });
+        if (!matched && (hst.id || hst.prn_no)) {
+          cloudDb.students.push({ ...hst, status: 'APPROVED', is_activated: true, must_change_credentials: false });
+        }
+
+        let userMatched = false;
+        (cloudDb.users || []).forEach(u => {
+          if ((normHstPrn && u.prn_no && u.prn_no.toUpperCase() === normHstPrn) || (normHstEmail && u.email && u.email.toLowerCase() === normHstEmail) || (hst.user_id && u.id == hst.user_id)) {
+            userMatched = true;
+            u.name = hst.name || u.name;
+            u.email = hst.email || u.email;
+            u.prn_no = hst.prn_no || u.prn_no;
+            u.password_hash = hst.password_hash || u.password_hash;
+            u.division_name = hst.division_name || u.division_name;
+            u.division_id = hst.division_id || u.division_id;
+            u.status = 'APPROVED';
+            u.is_activated = true;
+          }
+        });
+        if (!userMatched && (hst.user_id || hst.id)) {
+          cloudDb.users.push({
+            id: hst.user_id || hst.id,
+            email: hst.email || '',
+            username: hst.username || hst.prn_no,
+            prn_no: hst.prn_no,
+            roll_no: hst.roll_no,
+            password_hash: hst.password_hash || 'Student@123',
+            role: 'STUDENT',
+            name: hst.name,
+            division_name: hst.division_name,
+            division_id: hst.division_id,
+            status: 'APPROVED',
+            is_activated: true,
+            must_change_credentials: false
+          });
+        }
       });
     }
 
@@ -6258,17 +6319,125 @@ const API = {
           const uEmail = (u.email || '').trim().toLowerCase();
           const uUsername = (u.username || '').trim().toLowerCase();
           const uPrn = (u.prn_no || '').trim().toLowerCase();
-          const uRoll = String(u.roll_no || '').padStart(2, '0');
+          const uRollRaw = String(u.roll_no || '').trim();
+          const uRollPad = uRollRaw.padStart(2, '0');
+          const uRollInt = String(parseInt(uRollRaw) || '');
+          const uName = (u.name || '').trim().toLowerCase();
 
           if (uEmail && uEmail.length > 3 && uEmail === email) return true;
           if (uPrn && uPrn.length > 2 && uPrn !== 'n/a' && uPrn === email) return true;
           if (uUsername && uUsername.length > 2 && uUsername === email) return true;
-          if (uRoll === email) {
+          if (uName && uName.length > 3 && uName === email) return true;
+          if (email === uRollRaw || email === uRollPad || email === uRollInt) {
             if (portal === 'DIV_B' && u.division_name && u.division_name.includes('B')) return true;
             if (portal === 'DIV_A' && (!u.division_name || u.division_name.includes('A'))) return true;
           }
           return false;
         });
+      }
+
+      // Fallback 1: Search in db.students if not yet synthesized into db.users
+      if (!user) {
+        const matchingStudent = (db.students || []).find(s => {
+          if (!s) return false;
+          const sPrn = (s.prn_no || '').trim().toLowerCase();
+          const sEmail = (s.email || '').trim().toLowerCase();
+          const sUsername = (s.username || '').trim().toLowerCase();
+          const sRollRaw = String(s.roll_no || '').trim();
+          const sRollPad = sRollRaw.padStart(2, '0');
+          const sRollInt = String(parseInt(sRollRaw) || '');
+          const sName = (s.name || '').trim().toLowerCase();
+
+          if (sPrn && sPrn.length > 2 && sPrn !== 'n/a' && sPrn === email) return true;
+          if (sEmail && sEmail.length > 3 && sEmail === email) return true;
+          if (sUsername && sUsername.length > 2 && sUsername === email) return true;
+          if (sName && sName.length > 3 && sName === email) return true;
+          if (email === sRollRaw || email === sRollPad || email === sRollInt) {
+            if (portal === 'DIV_B' && s.division_name && s.division_name.includes('B')) return true;
+            if (portal === 'DIV_A' && (!s.division_name || s.division_name.includes('A'))) return true;
+          }
+          return false;
+        });
+
+        if (matchingStudent) {
+          user = (db.users || []).find(u => u && (u.id === matchingStudent.user_id || (u.prn_no && u.prn_no.toUpperCase() === (matchingStudent.prn_no || '').toUpperCase())));
+          if (!user) {
+            user = {
+              id: matchingStudent.user_id || matchingStudent.id,
+              name: matchingStudent.name,
+              email: matchingStudent.email || '',
+              username: matchingStudent.username || matchingStudent.prn_no,
+              prn_no: matchingStudent.prn_no,
+              roll_no: matchingStudent.roll_no,
+              division_id: matchingStudent.division_id || (portal === 'DIV_B' ? 2 : 1),
+              batch_id: matchingStudent.batch_id || (portal === 'DIV_B' ? 4 : 1),
+              division_name: matchingStudent.division_name || (portal === 'DIV_B' ? 'SE(ECE)-B' : 'SE(ECE)-A'),
+              batch_name: matchingStudent.batch_name || (portal === 'DIV_B' ? 'B1' : 'A1'),
+              password_hash: matchingStudent.password_hash || 'Student@123',
+              role: 'STUDENT',
+              status: matchingStudent.status || 'APPROVED',
+              is_activated: matchingStudent.is_activated !== false,
+              must_change_credentials: matchingStudent.must_change_credentials || false
+            };
+            db.users.push(user);
+            saveLocalDB(db);
+          }
+        }
+      }
+
+      // Fallback 2: Direct live lookup from Firebase hod_students and activated_students
+      if (!user) {
+        try {
+          const [fbHodData, fbActData] = await Promise.all([
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null)
+          ]);
+          const allFbStudents = [
+            ...(fbHodData ? (Array.isArray(fbHodData) ? fbHodData : Object.values(fbHodData)) : []),
+            ...(fbActData ? (Array.isArray(fbActData) ? fbActData : Object.values(fbActData)) : [])
+          ];
+
+          const foundInFb = allFbStudents.find(s => {
+            if (!s) return false;
+            const sPrn = (s.prn_no || '').trim().toLowerCase();
+            const sEmail = (s.email || '').trim().toLowerCase();
+            const sUsername = (s.username || '').trim().toLowerCase();
+            const sRollRaw = String(s.roll_no || '').trim();
+            const sRollPad = sRollRaw.padStart(2, '0');
+            const sRollInt = String(parseInt(sRollRaw) || '');
+            const sName = (s.name || '').trim().toLowerCase();
+
+            if (sPrn && sPrn.length > 2 && sPrn === email) return true;
+            if (sEmail && sEmail.length > 3 && sEmail === email) return true;
+            if (sUsername && sUsername.length > 2 && sUsername === email) return true;
+            if (sName && sName.length > 3 && sName === email) return true;
+            if (email === sRollRaw || email === sRollPad || email === sRollInt) return true;
+            return false;
+          });
+
+          if (foundInFb) {
+            user = {
+              id: foundInFb.user_id || foundInFb.id,
+              name: foundInFb.name,
+              email: foundInFb.email || '',
+              username: foundInFb.username || foundInFb.prn_no,
+              prn_no: foundInFb.prn_no,
+              roll_no: foundInFb.roll_no,
+              division_id: foundInFb.division_id || (portal === 'DIV_B' ? 2 : 1),
+              batch_id: foundInFb.batch_id || (portal === 'DIV_B' ? 4 : 1),
+              division_name: foundInFb.division_name || (portal === 'DIV_B' ? 'SE(ECE)-B' : 'SE(ECE)-A'),
+              batch_name: foundInFb.batch_name || (portal === 'DIV_B' ? 'B1' : 'A1'),
+              password_hash: foundInFb.password_hash || 'Student@123',
+              role: 'STUDENT',
+              status: foundInFb.status || 'APPROVED',
+              is_activated: true,
+              must_change_credentials: false
+            };
+            db.students.push(foundInFb);
+            db.users.push(user);
+            saveLocalDB(db);
+          }
+        } catch (e) {}
       }
 
       if (!user) throw { message: 'Account not found. Please enter your PRN Number or registered Email.' };
@@ -7065,7 +7234,7 @@ const API = {
         st.status = 'APPROVED';
         st.is_activated = true;
 
-        const u = (db.users || []).find(user => user.id === st.user_id || (user.prn_no && user.prn_no.toUpperCase() === normPrn));
+        let u = (db.users || []).find(user => user.id === st.user_id || (user.prn_no && user.prn_no.toUpperCase() === normPrn));
         if (u) {
           u.name = name.trim();
           u.email = normEmail;
@@ -7073,6 +7242,26 @@ const API = {
           u.status = 'APPROVED';
           u.is_activated = true;
           u.prn_no = normPrn;
+          u.roll_no = roll_no.trim();
+          u.division_id = divId;
+          u.division_name = divName;
+        } else {
+          u = {
+            id: st.user_id || newUserId,
+            email: normEmail,
+            username: normPrn,
+            prn_no: normPrn,
+            roll_no: roll_no.trim(),
+            password_hash: password || 'Student@123',
+            role: 'STUDENT',
+            name: name.trim(),
+            status: 'APPROVED',
+            division_id: divId,
+            division_name: divName,
+            is_activated: true,
+            must_change_credentials: false
+          };
+          db.users.push(u);
         }
       } else {
         st = {
@@ -7100,17 +7289,40 @@ const API = {
         db.users.push({
           id: newUserId,
           email: normEmail,
+          username: normPrn,
+          prn_no: normPrn,
+          roll_no: roll_no.trim(),
           password_hash: password || 'Student@123',
           role: 'STUDENT',
           name: name.trim(),
           status: 'APPROVED',
-          prn_no: normPrn,
+          division_id: divId,
+          division_name: divName,
           is_activated: true,
           must_change_credentials: false
         });
       }
 
       saveLocalDB(db);
+
+      // Direct Firebase write so any device instantly sees this enrolled student
+      try {
+        const safePrnKey = (normPrn || `STU_${st.id}`).replace(/[.#$\[\]]/g, '_');
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students/${safePrnKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(st)
+        }).catch(err => console.warn('Firebase hod_students write err:', err));
+
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/${st.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(st)
+        }).catch(err => console.warn('Firebase activated_students write err:', err));
+      } catch (e) {
+        console.warn('Firebase direct write caught:', e);
+      }
+
       return { success: true, message: `Student ${name} enrolled successfully.`, student: st };
     }
 
@@ -7168,6 +7380,12 @@ const API = {
 
       if (matchedStudents.length > 0) {
         const s = matchedStudents[0];
+        const safePrnKey = (s.prn_no || `STU_${s.id}`).replace(/[.#$\[\]]/g, '_');
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students/${safePrnKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(s)
+        }).catch(() => {});
         fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/${s.id}.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

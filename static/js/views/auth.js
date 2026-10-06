@@ -370,6 +370,9 @@ const AuthView = {
     }
 
     try {
+      if (typeof fetchCloudDB === 'function') {
+        try { await fetchCloudDB(true); } catch (_) {}
+      }
       const portal = this.loginPortalOption || 'DIV_A';
       const res = await API.post('/api/auth/login', { email, password, portal });
       Toast.success('Login successful!');
