@@ -7046,6 +7046,8 @@ const API = {
       cert.verified_by = approverName;
       cert.credited_lectures_count = total_credits;
       cert.subject_credits = subject_credits;
+      cert.approved_num_days = (body.selected_days && body.selected_days.length) || body.num_days || cert.num_days || 1;
+      if (!cert.num_days) cert.num_days = cert.approved_num_days;
 
       saveLocalDB(db);
 

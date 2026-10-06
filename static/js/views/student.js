@@ -1462,10 +1462,14 @@ const StudentView = {
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
             <div>
               <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">${certRecord.title || titleText}</h4>
-              <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">
-                <i class="fa-solid fa-trophy" style="color: #2563eb;"></i> Event: <strong>${certRecord.event_name || 'N/A'}</strong> (${certRecord.category || 'Co-Curricular'}) &nbsp;|&nbsp;
-                <i class="fa-regular fa-calendar"></i> Date: <strong>${certRecord.certificate_date || 'N/A'}</strong> &nbsp;|&nbsp;
-                <i class="fa-solid fa-calendar-days" style="color: #0284c7;"></i> Duration: <strong>${certRecord.num_days || 1} Day${(certRecord.num_days || 1) > 1 ? 's' : ''} Event</strong>
+              <div style="font-size: 0.82rem; color: #64748b; margin-top: 0.35rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span><i class="fa-solid fa-trophy" style="color: #2563eb;"></i> Event: <strong>${certRecord.event_name || 'N/A'}</strong> (${certRecord.category || 'Co-Curricular'})</span>
+                <span>&bull;</span>
+                <span><i class="fa-regular fa-calendar"></i> Date: <strong>${certRecord.certificate_date || 'N/A'}</strong></span>
+                <span>&bull;</span>
+                <span class="badge" style="background: ${(certRecord.num_days && parseInt(certRecord.num_days) > 1) ? '#fef3c7' : '#e0f2fe'}; color: ${(certRecord.num_days && parseInt(certRecord.num_days) > 1) ? '#b45309' : '#0369a1'}; border: 1.5px solid ${(certRecord.num_days && parseInt(certRecord.num_days) > 1) ? '#fde68a' : '#bae6fd'}; font-weight: 800; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                  <i class="fa-solid fa-business-time"></i> ${(certRecord.num_days && parseInt(certRecord.num_days) > 1) ? `${certRecord.num_days} Days Event (Student Selected)` : '1 Day Event'}
+                </span>
               </div>
             </div>
             <div>

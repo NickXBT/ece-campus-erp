@@ -156,6 +156,7 @@ const TeacherView = {
       const allCerts = (data.certificates && Array.isArray(data.certificates) && data.certificates.length > 0) 
         ? data.certificates 
         : (localDb.certificates || []);
+      this._lastLoadedCerts = allCerts;
 
       // Sort: PENDING certificates at top, then by newest ID
       allCerts.sort((a, b) => {
@@ -266,7 +267,17 @@ const TeacherView = {
       const totalApprovedCount = allCerts.filter(c => c.status === 'APPROVED').length;
 
       // Pending Rows Generator
-      const pendingRowsHtml = pendingCerts.map(c => `
+      const pendingRowsHtml = pendingCerts.map(c => {
+        const numDays = parseInt(c.num_days) || 1;
+        const daysBadgeHtml = numDays > 1 
+          ? `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1.5px solid #fde68a; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+               <i class="fa-solid fa-business-time" style="color: #d97706;"></i> <strong>${numDays} Days Event</strong> (Student Selected)
+             </span>`
+          : `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1.5px solid #bae6fd; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+               <i class="fa-solid fa-business-time" style="color: #0284c7;"></i> 1 Day Event
+             </span>`;
+
+        return `
         <tr data-div="${c.division_name}">
           <td>
             <strong>${c.student_name}</strong><br>
@@ -276,13 +287,21 @@ const TeacherView = {
           <td>
             <strong>${c.title}</strong><br>
             <span style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">${c.event_name} (${c.category})</span>
+            <div style="margin-top: 0.35rem;">
+              ${daysBadgeHtml}
+            </div>
             ${c.description ? `
               <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #1e293b; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.4rem 0.65rem; border-radius: 6px; line-height: 1.45;">
                 <strong style="color: #166534;"><i class="fa-solid fa-file-lines"></i> Student Detail:</strong> ${c.description}
               </div>
             ` : '<div style="margin-top: 0.25rem; font-size: 0.72rem; color: #94a3b8; font-style: italic;">No extra description provided</div>'}
           </td>
-          <td>${c.certificate_date}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--text-main);">${c.certificate_date}</div>
+            <div style="font-size: 0.74rem; font-weight: 800; color: ${numDays > 1 ? '#b45309' : '#0369a1'}; margin-top: 0.25rem;">
+              <i class="fa-solid fa-calendar-days"></i> ${numDays} Day${numDays > 1 ? 's' : ''} Duration
+            </div>
+          </td>
           <td><span class="badge-status status-PENDING" style="background: #fef3c7; color: #d97706; border: 1px solid #fde68a; font-weight: 800;"><i class="fa-solid fa-clock"></i> Awaiting Review</span></td>
           <td>
             <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
@@ -290,7 +309,7 @@ const TeacherView = {
                 <i class="fa-solid fa-eye"></i> View
               </button>
               <button class="btn btn-success btn-sm" onclick="TeacherView.openApproveModal('${c.id}')" style="background: #16a34a; border-color: #16a34a; font-weight: 800;">
-                <i class="fa-solid fa-clipboard-check"></i> Approve
+                <i class="fa-solid fa-clipboard-check"></i> Approve (${numDays}D)
               </button>
               <button class="btn btn-danger btn-sm" onclick="TeacherView.openRejectModal('${c.id}')">
                 <i class="fa-solid fa-xmark"></i> Reject
@@ -301,11 +320,21 @@ const TeacherView = {
             </div>
           </td>
         </tr>
-      `).join('') || `<tr><td colspan="6" style="text-align: center; color: #16a34a; font-weight: 700; padding: 2.5rem;"><i class="fa-solid fa-circle-check" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i> All certificate requests are cleared! No pending submissions.</td></tr>`;
+      `;
+      }).join('') || `<tr><td colspan="6" style="text-align: center; color: #16a34a; font-weight: 700; padding: 2.5rem;"><i class="fa-solid fa-circle-check" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;"></i> All certificate requests are cleared! No pending submissions.</td></tr>`;
 
       // Approved / Processed Rows Generator
       const approvedRowsHtml = approvedCerts.map(c => {
         const isAppr = c.status === 'APPROVED';
+        const numDays = parseInt(c.approved_num_days || c.num_days) || 1;
+        const daysBadgeHtml = numDays > 1 
+          ? `<span class="badge" style="background: #fef3c7; color: #b45309; border: 1.5px solid #fde68a; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+               <i class="fa-solid fa-business-time" style="color: #d97706;"></i> <strong>${numDays} Days Event</strong>
+             </span>`
+          : `<span class="badge" style="background: #e0e7ff; color: #3730a3; border: 1.5px solid #c7d2fe; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+               <i class="fa-solid fa-business-time"></i> 1 Day Event
+             </span>`;
+
         return `
           <tr data-div="${c.division_name}">
             <td>
@@ -316,13 +345,21 @@ const TeacherView = {
             <td>
               <strong>${c.title}</strong><br>
               <span style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">${c.event_name} (${c.category})</span>
+              <div style="margin-top: 0.35rem;">
+                ${daysBadgeHtml}
+              </div>
               ${c.description ? `
                 <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.35rem 0.6rem; border-radius: 6px; line-height: 1.4;">
                   <strong style="color: #475569;"><i class="fa-solid fa-file-lines"></i> Student Detail:</strong> ${c.description}
                 </div>
               ` : ''}
             </td>
-            <td>${c.certificate_date}</td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-main);">${c.certificate_date}</div>
+              <div style="font-size: 0.74rem; font-weight: 800; color: ${numDays > 1 ? '#b45309' : '#0284c7'}; margin-top: 0.25rem;">
+                <i class="fa-solid fa-calendar-days"></i> ${numDays} Day${numDays > 1 ? 's' : ''} Duration
+              </div>
+            </td>
             <td>
               ${isAppr ? `
                 <span class="badge-status status-APPROVED" style="font-weight: 800; background: #dcfce7; color: #15803d; padding: 0.35rem 0.6rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
@@ -331,7 +368,7 @@ const TeacherView = {
                 <div style="font-size: 0.74rem; color: #166534; font-weight: 700; margin-top: 0.25rem;">
                   By: <strong>${c.approved_by || c.verified_by || 'Dr. Dhanashree Kulkarni (HOD)'}</strong>
                 </div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">Attendance Credited</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Attendance Credited (${numDays} Day${numDays > 1 ? 's' : ''})</div>
               ` : `
                 <span class="badge-status status-REJECTED" style="font-weight: 800; background: #fee2e2; color: #b91c1c; padding: 0.35rem 0.6rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
                   <i class="fa-solid fa-circle-xmark"></i> Rejected
@@ -421,8 +458,8 @@ const TeacherView = {
                       <tr>
                         <th>Student Details</th>
                         <th>Division & Batch</th>
-                        <th>Certificate & Event</th>
-                        <th>Certificate Date</th>
+                        <th>Certificate, Event & Selected Duration</th>
+                        <th>Date & Days Selected</th>
                         <th>Status</th>
                         <th>Review Actions</th>
                       </tr>
@@ -450,8 +487,8 @@ const TeacherView = {
                       <tr>
                         <th>Student Details</th>
                         <th>Division & Batch</th>
-                        <th>Certificate & Event</th>
-                        <th>Certificate Date</th>
+                        <th>Certificate, Event & Duration</th>
+                        <th>Date & Days</th>
                         <th>Status & Credits</th>
                         <th>Actions</th>
                       </tr>
@@ -590,7 +627,10 @@ const TeacherView = {
   async openApproveModal(certId) {
     try {
       const db = typeof getLocalDB === 'function' ? getLocalDB() : { certificates: [], students: [], users: [], timetable: [] };
-      const cert = (db.certificates || []).find(c => String(c.id) === String(certId) || c.id === parseInt(certId)) || {};
+      let cert = (this._lastLoadedCerts || []).find(c => String(c.id) === String(certId) || c.id === parseInt(certId));
+      if (!cert) {
+        cert = (db.certificates || []).find(c => String(c.id) === String(certId) || c.id === parseInt(certId)) || {};
+      }
       const student = (db.students || []).find(s => s.id == cert.student_id || s.user_id == cert.student_id) || 
                       (db.users || []).find(u => u.id == cert.student_id) || {};
       
@@ -635,6 +675,7 @@ const TeacherView = {
       };
 
       const initialLectures = getLecturesForDay(initialDay);
+      const requestedDays = parseInt(cert.num_days) || 1;
 
       this.approveModalState = {
         certId: certId,
@@ -642,7 +683,7 @@ const TeacherView = {
         student: student,
         studentDivId: studentDivId,
         studentBatchId: studentBatchId,
-        numDays: 1,
+        numDays: requestedDays,
         activeDayIndex: 0,
         days: [
           {
@@ -653,7 +694,6 @@ const TeacherView = {
         ]
       };
 
-      const requestedDays = parseInt(cert.num_days) || 1;
       if (requestedDays > 1 && requestedDays <= 5) {
         this.setApproveDaysCount(requestedDays);
       }
@@ -768,6 +808,24 @@ const TeacherView = {
               <i class="fa-solid fa-clock"></i> Awaiting HOD Approval
             </span>
           </div>
+
+          <!-- PROMINENT STUDENT REQUESTED DURATION BANNER -->
+          <div style="margin-top: 0.85rem; background: #ffffff; border: 2px solid ${parseInt(s.cert.num_days || 1) > 1 ? '#f59e0b' : '#3b82f6'}; border-radius: 8px; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <span style="font-size: 1.4rem; color: ${parseInt(s.cert.num_days || 1) > 1 ? '#d97706' : '#2563eb'};">
+                <i class="fa-solid fa-business-time"></i>
+              </span>
+              <div>
+                <div style="font-size: 0.74rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Student Selected Event Duration:</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: ${parseInt(s.cert.num_days || 1) > 1 ? '#b45309' : '#1e40af'};">
+                  ${parseInt(s.cert.num_days || 1)} Day${parseInt(s.cert.num_days || 1) > 1 ? 's' : ''} Event Selected by Student
+                </div>
+              </div>
+            </div>
+            <span style="background: ${parseInt(s.cert.num_days || 1) > 1 ? '#fef3c7' : '#eff6ff'}; color: ${parseInt(s.cert.num_days || 1) > 1 ? '#b45309' : '#1d4ed8'}; border: 1.5px solid ${parseInt(s.cert.num_days || 1) > 1 ? '#fde68a' : '#bfdbfe'}; font-size: 0.82rem; font-weight: 800; padding: 0.35rem 0.85rem; border-radius: 9999px;">
+              <i class="fa-solid fa-calendar-check"></i> ${parseInt(s.cert.num_days || 1) > 1 ? `Compensates ${parseInt(s.cert.num_days || 1)} full days of classes` : 'Compensates 1 day of classes'}
+            </span>
+          </div>
         </div>
 
         <!-- Student's Written Description & Activity Details -->
@@ -790,9 +848,11 @@ const TeacherView = {
         <!-- Event Duration / Number of Days Selector -->
         <div style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <label style="font-size: 0.88rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem; margin: 0; flex-wrap: wrap;">
-              <i class="fa-solid fa-business-time" style="color: var(--primary);"></i> Event Duration (How many days was student absent?):
-              ${s.cert && s.cert.num_days ? `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.78rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-check"></i> Student Requested: ${s.cert.num_days} Day${s.cert.num_days > 1 ? 's' : ''}</span>` : ''}
+            <label style="font-size: 0.9rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.45rem; margin: 0; flex-wrap: wrap;">
+              <i class="fa-solid fa-business-time" style="color: var(--primary);"></i> Attendance Compensation Duration:
+              <span style="background: #e0f2fe; color: #0369a1; border: 1.5px solid #bae6fd; font-size: 0.8rem; font-weight: 900; padding: 0.2rem 0.65rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <i class="fa-solid fa-user-check"></i> Student Selected: <strong>${parseInt(s.cert.num_days || 1)} Day${parseInt(s.cert.num_days || 1) > 1 ? 's' : ''}</strong>
+              </span>
             </label>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
               ${durationPillsHtml}
@@ -1008,7 +1068,8 @@ const TeacherView = {
     try {
       Toast.info('Processing certificate approval & attendance credits...');
       const res = await API.post(`/api/teacher/certificates/${certId}/approve`, {
-        selected_days: selected_days
+        selected_days: selected_days,
+        num_days: s.numDays
       });
       Toast.success(res.message || '🎉 Certificate approved & attendance awarded!');
       if (window.App && App.updateBadges) await App.updateBadges();
