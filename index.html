@@ -136,6 +136,99 @@
     </div>
   </div>
 
+  <!-- 2b. Student Edit Certificate Modal -->
+  <div class="modal-overlay" id="modal-edit-certificate">
+    <div class="modal-content" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem;">
+        <h3 style="color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.15rem;">
+          <i class="fa-solid fa-pen-to-square"></i> Edit Certificate & Update Reason / Details
+        </h3>
+        <button class="modal-close" onclick="closeModal('modal-edit-certificate')">&times;</button>
+      </div>
+
+      <form id="form-edit-certificate" onsubmit="StudentView.handleSaveCertificateEdit(event)" style="padding-top: 1rem;">
+        <input type="hidden" id="edit-cert-id">
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: #166534;">
+          <i class="fa-solid fa-circle-info" style="color: #16a34a; margin-right: 0.35rem;"></i>
+          <strong>Made a mistake while uploading?</strong> You can modify your description/reason, event details, date, or attach a replacement document below.
+        </div>
+
+        <!-- Description / Reason (Primary field for correcting mistakes) -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label style="font-weight: 800; color: #1e40af; display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem;">
+            <i class="fa-solid fa-comment-dots"></i> Student Description / Reason / Activity Details <span style="color: #ef4444;">*</span>
+          </label>
+          <textarea id="edit-cert-desc" class="form-control" rows="4" placeholder="Explain your participation, event background, why attendance compensation is requested, or update your reason if entered by mistake..." required style="border: 1.5px solid #93c5fd; font-size: 0.9rem; line-height: 1.5; padding: 0.75rem; border-radius: 8px;"></textarea>
+          <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.35rem;">
+            This description is read directly by HOD & Faculty when reviewing your certificate.
+          </small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="font-weight: 700;">Certificate Title <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="edit-cert-title" class="form-control" placeholder="e.g. 1st Prize in National Hackathon 2026" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label style="font-weight: 700;">Event Name / Organizer <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="edit-cert-event" class="form-control" placeholder="e.g. Build with Bharat 2.0 / NIT Delhi" required>
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 700;">Category</label>
+            <select id="edit-cert-category" class="form-control">
+              <option value="DEPARTMENTAL">Departmental Event / Co-Curricular</option>
+              <option value="INSTITUTE">Institute / College Level</option>
+              <option value="UNIVERSITY">University / Inter-College</option>
+              <option value="STATE">State Level Competition</option>
+              <option value="NATIONAL">National Level (Hackathon / Conference)</option>
+              <option value="INTERNATIONAL">International Level</option>
+              <option value="SPORTS">Sports & Athletics</option>
+              <option value="CULTURAL">Cultural Event / Gathering</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="font-weight: 700;">Certificate / Activity Date <span style="color: #ef4444;">*</span></label>
+          <input type="date" id="edit-cert-date" class="form-control" onchange="StudentView.validateWeekday(this)" required>
+          <small style="color: var(--text-muted); font-size: 0.78rem;">Monday–Friday instructional dates only.</small>
+        </div>
+
+        <!-- Document Replacement (Optional) -->
+        <div class="form-group" style="margin-bottom: 1.25rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 1rem;">
+          <label style="font-weight: 700; color: #334155; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <span><i class="fa-solid fa-file-arrow-up"></i> Replace Certificate Document (Optional)</span>
+            <span id="edit-cert-current-file-badge" style="font-size: 0.75rem; color: #64748b; font-weight: normal;"></span>
+          </label>
+          <input type="file" id="edit-cert-file" class="form-control" accept="image/*,application/pdf" style="margin-top: 0.5rem; background: white;">
+          <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.35rem;">
+            Leave this empty if your uploaded file is already correct and you only want to change the reason or text details.
+          </small>
+        </div>
+
+        <div id="edit-cert-progress-box" style="display: none; margin-bottom: 1rem;">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 0.3rem;" id="edit-cert-progress-text">
+            Processing document update...
+          </div>
+          <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+            <div id="edit-cert-progress-bar" style="background: var(--primary); height: 100%; width: 50%; transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit-certificate')" style="font-weight: 700;">
+            Cancel
+          </button>
+          <button type="submit" id="btn-save-edit-certificate" class="btn btn-primary" style="font-weight: 800; background: #2563eb; padding: 0.65rem 1.5rem;">
+            <i class="fa-solid fa-floppy-disk"></i> Save & Update Certificate
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- 3. HOD Lecture Selection Approval Modal -->
   <div class="modal-overlay" id="modal-approve-lectures">
     <div class="modal-content" style="max-width: 620px;">
@@ -379,82 +472,6 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Student Edit Certificate Submission Modal -->
-  <div class="modal-overlay" id="modal-student-edit-cert">
-    <div class="modal-content" style="max-width: 650px; max-height: 90vh; overflow-y: auto;">
-      <div class="modal-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem;">
-        <h3 style="color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-          <i class="fa-solid fa-pen-to-square"></i> Change Certificate Submission Details
-        </h3>
-        <button class="modal-close" onclick="closeModal('modal-student-edit-cert')">&times;</button>
-      </div>
-
-      <div style="padding: 1.25rem 0;">
-        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
-          Made a mistake during upload? You can update your <strong>Description / Reason</strong>, <strong>Event Name & Organizer</strong>, <strong>Title</strong>, <strong>Date</strong>, or <strong>Replace Document File</strong> below.
-        </p>
-
-        <form id="form-student-edit-cert" onsubmit="StudentView.handleEditCertificateSubmit(event)">
-          <input type="hidden" id="edit-cert-id">
-
-          <div class="form-group">
-            <label>Certificate Title <span style="color: var(--accent-rose);">*</span></label>
-            <input type="text" id="edit-cert-title" class="form-control" placeholder="e.g. 1st Prize in National Web Hackathon 2026" required>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-              <label>Event Name / Organizer <span style="color: var(--accent-rose);">*</span></label>
-              <input type="text" id="edit-cert-event" class="form-control" placeholder="e.g. IEEE Tech Fest / College Sports" required>
-            </div>
-
-            <div class="form-group">
-              <label>Category <span style="color: var(--accent-rose);">*</span></label>
-              <select id="edit-cert-category" class="form-control" required>
-                <option value="Hackathon">Hackathon</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Seminar">Seminar</option>
-                <option value="Sports">Sports</option>
-                <option value="Cultural">Cultural</option>
-                <option value="Publication">Paper Publication</option>
-                <option value="NPTEL/Coursera">NPTEL / Online Certification</option>
-                <option value="Other">Other Co-Curricular</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> <small style="color: var(--text-muted); font-size: 0.78rem;">(Monday – Friday only)</small></label>
-            <input type="date" id="edit-cert-date" class="form-control" onchange="StudentView.validateWeekday(this)" oninput="StudentView.validateWeekday(this)" required>
-            <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-xmark" style="color: #d97706;"></i> Saturdays & Sundays are non-instructional days and cannot be selected.</small>
-          </div>
-
-          <div class="form-group">
-            <label>Description / Reason / Details <span style="color: var(--accent-rose);">*</span></label>
-            <textarea id="edit-cert-desc" class="form-control" rows="3" placeholder="Explain your reason, participation details, or project role here..." required></textarea>
-            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.25rem;">HOD and Faculty reviewers read this reason/description to verify attendance compensation.</small>
-          </div>
-
-          <div class="form-group">
-            <label>Replace Document File (Optional)</label>
-            <input type="file" id="edit-cert-file" class="form-control" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 0.65rem; border: 2px dashed #94a3b8; background: #f8fafc; cursor: pointer; border-radius: var(--radius-md);">
-            <small id="edit-file-status-msg" style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.3rem;">Leave empty to keep current file, or select a new file if you uploaded the wrong one.</small>
-          </div>
-
-          <!-- Existing file notice -->
-          <div id="edit-cert-current-file" style="font-size: 0.82rem; color: #1e40af; background: #eff6ff; padding: 0.6rem 0.85rem; border-radius: 6px; margin-bottom: 1.25rem; border: 1px solid #bfdbfe;"></div>
-
-          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-student-edit-cert')">Cancel</button>
-            <button type="submit" id="btn-submit-student-edit-cert" class="btn btn-primary" style="font-weight: 800; padding: 0.65rem 1.75rem;">
-              <i class="fa-solid fa-floppy-disk"></i> Save & Update Changes
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   </div>
 

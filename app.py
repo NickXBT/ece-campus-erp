@@ -629,39 +629,50 @@ def student_certificates():
 
     return jsonify({'certificates': [dict(c) for c in certs]})
 
-@app.route('/api/student/certificates/<int:cert_id>', methods=['PUT', 'POST'])
+@app.route('/api/student/certificates/<int:cert_id>/update', methods=['POST'])
 @require_role('STUDENT')
-def update_student_certificate(cert_id):
+def student_update_certificate(cert_id):
     user = get_current_user()
     conn = get_db_connection()
     student = conn.execute('SELECT id FROM students WHERE user_id = ?', (user['id'],)).fetchone()
     if not student:
         conn.close()
-        return jsonify({'message': 'Student profile not found'}), 404
+        return jsonify({'error': 'Student not found'}), 404
 
     cert = conn.execute('SELECT * FROM certificates WHERE id = ? AND student_id = ?', (cert_id, student['id'])).fetchone()
     if not cert:
         conn.close()
-        return jsonify({'message': 'Certificate not found or unauthorized'}), 404
+        return jsonify({'error': 'Certificate not found or unauthorized'}), 404
 
-    data = request.get_json(silent=True) or request.form or {}
-    title = data.get('title', cert['title'])
-    event_name = data.get('event_name', cert['event_name'])
-    category = data.get('category', cert['category'])
-    cert_date = data.get('certificate_date', cert['certificate_date'])
-    description = data.get('description', cert['description'])
-    file_url = data.get('file_url', cert['file_url'])
-    file_name = data.get('file_name', cert['file_name'])
+    data = request.get_json(silent=True) or request.form
+    title = data.get('title', cert['title']).strip()
+    event_name = data.get('event_name', cert['event_name']).strip()
+    category = data.get('category', cert['category']).strip()
+    cert_date = data.get('certificate_date', cert['certificate_date']).strip()
+    description = data.get('description', cert['description']).strip()
+
+    file_url = cert['file_url']
+    file_name = cert['file_name']
+    if 'file' in request.files:
+        file = request.files['file']
+        if file and file.filename and allowed_file(file.filename):
+            clean_name = secure_filename(file.filename) or "certificate.pdf"
+            file_name = f"{student['id']}_{int(datetime.now().timestamp())}_{clean_name}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+            file.save(file_path)
+            file_url = f"/uploads/{file_name}"
+
+    new_status = 'PENDING' if cert['status'] == 'REJECTED' else cert['status']
 
     conn.execute('''
         UPDATE certificates
-        SET title = ?, event_name = ?, category = ?, certificate_date = ?, description = ?, file_url = ?, file_name = ?
+        SET title = ?, event_name = ?, category = ?, certificate_date = ?, description = ?, file_url = ?, file_name = ?, status = ?
         WHERE id = ?
-    ''', (title, event_name, category, cert_date, description, file_url, file_name, cert_id))
+    ''', (title, event_name, category, cert_date, description, file_url, file_name, new_status, cert_id))
     conn.commit()
     conn.close()
 
-    return jsonify({'message': 'Certificate details updated successfully!', 'success': True})
+    return jsonify({'success': True, 'message': 'Certificate details and reason updated successfully!'})
 
 @app.route('/api/student/timetable', methods=['GET'])
 @require_role('STUDENT')

@@ -6533,44 +6533,44 @@ const API = {
       return { message: 'Certificate submitted successfully!', certificate: newCert, success: true };
     }
 
-    // 6.1 Student Update / Edit Certificate Details API
-    if ((endpoint.startsWith('/api/student/certificates/') || endpoint === '/api/student/certificates/update') && (method === 'PUT' || method === 'POST')) {
+    // 6b. Student Edit / Update Certificate Details (Modify reason, description, event info, or file)
+    if ((endpoint.startsWith('/api/student/certificates/') && (endpoint.endsWith('/update') || method === 'PUT' || method === 'POST')) || (endpoint === '/api/student/certificates/update' && method === 'POST')) {
       if (!currentUser) throw { message: 'Unauthorized access' };
       const parts = endpoint.split('/');
-      const certId = (body && body.id) || (parts.length > 4 ? parts[4] : null);
-      if (!certId) throw { message: 'Certificate ID is required' };
-
+      let certId = body && body.id;
+      if (!certId) {
+        const certIdx = parts.indexOf('certificates');
+        if (certIdx !== -1 && parts[certIdx + 1] && parts[certIdx + 1] !== 'update') {
+          certId = parts[certIdx + 1];
+        }
+      }
       const cert = (db.certificates || []).find(c => String(c.id) === String(certId));
       if (!cert) throw { message: 'Certificate not found' };
 
-      // Verify ownership: student can only edit their own certificate unless HOD/Teacher
       const student = findCurrentStudent(db, currentUser);
       const studentPrn = (student && student.prn_no) || (currentUser && currentUser.prn_no) || '';
-      if (currentUser.role === 'STUDENT') {
-        const ownsByPrn = studentPrn && cert.prn_no && cert.prn_no.toUpperCase().trim() === studentPrn.toUpperCase().trim();
-        const ownsById = cert.student_id == currentUser.id || (student && cert.student_id == student.id);
-        if (!ownsByPrn && !ownsById) {
-          throw { message: 'You can only edit your own certificate submissions' };
-        }
+      const studentId = student ? student.id : currentUser.id;
+
+      if (currentUser.role === 'STUDENT' && String(cert.student_id) !== String(studentId) && cert.prn_no !== studentPrn) {
+        throw { message: 'Unauthorized: You can only edit your own certificate submissions.' };
       }
 
-      if (body.title !== undefined && body.title.trim()) cert.title = body.title.trim();
-      if (body.event_name !== undefined && body.event_name.trim()) cert.event_name = body.event_name.trim();
-      if (body.category !== undefined && body.category) cert.category = body.category;
-      if (body.certificate_date !== undefined && body.certificate_date) cert.certificate_date = body.certificate_date;
-      if (body.description !== undefined) cert.description = body.description.trim();
-      if (body.file_url && body.file_url.length > 20) {
-        cert.file_url = body.file_url;
-        cert.file_name = body.file_name || cert.file_name || 'updated_certificate.jpg';
-      }
-
-      // If certificate was previously rejected, resubmit it back to PENDING for faculty review!
-      if (cert.status === 'REJECTED') {
-        cert.status = 'PENDING';
-        cert.rejection_reason = '';
-      }
-
+      if (body && body.title !== undefined && String(body.title).trim()) cert.title = String(body.title).trim();
+      if (body && body.event_name !== undefined && String(body.event_name).trim()) cert.event_name = String(body.event_name).trim();
+      if (body && body.category !== undefined && String(body.category).trim()) cert.category = String(body.category).trim();
+      if (body && body.certificate_date !== undefined && String(body.certificate_date).trim()) cert.certificate_date = String(body.certificate_date).trim();
+      if (body && body.description !== undefined) cert.description = String(body.description).trim();
+      if (body && body.file_url) cert.file_url = body.file_url;
+      if (body && body.file_name) cert.file_name = body.file_name;
       cert.updated_at = new Date().toLocaleString();
+
+      // If certificate was previously rejected, re-submitting with updated reason sets it back to PENDING for review
+      if (cert.status === 'REJECTED' || (body && body.resubmit)) {
+        cert.status = 'PENDING';
+        delete cert.rejection_reason;
+        delete cert.rejected_by;
+      }
+
       saveLocalDB(db);
 
       try {
@@ -6581,7 +6581,7 @@ const API = {
         }).catch(() => {});
       } catch(e) {}
 
-      return { message: 'Certificate details updated successfully!', certificate: cert, success: true };
+      return { success: true, message: 'Certificate details and reason updated successfully!', certificate: cert };
     }
 
     // 7. Teacher / HOD Certificates API

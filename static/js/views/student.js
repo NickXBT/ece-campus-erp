@@ -914,10 +914,25 @@ const StudentView = {
             <td>
               <strong>${c.title}</strong>
               ${c.description ? `
-                <div style="font-size: 0.78rem; color: #475569; margin-top: 0.25rem; background: #f8fafc; padding: 0.3rem 0.5rem; border-radius: 4px; border-left: 2.5px solid var(--primary); line-height: 1.4;">
-                  <strong style="color: #1e40af;"><i class="fa-solid fa-file-lines"></i> Detail:</strong> ${c.description}
+                <div style="font-size: 0.78rem; color: #475569; margin-top: 0.25rem; background: #f8fafc; padding: 0.35rem 0.55rem; border-radius: 6px; border-left: 3px solid var(--primary); line-height: 1.4; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem;">
+                  <div>
+                    <strong style="color: #1e40af;"><i class="fa-solid fa-comment-dots"></i> Reason/Detail:</strong> ${c.description}
+                  </div>
+                  ${(isPending || c.status === 'REJECTED') ? `
+                    <button type="button" class="btn btn-sm" onclick="StudentView.openEditCertificateModal('${c.id}')" style="background: transparent; border: none; color: #d97706; font-size: 0.75rem; font-weight: 700; cursor: pointer; padding: 0; white-space: nowrap;" title="Change reason if submitted by mistake">
+                      <i class="fa-solid fa-pen-to-square"></i> Change
+                    </button>
+                  ` : ''}
                 </div>
-              ` : ''}
+              ` : `
+                ${(isPending || c.status === 'REJECTED') ? `
+                  <div style="margin-top: 0.35rem;">
+                    <button type="button" class="btn btn-sm" onclick="StudentView.openEditCertificateModal('${c.id}')" style="background: #eff6ff; color: #2563eb; border: 1px dashed #93c5fd; font-size: 0.74rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px;">
+                      <i class="fa-solid fa-plus"></i> Add Description / Reason
+                    </button>
+                  </div>
+                ` : ''}
+              `}
             </td>
             <td>${c.event_name}</td>
             <td><span class="badge-role role-STUDENT">${c.category}</span></td>
@@ -947,12 +962,14 @@ const StudentView = {
                 <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${c.file_url}', '${c.file_name}', '${safeTitle}', '${safeStudent}', '${c.id}')">
                   <i class="fa-solid fa-eye"></i> View
                 </button>
-                <button class="btn btn-warning btn-sm" onclick="StudentView.openEditCertificateModal('${c.id}')" style="background: #f59e0b; border-color: #d97706; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem;" title="Change description, reason, event, organiser, or title if submitted by mistake">
-                  <i class="fa-solid fa-pen-to-square"></i> Change Details
-                </button>
+                ${(isPending || c.status === 'REJECTED') ? `
+                  <button class="btn btn-warning btn-sm" onclick="StudentView.openEditCertificateModal('${c.id}')" style="background: #d97706; border-color: #d97706; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem;" title="Change reason, description, or event details if submitted by mistake">
+                    <i class="fa-solid fa-pen-to-square"></i> Change Reason / Edit
+                  </button>
+                ` : ''}
                 ${isPending ? `
-                  <button class="btn btn-danger btn-sm" onclick="StudentView.cancelCertificateRequest('${c.id}', '${safeTitle}')" style="background: #ef4444; border-color: #ef4444; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem;" title="Cancel & withdraw this pending certificate submission">
-                    <i class="fa-solid fa-ban"></i> Cancel
+                  <button class="btn btn-danger btn-sm" onclick="StudentView.cancelCertificateRequest('${c.id}', '${safeTitle}')" style="background: #ef4444; border-color: #ef4444; font-size: 0.78rem; font-weight: 700;" title="Cancel & withdraw this pending certificate submission">
+                    <i class="fa-solid fa-ban"></i> Cancel Request
                   </button>
                 ` : ''}
               </div>
@@ -995,118 +1012,6 @@ const StudentView = {
     }
   },
 
-  openEditCertificateModal(certId) {
-    const db = (typeof getLocalDB === 'function') ? getLocalDB() : { certificates: [] };
-    const cert = (db.certificates || []).find(c => String(c.id) === String(certId));
-    if (!cert) {
-      Toast.error('Certificate submission not found.');
-      return;
-    }
-
-    const idInput = document.getElementById('edit-cert-id');
-    const titleInput = document.getElementById('edit-cert-title');
-    const eventInput = document.getElementById('edit-cert-event');
-    const categoryInput = document.getElementById('edit-cert-category');
-    const dateInput = document.getElementById('edit-cert-date');
-    const descInput = document.getElementById('edit-cert-desc');
-    const currentFileBox = document.getElementById('edit-cert-current-file');
-    const fileInput = document.getElementById('edit-cert-file');
-
-    if (idInput) idInput.value = cert.id;
-    if (titleInput) titleInput.value = cert.title || '';
-    if (eventInput) eventInput.value = cert.event_name || '';
-    if (categoryInput) categoryInput.value = cert.category || 'Hackathon';
-    if (dateInput) dateInput.value = cert.certificate_date || '';
-    if (descInput) descInput.value = cert.description || '';
-    if (fileInput) fileInput.value = '';
-
-    if (currentFileBox) {
-      const safeTitle = (cert.title || '').replace(/'/g, "\\'");
-      const safeStudent = (cert.student_name || '').replace(/'/g, "\\'");
-      currentFileBox.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-          <div>
-            <i class="fa-solid fa-file-shield" style="color: #2563eb;"></i> <strong>Current Attached File:</strong> ${cert.file_name || cert.title || 'Document'}
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${cert.file_url}', '${cert.file_name}', '${safeTitle}', '${safeStudent}', '${cert.id}')" style="font-size: 0.72rem; padding: 0.2rem 0.55rem; font-weight: 700;">
-            <i class="fa-solid fa-eye"></i> View Current
-          </button>
-        </div>
-      `;
-    }
-
-    openModal('modal-student-edit-cert');
-  },
-
-  async handleEditCertificateSubmit(e) {
-    e.preventDefault();
-    const btnSubmit = document.getElementById('btn-submit-student-edit-cert');
-    const certId = document.getElementById('edit-cert-id')?.value;
-    const title = document.getElementById('edit-cert-title')?.value.trim();
-    const event_name = document.getElementById('edit-cert-event')?.value.trim();
-    const category = document.getElementById('edit-cert-category')?.value;
-    const certificate_date = document.getElementById('edit-cert-date')?.value;
-    const description = document.getElementById('edit-cert-desc')?.value.trim();
-    const fileInput = document.getElementById('edit-cert-file');
-    const selectedFile = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0] : null;
-
-    if (!certId) {
-      Toast.error('Invalid certificate reference.');
-      return;
-    }
-    if (!title || !event_name || !certificate_date) {
-      Toast.warning('Please fill in Title, Event/Organizer, and Date.');
-      return;
-    }
-
-    const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : 'Save & Update Changes';
-    if (btnSubmit) {
-      btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating Details...';
-      btnSubmit.disabled = true;
-    }
-
-    const sendUpdateRequest = (newFileUrl) => {
-      const payload = {
-        id: certId,
-        title,
-        event_name,
-        category,
-        certificate_date,
-        description
-      };
-      if (newFileUrl) {
-        payload.file_url = newFileUrl;
-        payload.file_name = selectedFile ? selectedFile.name : 'updated_certificate.jpg';
-      }
-
-      API.put(`/api/student/certificates/${certId}`, payload).then(async (res) => {
-        Toast.success(res.message || '🎉 Certificate details updated successfully!');
-        closeModal('modal-student-edit-cert');
-
-        // Re-render certificates view
-        const container = document.getElementById('view-container');
-        if (container) {
-          container.innerHTML = await StudentView.renderCertificates();
-        }
-      }).catch(err => {
-        Toast.error((err && err.message) || 'Failed to update certificate details.');
-      }).finally(() => {
-        if (btnSubmit) {
-          btnSubmit.innerHTML = originalBtnHtml;
-          btnSubmit.disabled = false;
-        }
-      });
-    };
-
-    if (selectedFile) {
-      this.compressImageFile(selectedFile, (compressedData) => {
-        sendUpdateRequest(compressedData);
-      });
-    } else {
-      sendUpdateRequest(null);
-    }
-  },
-
   async cancelCertificateRequest(certId, title) {
     if (!confirm(`Are you sure you want to cancel and withdraw your certificate request for "${title || 'this certificate'}"?`)) return;
     try {
@@ -1117,6 +1022,137 @@ const StudentView = {
       if (container) container.innerHTML = await StudentView.renderCertificates();
     } catch (err) {
       Toast.error((err && err.message) || 'Failed to cancel certificate request.');
+    }
+  },
+
+  openEditCertificateModal(certId) {
+    const db = (typeof getLocalDB === 'function') ? getLocalDB() : { certificates: [] };
+    const cert = (db.certificates || []).find(c => String(c.id) === String(certId));
+    if (!cert) {
+      Toast.error('Certificate not found.');
+      return;
+    }
+
+    const editId = document.getElementById('edit-cert-id');
+    const editDesc = document.getElementById('edit-cert-desc');
+    const editTitle = document.getElementById('edit-cert-title');
+    const editEvent = document.getElementById('edit-cert-event');
+    const editCat = document.getElementById('edit-cert-category');
+    const editDate = document.getElementById('edit-cert-date');
+    const editFileInput = document.getElementById('edit-cert-file');
+    const currentBadge = document.getElementById('edit-cert-current-file-badge');
+    const progressBox = document.getElementById('edit-cert-progress-box');
+
+    if (editId) editId.value = cert.id;
+    if (editDesc) editDesc.value = cert.description || '';
+    if (editTitle) editTitle.value = cert.title || '';
+    if (editEvent) editEvent.value = cert.event_name || '';
+    if (editCat) editCat.value = cert.category || 'DEPARTMENTAL';
+    if (editDate) editDate.value = cert.certificate_date || '';
+    if (editFileInput) editFileInput.value = '';
+    if (progressBox) progressBox.style.display = 'none';
+
+    if (currentBadge) {
+      currentBadge.innerHTML = cert.file_name 
+        ? `Current file: <strong style="color: var(--primary);">${cert.file_name}</strong>`
+        : 'Current file on record';
+    }
+
+    openModal('modal-edit-certificate');
+  },
+
+  async handleSaveCertificateEdit(e) {
+    e.preventDefault();
+    const certId = document.getElementById('edit-cert-id')?.value;
+    if (!certId) {
+      Toast.error('Invalid certificate reference.');
+      return;
+    }
+
+    const title = (document.getElementById('edit-cert-title')?.value || '').trim();
+    const event_name = (document.getElementById('edit-cert-event')?.value || '').trim();
+    const category = (document.getElementById('edit-cert-category')?.value || '').trim();
+    const certDateInput = document.getElementById('edit-cert-date');
+    const certDate = certDateInput ? certDateInput.value : '';
+    const description = (document.getElementById('edit-cert-desc')?.value || '').trim();
+
+    if (!description) {
+      Toast.warning('Please enter a description or reason for this activity certificate.');
+      return;
+    }
+
+    if (certDate) {
+      const parts = certDate.split('-').map(Number);
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          Toast.error('Invalid Date: Saturdays and Sundays are non-instructional days. Please choose a Monday–Friday date.');
+          return;
+        }
+      }
+    }
+
+    const btnSubmit = document.getElementById('btn-save-edit-certificate');
+    const progressBox = document.getElementById('edit-cert-progress-box');
+    const progressBar = document.getElementById('edit-cert-progress-bar');
+    const progressText = document.getElementById('edit-cert-progress-text');
+
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving Updates...';
+    }
+
+    const fileInput = document.getElementById('edit-cert-file');
+    const selectedFile = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0] : null;
+
+    const finalizeUpdate = (fileUrl, fileName) => {
+      const payload = {
+        id: certId,
+        title: title || 'Activity Certificate',
+        event_name: event_name || 'Department Event',
+        category: category || 'DEPARTMENTAL',
+        certificate_date: certDate,
+        description: description,
+        resubmit: true
+      };
+
+      if (fileUrl) {
+        payload.file_url = fileUrl;
+        payload.file_name = fileName || 'certificate_document.jpg';
+      }
+
+      API.post(`/api/student/certificates/${certId}/update`, payload).then(async (res) => {
+        Toast.success(res.message || '🎉 Certificate details and reason updated successfully!');
+        closeModal('modal-edit-certificate');
+
+        // Re-render student certificates list
+        const container = document.getElementById('view-container');
+        if (container) {
+          container.innerHTML = await StudentView.renderCertificates();
+        }
+      }).catch(err => {
+        Toast.error((err && err.message) || 'Failed to update certificate.');
+      }).finally(() => {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save & Update Certificate';
+        }
+        if (progressBox) progressBox.style.display = 'none';
+      });
+    };
+
+    if (selectedFile) {
+      if (progressBox) {
+        progressBox.style.display = 'block';
+        if (progressBar) progressBar.style.width = '60%';
+        if (progressText) progressText.textContent = `Optimizing replacement document (${(selectedFile.size / (1024*1024)).toFixed(2)} MB)...`;
+      }
+      this.uploadFileToCloud(selectedFile, (uploadedUrl) => {
+        finalizeUpdate(uploadedUrl, selectedFile.name);
+      });
+    } else {
+      finalizeUpdate('', '');
     }
   },
 
@@ -1411,13 +1447,15 @@ const StudentView = {
 
           <!-- Student Written Description -->
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.95rem; margin-top: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.35rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
               <div style="font-size: 0.78rem; font-weight: 800; color: #1e40af; text-transform: uppercase;">
-                <i class="fa-solid fa-align-left"></i> Student Description / Activity Reason:
+                <i class="fa-solid fa-align-left"></i> Student Description / Reason:
               </div>
-              <button type="button" class="btn btn-warning btn-sm" onclick="closeModal('modal-file-preview'); StudentView.openEditCertificateModal('${certRecord.id}')" style="font-size: 0.74rem; padding: 0.18rem 0.55rem; font-weight: 700; background: #f59e0b; border-color: #d97706; color: #ffffff;" title="Change description, reason, event, organiser, or title if made by mistake">
-                <i class="fa-solid fa-pen-to-square"></i> Change Details
-              </button>
+              ${(!isApproved) ? `
+                <button type="button" class="btn btn-warning btn-sm" onclick="closeModal('modal-file-preview'); StudentView.openEditCertificateModal('${certRecord.id}');" style="background: #d97706; border-color: #d97706; color: #ffffff; font-size: 0.74rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 4px;" title="Change reason or details if submitted by mistake">
+                  <i class="fa-solid fa-pen-to-square"></i> Change Reason / Edit
+                </button>
+              ` : ''}
             </div>
             <div style="font-size: 0.88rem; color: #334155; line-height: 1.5; white-space: pre-wrap; font-weight: 500;">
               ${certRecord.description ? certRecord.description : '<em style="color: #94a3b8;">No additional details were provided by the student for this submission.</em>'}
