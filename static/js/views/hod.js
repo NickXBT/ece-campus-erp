@@ -148,14 +148,16 @@ const HodView = {
     try {
       await fetchCloudDB(true);
       const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [] };
-      // Deduplicate students strictly by unique (division + roll_no)
+      // Deduplicate students: if a real or pending registered student exists for this roll_no + division, it takes precedence over unactivated dummy placeholder!
       const stMap = new Map();
       (db.students || []).forEach(s => {
-        if (!s || !s.name || s.name === 'Student' || !s.roll_no) return;
+        if (!s || !s.name || !s.roll_no) return;
         const isB = (s.division_id == 2) || (s.division_name && s.division_name.includes('B'));
         const divKey = isB ? 'B' : 'A';
         const key = divKey + '_' + String(parseInt(s.roll_no) || s.roll_no);
-        if (!stMap.has(key)) {
+        const isRealOrPending = (s.status === 'PENDING_APPROVAL' || s.status === 'PENDING' || s.is_activated || (s.email && !s.email.endsWith('@campus.edu') && s.email.length > 3));
+
+        if (!stMap.has(key) || isRealOrPending) {
           stMap.set(key, { ...s, division_name: isB ? 'SE(ECE)-B' : 'SE(ECE)-A', division_id: isB ? 2 : 1 });
         }
       });
@@ -225,7 +227,31 @@ const HodView = {
       const rowsDivB = divBStudents.map(renderStudentRow).join('') || 
         `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No students registered in Division B yet.</td></tr>`;
 
-      const pendingStudents = students.filter(s => !s.status || s.status === 'PENDING_APPROVAL' || s.status === 'PENDING' || s.status.toUpperCase().includes('PENDING'));
+      const pendingStudents = students.filter(s => s.status === 'PENDING_APPROVAL' || s.status === 'PENDING' || (s.status && s.status.toUpperCase().includes('PENDING')));
+
+      // Also ensure any pending user signups in db.users are visible in pendingStudents
+      (db.users || []).forEach(u => {
+        if (u && u.role === 'STUDENT' && (u.status === 'PENDING_APPROVAL' || u.status === 'PENDING')) {
+          const alreadyIn = pendingStudents.some(p => 
+            (p.email && u.email && p.email.toLowerCase() === u.email.toLowerCase()) || 
+            (p.prn_no && u.prn_no && p.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || 
+            String(p.id) === String(u.id)
+          );
+          if (!alreadyIn) {
+            pendingStudents.push({
+              id: 'u_' + u.id,
+              user_id: u.id,
+              name: u.name || 'Student',
+              roll_no: u.roll_no || 'N/A',
+              prn_no: u.prn_no || 'N/A',
+              division_name: u.division_name || 'SE(ECE)-A',
+              batch_name: u.batch_name || 'A1',
+              email: u.email || '',
+              status: 'PENDING_APPROVAL'
+            });
+          }
+        }
+      });
 
       const pendingSectionHtml = pendingStudents.length > 0 ? `
         <!-- TOP HIGHLIGHTED PENDING STUDENT REGISTRATIONS PANEL -->
@@ -569,8 +595,10 @@ const HodView = {
       if (db) {
         if (db.students) {
           db.students.forEach(s => {
-            if (s.id == studentId || (email && s.email && s.email.trim().toLowerCase() === email.trim().toLowerCase())) {
+            if (s.id == studentId || (email && s.email && s.email.trim().toLowerCase() === email.trim().toLowerCase()) || (prn_no && s.prn_no && s.prn_no.trim().toUpperCase() === prn_no.trim().toUpperCase())) {
               s.status = 'APPROVED';
+              s.is_activated = true;
+              s.must_change_credentials = false;
               s.approved_by = (window.App && App.currentUser) ? App.currentUser.id : 1;
               s.approved_at = new Date().toISOString();
             }
@@ -578,12 +606,25 @@ const HodView = {
         }
         if (db.users) {
           db.users.forEach(u => {
-            if (u.id == studentId || (email && u.email && u.email.trim().toLowerCase() === email.trim().toLowerCase())) {
+            if (u.id == studentId || (email && u.email && u.email.trim().toLowerCase() === email.trim().toLowerCase()) || (prn_no && u.prn_no && u.prn_no.trim().toUpperCase() === prn_no.trim().toUpperCase())) {
               u.status = 'APPROVED';
+              u.is_activated = true;
+              u.must_change_credentials = false;
             }
           });
         }
         if (typeof saveLocalDB === 'function') saveLocalDB(db);
+      }
+
+      if (email) {
+        const safeEmailKey = email.trim().toLowerCase().replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
+        fetch(`https://keyvalue.immanuel.co/api/KeyVal/SetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}/APPROVED`).catch(() => {});
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students/${safeEmailKey}.json`, { method: 'DELETE' }).catch(() => {});
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals/${safeEmailKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'APPROVED', approved_at: new Date().toISOString() })
+        }).catch(() => {});
       }
 
       if (window.App && App.updateBadges) await App.updateBadges();
@@ -602,14 +643,14 @@ const HodView = {
 
     const pendingMap = new Map();
     (db.students || []).forEach(s => {
-      if (!s.status || s.status === 'PENDING_APPROVAL' || s.status === 'PENDING') {
+      if (s.status === 'PENDING_APPROVAL' || s.status === 'PENDING' || (s.status && s.status.includes('PENDING'))) {
         const k = (s.email || '').trim().toLowerCase() || String(s.id);
         if (k) pendingMap.set(k, { id: s.id, email: s.email, prn_no: s.prn_no, name: s.name });
       }
     });
 
     (db.users || []).forEach(u => {
-      if (u.role === 'STUDENT' && (!u.status || u.status === 'PENDING_APPROVAL' || u.status === 'PENDING')) {
+      if (u.role === 'STUDENT' && (u.status === 'PENDING_APPROVAL' || u.status === 'PENDING' || (u.status && u.status.includes('PENDING')))) {
         const k = (u.email || '').trim().toLowerCase() || String(u.id);
         if (k) pendingMap.set(k, { id: 'u_' + u.id, email: u.email, prn_no: u.prn_no, name: u.name });
       }
@@ -624,10 +665,32 @@ const HodView = {
     try {
       for (const s of pendingList) {
         await API.post(`/api/hod/students/${s.id}/approve`, { email: s.email, prn_no: s.prn_no }).catch(() => {});
+        if (s.email) {
+          const safeEmailKey = s.email.trim().toLowerCase().replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
+          fetch(`https://keyvalue.immanuel.co/api/KeyVal/SetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}/APPROVED`).catch(() => {});
+          fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students/${safeEmailKey}.json`, { method: 'DELETE' }).catch(() => {});
+          fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals/${safeEmailKey}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'APPROVED', approved_at: new Date().toISOString() })
+          }).catch(() => {});
+        }
       }
 
-      (db.students || []).forEach(s => s.status = 'APPROVED');
-      (db.users || []).forEach(u => { if (u.role === 'STUDENT') u.status = 'APPROVED'; });
+      (db.students || []).forEach(s => {
+        if (s.status === 'PENDING_APPROVAL' || s.status === 'PENDING') {
+          s.status = 'APPROVED';
+          s.is_activated = true;
+          s.must_change_credentials = false;
+        }
+      });
+      (db.users || []).forEach(u => {
+        if (u.role === 'STUDENT' && (u.status === 'PENDING_APPROVAL' || u.status === 'PENDING')) {
+          u.status = 'APPROVED';
+          u.is_activated = true;
+          u.must_change_credentials = false;
+        }
+      });
       if (typeof saveLocalDB === 'function') saveLocalDB(db);
 
       Toast.success(`🎉 Successfully approved all ${pendingList.length} student registrations!`);

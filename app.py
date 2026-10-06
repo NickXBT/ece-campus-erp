@@ -865,6 +865,26 @@ def delete_teacher(teacher_id):
     return jsonify({'message': f'Faculty member {t["name"]} deleted successfully.'})
 
 
+@app.route('/api/hod/students/<student_id>/approve', methods=['POST'])
+@require_role(['HOD', 'TEACHER'])
+def approve_student_registration(student_id):
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    prn_no = data.get('prn_no', '').strip().upper()
+    conn = get_db_connection()
+    clean_id = student_id.replace('u_', '') if isinstance(student_id, str) else str(student_id)
+    s = conn.execute('SELECT id, user_id, name FROM students WHERE id = ? OR prn_no = ? OR email = ?',
+                     (clean_id, prn_no, email)).fetchone()
+    if s:
+        conn.execute("UPDATE students SET status = 'APPROVED' WHERE id = ?", (s['id'],))
+        conn.execute("UPDATE users SET status = 'APPROVED' WHERE id = ?", (s['user_id'],))
+        conn.commit()
+        conn.close()
+        return jsonify({'message': f"Student registration approved for {s['name']}."}), 200
+    conn.close()
+    return jsonify({'message': 'Approved'}), 200
+
+
 @app.route('/api/hod/students/<int:student_id>', methods=['DELETE'])
 @require_role(['HOD', 'TEACHER'])
 def delete_student(student_id):

@@ -614,15 +614,18 @@ const AuthView = {
 
       let isApproved = (student && student.status === 'APPROVED') || (userInDb && userInDb.status === 'APPROVED');
 
-      // Direct KV Cloud Key Check as fallback
+      // Direct Cloud Key & Firebase Check as fallback
       if (!isApproved && currentEmail) {
         try {
           const safeEmailKey = currentEmail.replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
-          const cloudAppr = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}`).then(r => r.text()).catch(() => '');
-          if ((cloudAppr || '').includes('APPROVED')) {
+          const [cloudAppr, fbAppr] = await Promise.all([
+            fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}`).then(r => r.text()).catch(() => ''),
+            fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals/${safeEmailKey}.json`).then(r => r.json()).catch(() => null)
+          ]);
+          if ((cloudAppr || '').includes('APPROVED') || (fbAppr && fbAppr.status === 'APPROVED')) {
             isApproved = true;
-            if (student) student.status = 'APPROVED';
-            if (userInDb) userInDb.status = 'APPROVED';
+            if (student) { student.status = 'APPROVED'; student.is_activated = true; }
+            if (userInDb) { userInDb.status = 'APPROVED'; userInDb.is_activated = true; }
             saveLocalDB(db);
           }
         } catch(e) {}
@@ -686,11 +689,14 @@ const AuthView = {
         if (!isApproved && cEmail) {
           try {
             const safeEmailKey = cEmail.replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
-            const cloudAppr = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}`).then(r => r.text()).catch(() => '');
-            if ((cloudAppr || '').includes('APPROVED')) {
+            const [cloudAppr, fbAppr] = await Promise.all([
+              fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}`).then(r => r.text()).catch(() => ''),
+              fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals/${safeEmailKey}.json`).then(r => r.json()).catch(() => null)
+            ]);
+            if ((cloudAppr || '').includes('APPROVED') || (fbAppr && fbAppr.status === 'APPROVED')) {
               isApproved = true;
-              if (st) st.status = 'APPROVED';
-              if (us) us.status = 'APPROVED';
+              if (st) { st.status = 'APPROVED'; st.is_activated = true; }
+              if (us) { us.status = 'APPROVED'; us.is_activated = true; }
               saveLocalDB(db);
             }
           } catch(e) {}

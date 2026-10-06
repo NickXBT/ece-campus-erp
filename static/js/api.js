@@ -5859,6 +5859,7 @@ function mergeDBs(localDb, cloudDb) {
       if (u.is_activated) ex.is_activated = true;
       if (u.must_change_credentials === false) ex.must_change_credentials = false;
       if (u.prn_no && !u.prn_no.startsWith('PRN-')) ex.prn_no = u.prn_no;
+      if (u.status) ex.status = u.status;
     }
   });
   merged.users = Array.from(userMap.values()).filter(u => {
@@ -5892,6 +5893,11 @@ function mergeDBs(localDb, cloudDb) {
       if (s.is_activated) ex.is_activated = true;
       if (s.must_change_credentials === false) ex.must_change_credentials = false;
       if (s.prn_no && !s.prn_no.startsWith('PRN-')) ex.prn_no = s.prn_no;
+      if (s.status) ex.status = s.status;
+      if (s.approved_by) ex.approved_by = s.approved_by;
+      if (s.approved_at) ex.approved_at = s.approved_at;
+    } else {
+      studentMap.set(key, { ...s });
     }
   });
   merged.students = Array.from(studentMap.values()).filter(s => {
@@ -5967,12 +5973,14 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass] = await Promise.all([
+    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/timetable.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null)
     ]);
 
     if (resSync && resSync.db) {
@@ -5984,8 +5992,10 @@ async function fetchCloudDB(force = false) {
       const actList = Array.isArray(fbData) ? fbData : Object.values(fbData);
       actList.forEach(actSt => {
         if (!actSt || typeof actSt !== 'object') return;
+        let matched = false;
         (cloudDb.students || []).forEach(s => {
-          if ((actSt.prn_no && s.prn_no && actSt.prn_no.toUpperCase() === s.prn_no.toUpperCase()) || s.id == actSt.id || (s.roll_no == actSt.roll_no && s.division_name == actSt.division_name)) {
+          if ((actSt.prn_no && s.prn_no && actSt.prn_no.toUpperCase() === s.prn_no.toUpperCase()) || s.id == actSt.id || (actSt.email && s.email && actSt.email.toLowerCase() === s.email.toLowerCase()) || (s.roll_no == actSt.roll_no && s.division_name == actSt.division_name)) {
+            matched = true;
             s.name = actSt.name || s.name;
             s.email = actSt.email || s.email;
             s.prn_no = actSt.prn_no || s.prn_no;
@@ -5996,8 +6006,14 @@ async function fetchCloudDB(force = false) {
             s.status = 'APPROVED';
           }
         });
+        if (!matched && actSt.id) {
+          cloudDb.students.push({ ...actSt, status: 'APPROVED', is_activated: true, must_change_credentials: false });
+        }
+
+        let userMatched = false;
         (cloudDb.users || []).forEach(u => {
-          if ((actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || u.id == actSt.user_id || (u.roll_no == actSt.roll_no && u.division_name == actSt.division_name)) {
+          if ((actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || u.id == actSt.user_id || (actSt.email && u.email && actSt.email.toLowerCase() === u.email.toLowerCase()) || (u.roll_no == actSt.roll_no && u.division_name == actSt.division_name)) {
+            userMatched = true;
             u.name = actSt.name || u.name;
             u.email = actSt.email || u.email;
             u.prn_no = actSt.prn_no || u.prn_no;
@@ -6006,6 +6022,90 @@ async function fetchCloudDB(force = false) {
             u.must_change_credentials = false;
             u.is_logged_in = true;
             u.status = 'APPROVED';
+          }
+        });
+        if (!userMatched && (actSt.user_id || actSt.id)) {
+          cloudDb.users.push({
+            id: actSt.user_id || actSt.id,
+            email: actSt.email,
+            password_hash: actSt.password_hash,
+            role: 'STUDENT',
+            name: actSt.name,
+            prn_no: actSt.prn_no,
+            status: 'APPROVED',
+            is_activated: true,
+            must_change_credentials: false
+          });
+        }
+      });
+    }
+
+    if (fbPending && typeof fbPending === 'object') {
+      const pList = Array.isArray(fbPending) ? fbPending : Object.values(fbPending);
+      pList.forEach(pst => {
+        if (!pst || typeof pst !== 'object') return;
+        const normPstEmail = (pst.email || '').trim().toLowerCase();
+        const normPstPrn = (pst.prn_no || '').trim().toUpperCase();
+        let matched = false;
+        (cloudDb.students || []).forEach(s => {
+          if ((normPstPrn && s.prn_no && s.prn_no.toUpperCase() === normPstPrn) || (normPstEmail && s.email && s.email.toLowerCase() === normPstEmail) || (pst.id && s.id == pst.id)) {
+            matched = true;
+            if (s.status !== 'APPROVED') {
+              s.name = pst.name || s.name;
+              s.email = pst.email || s.email;
+              s.prn_no = pst.prn_no || s.prn_no;
+              s.password_hash = pst.password_hash || s.password_hash;
+              s.status = 'PENDING_APPROVAL';
+            }
+          }
+        });
+        if (!matched && pst.id) {
+          cloudDb.students.push({ ...pst, status: 'PENDING_APPROVAL' });
+        }
+
+        let userMatched = false;
+        (cloudDb.users || []).forEach(u => {
+          if ((normPstPrn && u.prn_no && u.prn_no.toUpperCase() === normPstPrn) || (normPstEmail && u.email && u.email.toLowerCase() === normPstEmail) || (pst.user_id && u.id == pst.user_id)) {
+            userMatched = true;
+            if (u.status !== 'APPROVED') {
+              u.name = pst.name || u.name;
+              u.email = pst.email || u.email;
+              u.prn_no = pst.prn_no || u.prn_no;
+              u.password_hash = pst.password_hash || u.password_hash;
+              u.status = 'PENDING_APPROVAL';
+            }
+          }
+        });
+        if (!userMatched && (pst.user_id || pst.id)) {
+          cloudDb.users.push({
+            id: pst.user_id || pst.id,
+            email: pst.email,
+            password_hash: pst.password_hash,
+            role: 'STUDENT',
+            name: pst.name,
+            prn_no: pst.prn_no,
+            status: 'PENDING_APPROVAL',
+            is_activated: false
+          });
+        }
+      });
+    }
+
+    if (fbApprovals && typeof fbApprovals === 'object') {
+      const apprEntries = Object.entries(fbApprovals);
+      apprEntries.forEach(([key, val]) => {
+        if (!val || val.status !== 'APPROVED') return;
+        const normKey = key.replace(/_at_/g, '@').toLowerCase();
+        (cloudDb.students || []).forEach(s => {
+          if ((s.email && s.email.toLowerCase() === normKey) || (s.prn_no && s.prn_no.toLowerCase() === normKey)) {
+            s.status = 'APPROVED';
+            s.is_activated = true;
+          }
+        });
+        (cloudDb.users || []).forEach(u => {
+          if ((u.email && u.email.toLowerCase() === normKey) || (u.prn_no && u.prn_no.toLowerCase() === normKey)) {
+            u.status = 'APPROVED';
+            u.is_activated = true;
           }
         });
       });
@@ -6206,6 +6306,133 @@ const API = {
       const student = findCurrentStudent(db, user);
       const redirect = (user.role === 'HOD' || user.role === 'TEACHER') ? '#/hod/dashboard' : '#/student/dashboard';
       return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: student || user, redirect };
+    }
+
+    // 2b. POST /api/auth/register-student
+    if (endpoint === '/api/auth/register-student' && method === 'POST') {
+      const { name, roll_no, prn_no, division_id, batch_id, email, password } = body;
+      if (!name || !roll_no || !prn_no || !email || !password) {
+        throw { message: 'Please fill all required registration fields.' };
+      }
+
+      const normEmail = email.trim().toLowerCase();
+      const normPrn = prn_no.trim().toUpperCase();
+      const divId = parseInt(division_id) || 1;
+      const bId = parseInt(batch_id) || 1;
+      const divName = divId === 2 ? 'SE(ECE)-B' : 'SE(ECE)-A';
+      const batchName = (db.batches || []).find(b => b.id === bId)?.name || (divId === 2 ? 'B1' : 'A1');
+
+      // Check existing email
+      const existingUser = (db.users || []).find(u => u && u.email && u.email.trim().toLowerCase() === normEmail);
+      if (existingUser && existingUser.status === 'APPROVED') {
+        throw { message: 'An account with this email address already exists. Please log in.' };
+      }
+
+      // Check existing PRN
+      const existingPrnStudent = (db.students || []).find(s => s && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn);
+      if (existingPrnStudent && existingPrnStudent.status === 'APPROVED') {
+        throw { message: `PRN Number ${prn_no} is already registered.` };
+      }
+
+      const maxUserId = (db.users || []).reduce((max, u) => Math.max(max, parseInt(u.id) || 0), 0);
+      const newUserId = maxUserId + 1;
+      const maxStudentId = (db.students || []).reduce((max, s) => Math.max(max, parseInt(s.id) || 0), 0);
+      const newStudentId = maxStudentId + 1;
+
+      // Check if student existed in pre-seeded list (e.g. dummy matching roll_no & division or PRN)
+      let targetStudent = (db.students || []).find(s => 
+        (s.prn_no && s.prn_no.trim().toUpperCase() === normPrn) ||
+        (parseInt(s.division_id) === divId && String(parseInt(s.roll_no)) === String(parseInt(roll_no)))
+      );
+
+      let targetUser = null;
+      if (targetStudent) {
+        targetStudent.name = name.trim();
+        targetStudent.roll_no = roll_no.trim();
+        targetStudent.prn_no = normPrn;
+        targetStudent.email = normEmail;
+        targetStudent.password_hash = password;
+        targetStudent.division_id = divId;
+        targetStudent.batch_id = bId;
+        targetStudent.division_name = divName;
+        targetStudent.batch_name = batchName;
+        targetStudent.status = 'PENDING_APPROVAL';
+        targetStudent.is_activated = false;
+        targetStudent.must_change_credentials = false;
+
+        targetUser = (db.users || []).find(u => u.id === targetStudent.user_id || (u.prn_no && u.prn_no.toUpperCase() === normPrn));
+        if (targetUser) {
+          targetUser.name = name.trim();
+          targetUser.email = normEmail;
+          targetUser.password_hash = password;
+          targetUser.status = 'PENDING_APPROVAL';
+          targetUser.prn_no = normPrn;
+          targetUser.role = 'STUDENT';
+          targetUser.is_activated = false;
+        }
+      }
+
+      if (!targetStudent) {
+        targetStudent = {
+          id: newStudentId,
+          user_id: newUserId,
+          name: name.trim(),
+          roll_no: roll_no.trim(),
+          prn_no: normPrn,
+          username: normPrn,
+          department_id: 1,
+          semester_id: 1,
+          division_id: divId,
+          batch_id: bId,
+          division_name: divName,
+          batch_name: batchName,
+          email: normEmail,
+          password_hash: password,
+          status: 'PENDING_APPROVAL',
+          is_activated: false,
+          must_change_credentials: false,
+          is_logged_in: false,
+          registered_at: new Date().toISOString()
+        };
+        db.students.push(targetStudent);
+      }
+
+      if (!targetUser) {
+        targetUser = {
+          id: newUserId,
+          email: normEmail,
+          password_hash: password,
+          role: 'STUDENT',
+          name: name.trim(),
+          status: 'PENDING_APPROVAL',
+          prn_no: normPrn,
+          is_activated: false,
+          must_change_credentials: false
+        };
+        db.users.push(targetUser);
+      }
+
+      saveLocalDB(db);
+
+      // Sync registered pending student to Firebase so HOD sees it immediately
+      try {
+        const safeEmailKey = normEmail.replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students/${safeEmailKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetStudent)
+        }).catch(() => {});
+      } catch(e) {}
+
+      setSessionUser(targetUser);
+
+      return {
+        success: true,
+        user: targetUser,
+        student: targetStudent,
+        redirect: '#/pending-approval',
+        message: `Welcome ${name}! Your registration has been submitted and is awaiting HOD approval.`
+      };
     }
 
     // 3. POST /api/auth/logout
@@ -6806,17 +7033,161 @@ const API = {
       return { students: db.students || [], users: db.users || [] };
     }
 
+    if (endpoint === '/api/hod/students' && method === 'POST') {
+      const { name, roll_no, prn_no, division_id, batch_id, email, password } = body;
+      const normEmail = (email || '').trim().toLowerCase();
+      const normPrn = (prn_no || '').trim().toUpperCase();
+      const divId = parseInt(division_id) || 1;
+      const bId = parseInt(batch_id) || 1;
+      const divName = divId === 2 ? 'SE(ECE)-B' : 'SE(ECE)-A';
+      const batchName = (db.batches || []).find(b => b.id === bId)?.name || (divId === 2 ? 'B1' : 'A1');
+
+      const maxUserId = (db.users || []).reduce((max, u) => Math.max(max, parseInt(u.id) || 0), 0);
+      const newUserId = maxUserId + 1;
+      const maxStudentId = (db.students || []).reduce((max, s) => Math.max(max, parseInt(s.id) || 0), 0);
+      const newStudentId = maxStudentId + 1;
+
+      let st = (db.students || []).find(s => 
+        (normPrn && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn) ||
+        (parseInt(s.division_id) === divId && String(parseInt(s.roll_no)) === String(parseInt(roll_no)))
+      );
+
+      if (st) {
+        st.name = name.trim();
+        st.roll_no = roll_no.trim();
+        st.prn_no = normPrn;
+        st.email = normEmail;
+        st.password_hash = password || 'Student@123';
+        st.division_id = divId;
+        st.batch_id = bId;
+        st.division_name = divName;
+        st.batch_name = batchName;
+        st.status = 'APPROVED';
+        st.is_activated = true;
+
+        const u = (db.users || []).find(user => user.id === st.user_id || (user.prn_no && user.prn_no.toUpperCase() === normPrn));
+        if (u) {
+          u.name = name.trim();
+          u.email = normEmail;
+          u.password_hash = password || 'Student@123';
+          u.status = 'APPROVED';
+          u.is_activated = true;
+          u.prn_no = normPrn;
+        }
+      } else {
+        st = {
+          id: newStudentId,
+          user_id: newUserId,
+          name: name.trim(),
+          roll_no: roll_no.trim(),
+          prn_no: normPrn,
+          username: normPrn,
+          department_id: 1,
+          semester_id: 1,
+          division_id: divId,
+          batch_id: bId,
+          division_name: divName,
+          batch_name: batchName,
+          email: normEmail,
+          password_hash: password || 'Student@123',
+          status: 'APPROVED',
+          is_activated: true,
+          must_change_credentials: false,
+          is_logged_in: true
+        };
+        db.students.push(st);
+
+        db.users.push({
+          id: newUserId,
+          email: normEmail,
+          password_hash: password || 'Student@123',
+          role: 'STUDENT',
+          name: name.trim(),
+          status: 'APPROVED',
+          prn_no: normPrn,
+          is_activated: true,
+          must_change_credentials: false
+        });
+      }
+
+      saveLocalDB(db);
+      return { success: true, message: `Student ${name} enrolled successfully.`, student: st };
+    }
+
     if (endpoint.startsWith('/api/hod/students/') && endpoint.includes('/approve') && method === 'POST') {
       const studentId = endpoint.split('/')[4];
-      const st = (db.students || []).find(s => String(s.id) === String(studentId));
-      if (st) {
-        st.status = 'APPROVED';
-        const u = (db.users || []).find(user => user.id === st.user_id);
-        if (u) u.status = 'APPROVED';
-        saveLocalDB(db);
-        return { success: true, message: 'Student registration approved' };
+      const normEmail = (body.email || '').trim().toLowerCase();
+      const normPrn = (body.prn_no || '').trim().toUpperCase();
+
+      // Find student in db.students by id, u_ prefixed id, user_id, email, or PRN
+      const matchedStudents = (db.students || []).filter(s => 
+        (studentId && String(s.id) === String(studentId)) ||
+        (studentId && String(s.user_id) === String(studentId)) ||
+        (studentId && studentId.startsWith('u_') && String(s.user_id) === studentId.slice(2)) ||
+        (normEmail && s.email && s.email.trim().toLowerCase() === normEmail) ||
+        (normPrn && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn)
+      );
+
+      // Find user in db.users by id, u_ prefixed id, email, PRN, or student user_id
+      const matchedUsers = (db.users || []).filter(u =>
+        (studentId && String(u.id) === String(studentId)) ||
+        (studentId && studentId.startsWith('u_') && String(u.id) === studentId.slice(2)) ||
+        (normEmail && u.email && u.email.trim().toLowerCase() === normEmail) ||
+        (normPrn && u.prn_no && u.prn_no.trim().toUpperCase() === normPrn) ||
+        matchedStudents.some(s => s.user_id && String(s.user_id) === String(u.id))
+      );
+
+      matchedStudents.forEach(s => {
+        s.status = 'APPROVED';
+        s.is_activated = true;
+        s.must_change_credentials = false;
+        s.approved_by = (currentUser && currentUser.id) ? currentUser.id : 1;
+        s.approved_at = new Date().toISOString();
+      });
+
+      matchedUsers.forEach(u => {
+        u.status = 'APPROVED';
+        u.is_activated = true;
+        u.must_change_credentials = false;
+      });
+
+      saveLocalDB(db);
+
+      // Write approval to KeyValue store so student auto-polling unlocks instantly
+      const targetEmail = normEmail || (matchedStudents[0] && matchedStudents[0].email) || (matchedUsers[0] && matchedUsers[0].email);
+      if (targetEmail) {
+        const safeEmailKey = targetEmail.trim().toLowerCase().replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_]/g, '_');
+        fetch(`https://keyvalue.immanuel.co/api/KeyVal/SetValue/${CLOUD_DB_KEY}/appr_${safeEmailKey}/APPROVED`).catch(() => {});
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students/${safeEmailKey}.json`, { method: 'DELETE' }).catch(() => {});
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals/${safeEmailKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'APPROVED', approved_at: new Date().toISOString() })
+        }).catch(() => {});
       }
-      return { success: true, message: 'Approved' };
+
+      if (matchedStudents.length > 0) {
+        const s = matchedStudents[0];
+        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/${s.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: s.id,
+            user_id: s.user_id,
+            name: s.name,
+            roll_no: s.roll_no,
+            prn_no: s.prn_no,
+            division_name: s.division_name,
+            batch_name: s.batch_name,
+            email: s.email,
+            password_hash: s.password_hash,
+            is_activated: true,
+            status: 'APPROVED'
+          })
+        }).catch(() => {});
+      }
+
+      return { success: true, message: 'Student registration approved successfully' };
     }
 
     if (endpoint.startsWith('/api/hod/students/') && method === 'DELETE') {
