@@ -6514,6 +6514,7 @@ const API = {
         file_url: body.file_url || '',
         file_name: body.file_name || 'certificate.pdf',
         description: body.description || '',
+        num_days: parseInt(body.num_days) || 1,
         status: 'PENDING',
         created_at: new Date().toLocaleString()
       };
@@ -6560,6 +6561,7 @@ const API = {
       if (body && body.category !== undefined && String(body.category).trim()) cert.category = String(body.category).trim();
       if (body && body.certificate_date !== undefined && String(body.certificate_date).trim()) cert.certificate_date = String(body.certificate_date).trim();
       if (body && body.description !== undefined) cert.description = String(body.description).trim();
+      if (body && body.num_days !== undefined) cert.num_days = parseInt(body.num_days) || 1;
       if (body && body.file_url) cert.file_url = body.file_url;
       if (body && body.file_name) cert.file_name = body.file_name;
       cert.updated_at = new Date().toLocaleString();

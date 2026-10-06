@@ -190,10 +190,23 @@
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label style="font-weight: 700;">Certificate / Activity Date <span style="color: #ef4444;">*</span></label>
-          <input type="date" id="edit-cert-date" class="form-control" onchange="StudentView.validateWeekday(this)" required>
-          <small style="color: var(--text-muted); font-size: 0.78rem;">Monday–Friday instructional dates only.</small>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label style="font-weight: 700;">Certificate / Activity Date <span style="color: #ef4444;">*</span></label>
+            <input type="date" id="edit-cert-date" class="form-control" onchange="StudentView.validateWeekday(this)" required>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">Monday–Friday instructional dates only.</small>
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 700; color: #1e40af;"><i class="fa-solid fa-calendar-days"></i> Event Duration <span style="color: #ef4444;">*</span></label>
+            <select id="edit-cert-days" class="form-control" style="font-weight: 700; border: 1.5px solid #93c5fd;">
+              <option value="1">1 Day Event (1 Working Day)</option>
+              <option value="2">2 Days Event (2 Working Days)</option>
+              <option value="3">3 Days Event (3 Working Days)</option>
+              <option value="4">4 Days Event (4 Working Days)</option>
+              <option value="5">5 Days Event (Full Working Week - 5 Days)</option>
+            </select>
+            <small style="color: var(--text-muted); font-size: 0.78rem;">Consecutive instructional days compensated.</small>
+          </div>
         </div>
 
         <!-- Document Replacement (Optional) -->
@@ -756,16 +769,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
-  <!-- JavaScript Modules with Cache Buster v=98000 -->
-  <script src="./static/js/api.js?v=98000"></script>
-  <script src="./static/js/utils/toast.js?v=98000"></script>
-  <script src="./static/js/utils/exporter.js?v=98000"></script>
-  <script src="./static/js/views/auth.js?v=98000"></script>
-  <script src="./static/js/views/student.js?v=98000"></script>
-  <script src="./static/js/views/teacher.js?v=98000"></script>
-  <script src="./static/js/views/hod.js?v=98000"></script>
-  <script src="./static/js/views/timetable.js?v=98000"></script>
-  <script src="./static/js/views/reports.js?v=98000"></script>
-  <script src="./static/js/app.js?v=98000"></script>
+  <!-- JavaScript Modules with Cache Buster v=99000 -->
+  <script src="./static/js/api.js?v=99000"></script>
+  <script src="./static/js/utils/toast.js?v=99000"></script>
+  <script src="./static/js/utils/exporter.js?v=99000"></script>
+  <script src="./static/js/views/auth.js?v=99000"></script>
+  <script src="./static/js/views/student.js?v=99000"></script>
+  <script src="./static/js/views/teacher.js?v=99000"></script>
+  <script src="./static/js/views/hod.js?v=99000"></script>
+  <script src="./static/js/views/timetable.js?v=99000"></script>
+  <script src="./static/js/views/reports.js?v=99000"></script>
+  <script src="./static/js/app.js?v=99000"></script>
 </body>
 </html>

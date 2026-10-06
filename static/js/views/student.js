@@ -509,10 +509,28 @@ const StudentView = {
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> <small style="color: var(--text-muted); font-size: 0.78rem;">(Monday – Friday only)</small></label>
-              <input type="date" id="page-cert-date" class="form-control" max="${todayStr}" onchange="StudentView.validateWeekday(this)" oninput="StudentView.validateWeekday(this)" required>
-              <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-xmark" style="color: #d97706;"></i> Saturdays & Sundays are non-instructional days and cannot be selected.</small>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> <small style="color: var(--text-muted); font-size: 0.78rem;">(Monday – Friday only)</small></label>
+                <input type="date" id="page-cert-date" class="form-control" max="${todayStr}" onchange="StudentView.validateWeekday(this)" oninput="StudentView.validateWeekday(this)" required>
+                <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-xmark" style="color: #d97706;"></i> Saturdays & Sundays cannot be selected.</small>
+              </div>
+
+              <div class="form-group">
+                <label style="font-weight: 700; color: #1e40af; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-business-time"></i> Event Duration (How Many Days?) <span style="color: var(--accent-rose);">*</span>
+                </label>
+                <select id="page-cert-days" class="form-control" style="border: 2px solid #3b82f6; font-weight: 800; color: #1e3a8a; padding: 0.6rem;" onchange="StudentView.onEventDaysChange(this.value)">
+                  <option value="1">1 Day Event (Single Day Attendance)</option>
+                  <option value="2">2 Days Event (e.g. 2-Day Hackathon)</option>
+                  <option value="3">3 Days Event (e.g. 3-Day Tech Fest / Conference)</option>
+                  <option value="4">4 Days Event</option>
+                  <option value="5">5 Days Event (Full Academic Week)</option>
+                </select>
+                <small id="page-cert-days-hint" style="color: #2563eb; font-size: 0.76rem; display: block; margin-top: 0.25rem; font-weight: 600;">
+                  <i class="fa-solid fa-circle-info"></i> Attendance compensation will be requested for 1 day.
+                </small>
+              </div>
             </div>
 
             <div class="form-group">
@@ -561,6 +579,14 @@ const StudentView = {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
       statusMsg.style.color = '#15803d';
       statusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Selected: <strong>${file.name}</strong> (${sizeMb} MB) — Ready for submission.`;
+    }
+  },
+
+  onEventDaysChange(days) {
+    const hint = document.getElementById('page-cert-days-hint');
+    if (hint) {
+      const d = parseInt(days) || 1;
+      hint.innerHTML = `<i class="fa-solid fa-circle-info"></i> Attendance compensation will be requested for <strong>${d} consecutive instructional day${d > 1 ? 's' : ''}</strong>.`;
     }
   },
 
@@ -855,6 +881,7 @@ const StudentView = {
     const event_name = (document.getElementById('page-cert-event') ? document.getElementById('page-cert-event').value : '') || 'Department Event';
     const category = (document.getElementById('page-cert-category') ? document.getElementById('page-cert-category').value : '') || 'DEPARTMENTAL';
     const description = (document.getElementById('page-cert-desc') ? document.getElementById('page-cert-desc').value : '') || '';
+    const num_days = parseInt(document.getElementById('page-cert-days')?.value || '1') || 1;
 
     const processFileAndPost = (fileUrl) => {
       if (progressBar) progressBar.style.width = '80%';
@@ -865,6 +892,7 @@ const StudentView = {
         event_name,
         category,
         certificate_date: certDate || localTodayStr,
+        num_days,
         description,
         file_url: fileUrl || '',
         file_name: selectedFile ? (selectedFile.name || 'uploaded_certificate') : 'certificate_document.jpg'
@@ -934,7 +962,14 @@ const StudentView = {
                 ` : ''}
               `}
             </td>
-            <td>${c.event_name}</td>
+            <td>
+              <strong>${c.event_name}</strong>
+              <div style="margin-top: 0.25rem;">
+                <span class="badge" style="background: #e0e7ff; color: #3730a3; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  <i class="fa-solid fa-business-time"></i> ${(c.num_days && c.num_days > 1) ? `${c.num_days} Days Event` : '1 Day Event'}
+                </span>
+              </div>
+            </td>
             <td><span class="badge-role role-STUDENT">${c.category}</span></td>
             <td>${c.certificate_date}</td>
             <td>
@@ -1039,6 +1074,7 @@ const StudentView = {
     const editEvent = document.getElementById('edit-cert-event');
     const editCat = document.getElementById('edit-cert-category');
     const editDate = document.getElementById('edit-cert-date');
+    const editDays = document.getElementById('edit-cert-days');
     const editFileInput = document.getElementById('edit-cert-file');
     const currentBadge = document.getElementById('edit-cert-current-file-badge');
     const progressBox = document.getElementById('edit-cert-progress-box');
@@ -1049,6 +1085,7 @@ const StudentView = {
     if (editEvent) editEvent.value = cert.event_name || '';
     if (editCat) editCat.value = cert.category || 'DEPARTMENTAL';
     if (editDate) editDate.value = cert.certificate_date || '';
+    if (editDays) editDays.value = String(cert.num_days || 1);
     if (editFileInput) editFileInput.value = '';
     if (progressBox) progressBox.style.display = 'none';
 
@@ -1074,6 +1111,7 @@ const StudentView = {
     const category = (document.getElementById('edit-cert-category')?.value || '').trim();
     const certDateInput = document.getElementById('edit-cert-date');
     const certDate = certDateInput ? certDateInput.value : '';
+    const num_days = parseInt(document.getElementById('edit-cert-days')?.value || '1') || 1;
     const description = (document.getElementById('edit-cert-desc')?.value || '').trim();
 
     if (!description) {
@@ -1113,6 +1151,7 @@ const StudentView = {
         event_name: event_name || 'Department Event',
         category: category || 'DEPARTMENTAL',
         certificate_date: certDate,
+        num_days,
         description: description,
         resubmit: true
       };
@@ -1425,7 +1464,8 @@ const StudentView = {
               <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">${certRecord.title || titleText}</h4>
               <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">
                 <i class="fa-solid fa-trophy" style="color: #2563eb;"></i> Event: <strong>${certRecord.event_name || 'N/A'}</strong> (${certRecord.category || 'Co-Curricular'}) &nbsp;|&nbsp;
-                <i class="fa-regular fa-calendar"></i> Date: <strong>${certRecord.certificate_date || 'N/A'}</strong>
+                <i class="fa-regular fa-calendar"></i> Date: <strong>${certRecord.certificate_date || 'N/A'}</strong> &nbsp;|&nbsp;
+                <i class="fa-solid fa-calendar-days" style="color: #0284c7;"></i> Duration: <strong>${certRecord.num_days || 1} Day${(certRecord.num_days || 1) > 1 ? 's' : ''} Event</strong>
               </div>
             </div>
             <div>

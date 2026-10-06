@@ -653,6 +653,11 @@ const TeacherView = {
         ]
       };
 
+      const requestedDays = parseInt(cert.num_days) || 1;
+      if (requestedDays > 1 && requestedDays <= 5) {
+        this.setApproveDaysCount(requestedDays);
+      }
+
       document.getElementById('preview-modal-title').innerText = `HOD Certificate Approval & Attendance Compensation`;
       openModal('modal-file-preview');
       this.renderApproveModalUI();
@@ -785,8 +790,9 @@ const TeacherView = {
         <!-- Event Duration / Number of Days Selector -->
         <div style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem;">
-            <label style="font-size: 0.88rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem; margin: 0;">
+            <label style="font-size: 0.88rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem; margin: 0; flex-wrap: wrap;">
               <i class="fa-solid fa-business-time" style="color: var(--primary);"></i> Event Duration (How many days was student absent?):
+              ${s.cert && s.cert.num_days ? `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.78rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-check"></i> Student Requested: ${s.cert.num_days} Day${s.cert.num_days > 1 ? 's' : ''}</span>` : ''}
             </label>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
               ${durationPillsHtml}
