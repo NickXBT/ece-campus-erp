@@ -947,9 +947,12 @@ const StudentView = {
                 <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${c.file_url}', '${c.file_name}', '${safeTitle}', '${safeStudent}', '${c.id}')">
                   <i class="fa-solid fa-eye"></i> View
                 </button>
+                <button class="btn btn-warning btn-sm" onclick="StudentView.openEditCertificateModal('${c.id}')" style="background: #f59e0b; border-color: #d97706; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem;" title="Change description, reason, event, organiser, or title if submitted by mistake">
+                  <i class="fa-solid fa-pen-to-square"></i> Change Details
+                </button>
                 ${isPending ? `
-                  <button class="btn btn-danger btn-sm" onclick="StudentView.cancelCertificateRequest('${c.id}', '${safeTitle}')" style="background: #ef4444; border-color: #ef4444; font-size: 0.78rem; font-weight: 700;" title="Cancel & withdraw this pending certificate submission">
-                    <i class="fa-solid fa-ban"></i> Cancel Request
+                  <button class="btn btn-danger btn-sm" onclick="StudentView.cancelCertificateRequest('${c.id}', '${safeTitle}')" style="background: #ef4444; border-color: #ef4444; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.55rem;" title="Cancel & withdraw this pending certificate submission">
+                    <i class="fa-solid fa-ban"></i> Cancel
                   </button>
                 ` : ''}
               </div>
@@ -989,6 +992,118 @@ const StudentView = {
       `;
     } catch (err) {
       return `<div class="dashboard-container"><p style="color: var(--accent-rose);">Failed to load certificates.</p></div>`;
+    }
+  },
+
+  openEditCertificateModal(certId) {
+    const db = (typeof getLocalDB === 'function') ? getLocalDB() : { certificates: [] };
+    const cert = (db.certificates || []).find(c => String(c.id) === String(certId));
+    if (!cert) {
+      Toast.error('Certificate submission not found.');
+      return;
+    }
+
+    const idInput = document.getElementById('edit-cert-id');
+    const titleInput = document.getElementById('edit-cert-title');
+    const eventInput = document.getElementById('edit-cert-event');
+    const categoryInput = document.getElementById('edit-cert-category');
+    const dateInput = document.getElementById('edit-cert-date');
+    const descInput = document.getElementById('edit-cert-desc');
+    const currentFileBox = document.getElementById('edit-cert-current-file');
+    const fileInput = document.getElementById('edit-cert-file');
+
+    if (idInput) idInput.value = cert.id;
+    if (titleInput) titleInput.value = cert.title || '';
+    if (eventInput) eventInput.value = cert.event_name || '';
+    if (categoryInput) categoryInput.value = cert.category || 'Hackathon';
+    if (dateInput) dateInput.value = cert.certificate_date || '';
+    if (descInput) descInput.value = cert.description || '';
+    if (fileInput) fileInput.value = '';
+
+    if (currentFileBox) {
+      const safeTitle = (cert.title || '').replace(/'/g, "\\'");
+      const safeStudent = (cert.student_name || '').replace(/'/g, "\\'");
+      currentFileBox.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+          <div>
+            <i class="fa-solid fa-file-shield" style="color: #2563eb;"></i> <strong>Current Attached File:</strong> ${cert.file_name || cert.title || 'Document'}
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${cert.file_url}', '${cert.file_name}', '${safeTitle}', '${safeStudent}', '${cert.id}')" style="font-size: 0.72rem; padding: 0.2rem 0.55rem; font-weight: 700;">
+            <i class="fa-solid fa-eye"></i> View Current
+          </button>
+        </div>
+      `;
+    }
+
+    openModal('modal-student-edit-cert');
+  },
+
+  async handleEditCertificateSubmit(e) {
+    e.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-student-edit-cert');
+    const certId = document.getElementById('edit-cert-id')?.value;
+    const title = document.getElementById('edit-cert-title')?.value.trim();
+    const event_name = document.getElementById('edit-cert-event')?.value.trim();
+    const category = document.getElementById('edit-cert-category')?.value;
+    const certificate_date = document.getElementById('edit-cert-date')?.value;
+    const description = document.getElementById('edit-cert-desc')?.value.trim();
+    const fileInput = document.getElementById('edit-cert-file');
+    const selectedFile = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0] : null;
+
+    if (!certId) {
+      Toast.error('Invalid certificate reference.');
+      return;
+    }
+    if (!title || !event_name || !certificate_date) {
+      Toast.warning('Please fill in Title, Event/Organizer, and Date.');
+      return;
+    }
+
+    const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : 'Save & Update Changes';
+    if (btnSubmit) {
+      btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Updating Details...';
+      btnSubmit.disabled = true;
+    }
+
+    const sendUpdateRequest = (newFileUrl) => {
+      const payload = {
+        id: certId,
+        title,
+        event_name,
+        category,
+        certificate_date,
+        description
+      };
+      if (newFileUrl) {
+        payload.file_url = newFileUrl;
+        payload.file_name = selectedFile ? selectedFile.name : 'updated_certificate.jpg';
+      }
+
+      API.put(`/api/student/certificates/${certId}`, payload).then(async (res) => {
+        Toast.success(res.message || '🎉 Certificate details updated successfully!');
+        closeModal('modal-student-edit-cert');
+
+        // Re-render certificates view
+        const container = document.getElementById('view-container');
+        if (container) {
+          container.innerHTML = await StudentView.renderCertificates();
+        }
+      }).catch(err => {
+        Toast.error((err && err.message) || 'Failed to update certificate details.');
+      }).finally(() => {
+        if (btnSubmit) {
+          btnSubmit.innerHTML = originalBtnHtml;
+          btnSubmit.disabled = false;
+        }
+      });
+    };
+
+    if (selectedFile) {
+      this.compressImageFile(selectedFile, (compressedData) => {
+        sendUpdateRequest(compressedData);
+      });
+    } else {
+      sendUpdateRequest(null);
     }
   },
 
@@ -1296,8 +1411,13 @@ const StudentView = {
 
           <!-- Student Written Description -->
           <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 0.95rem; margin-top: 0.5rem;">
-            <div style="font-size: 0.78rem; font-weight: 800; color: #1e40af; text-transform: uppercase; margin-bottom: 0.25rem;">
-              <i class="fa-solid fa-align-left"></i> Student Description / Activity Details:
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.35rem;">
+              <div style="font-size: 0.78rem; font-weight: 800; color: #1e40af; text-transform: uppercase;">
+                <i class="fa-solid fa-align-left"></i> Student Description / Activity Reason:
+              </div>
+              <button type="button" class="btn btn-warning btn-sm" onclick="closeModal('modal-file-preview'); StudentView.openEditCertificateModal('${certRecord.id}')" style="font-size: 0.74rem; padding: 0.18rem 0.55rem; font-weight: 700; background: #f59e0b; border-color: #d97706; color: #ffffff;" title="Change description, reason, event, organiser, or title if made by mistake">
+                <i class="fa-solid fa-pen-to-square"></i> Change Details
+              </button>
             </div>
             <div style="font-size: 0.88rem; color: #334155; line-height: 1.5; white-space: pre-wrap; font-weight: 500;">
               ${certRecord.description ? certRecord.description : '<em style="color: #94a3b8;">No additional details were provided by the student for this submission.</em>'}

@@ -382,6 +382,82 @@
     </div>
   </div>
 
+  <!-- Student Edit Certificate Submission Modal -->
+  <div class="modal-overlay" id="modal-student-edit-cert">
+    <div class="modal-content" style="max-width: 650px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem;">
+        <h3 style="color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+          <i class="fa-solid fa-pen-to-square"></i> Change Certificate Submission Details
+        </h3>
+        <button class="modal-close" onclick="closeModal('modal-student-edit-cert')">&times;</button>
+      </div>
+
+      <div style="padding: 1.25rem 0;">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+          Made a mistake during upload? You can update your <strong>Description / Reason</strong>, <strong>Event Name & Organizer</strong>, <strong>Title</strong>, <strong>Date</strong>, or <strong>Replace Document File</strong> below.
+        </p>
+
+        <form id="form-student-edit-cert" onsubmit="StudentView.handleEditCertificateSubmit(event)">
+          <input type="hidden" id="edit-cert-id">
+
+          <div class="form-group">
+            <label>Certificate Title <span style="color: var(--accent-rose);">*</span></label>
+            <input type="text" id="edit-cert-title" class="form-control" placeholder="e.g. 1st Prize in National Web Hackathon 2026" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label>Event Name / Organizer <span style="color: var(--accent-rose);">*</span></label>
+              <input type="text" id="edit-cert-event" class="form-control" placeholder="e.g. IEEE Tech Fest / College Sports" required>
+            </div>
+
+            <div class="form-group">
+              <label>Category <span style="color: var(--accent-rose);">*</span></label>
+              <select id="edit-cert-category" class="form-control" required>
+                <option value="Hackathon">Hackathon</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Seminar">Seminar</option>
+                <option value="Sports">Sports</option>
+                <option value="Cultural">Cultural</option>
+                <option value="Publication">Paper Publication</option>
+                <option value="NPTEL/Coursera">NPTEL / Online Certification</option>
+                <option value="Other">Other Co-Curricular</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> <small style="color: var(--text-muted); font-size: 0.78rem;">(Monday – Friday only)</small></label>
+            <input type="date" id="edit-cert-date" class="form-control" onchange="StudentView.validateWeekday(this)" oninput="StudentView.validateWeekday(this)" required>
+            <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-xmark" style="color: #d97706;"></i> Saturdays & Sundays are non-instructional days and cannot be selected.</small>
+          </div>
+
+          <div class="form-group">
+            <label>Description / Reason / Details <span style="color: var(--accent-rose);">*</span></label>
+            <textarea id="edit-cert-desc" class="form-control" rows="3" placeholder="Explain your reason, participation details, or project role here..." required></textarea>
+            <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.25rem;">HOD and Faculty reviewers read this reason/description to verify attendance compensation.</small>
+          </div>
+
+          <div class="form-group">
+            <label>Replace Document File (Optional)</label>
+            <input type="file" id="edit-cert-file" class="form-control" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 0.65rem; border: 2px dashed #94a3b8; background: #f8fafc; cursor: pointer; border-radius: var(--radius-md);">
+            <small id="edit-file-status-msg" style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.3rem;">Leave empty to keep current file, or select a new file if you uploaded the wrong one.</small>
+          </div>
+
+          <!-- Existing file notice -->
+          <div id="edit-cert-current-file" style="font-size: 0.82rem; color: #1e40af; background: #eff6ff; padding: 0.6rem 0.85rem; border-radius: 6px; margin-bottom: 1.25rem; border: 1px solid #bfdbfe;"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-student-edit-cert')">Cancel</button>
+            <button type="submit" id="btn-submit-student-edit-cert" class="btn btn-primary" style="font-weight: 800; padding: 0.65rem 1.75rem;">
+              <i class="fa-solid fa-floppy-disk"></i> Save & Update Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Universal Edit Profile Modal for ALL Roles (Student, Teacher, HOD/Admin) -->
   <div class="modal-overlay" id="modal-universal-edit-profile">
     <div class="modal-content" style="max-width: 520px;">
@@ -663,16 +739,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
-  <!-- JavaScript Modules with Cache Buster v=97000 -->
-  <script src="./static/js/api.js?v=97000"></script>
-  <script src="./static/js/utils/toast.js?v=97000"></script>
-  <script src="./static/js/utils/exporter.js?v=97000"></script>
-  <script src="./static/js/views/auth.js?v=97000"></script>
-  <script src="./static/js/views/student.js?v=97000"></script>
-  <script src="./static/js/views/teacher.js?v=97000"></script>
-  <script src="./static/js/views/hod.js?v=97000"></script>
-  <script src="./static/js/views/timetable.js?v=97000"></script>
-  <script src="./static/js/views/reports.js?v=97000"></script>
-  <script src="./static/js/app.js?v=97000"></script>
+  <!-- JavaScript Modules with Cache Buster v=98000 -->
+  <script src="./static/js/api.js?v=98000"></script>
+  <script src="./static/js/utils/toast.js?v=98000"></script>
+  <script src="./static/js/utils/exporter.js?v=98000"></script>
+  <script src="./static/js/views/auth.js?v=98000"></script>
+  <script src="./static/js/views/student.js?v=98000"></script>
+  <script src="./static/js/views/teacher.js?v=98000"></script>
+  <script src="./static/js/views/hod.js?v=98000"></script>
+  <script src="./static/js/views/timetable.js?v=98000"></script>
+  <script src="./static/js/views/reports.js?v=98000"></script>
+  <script src="./static/js/app.js?v=98000"></script>
 </body>
 </html>

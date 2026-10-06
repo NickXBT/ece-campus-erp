@@ -6533,6 +6533,57 @@ const API = {
       return { message: 'Certificate submitted successfully!', certificate: newCert, success: true };
     }
 
+    // 6.1 Student Update / Edit Certificate Details API
+    if ((endpoint.startsWith('/api/student/certificates/') || endpoint === '/api/student/certificates/update') && (method === 'PUT' || method === 'POST')) {
+      if (!currentUser) throw { message: 'Unauthorized access' };
+      const parts = endpoint.split('/');
+      const certId = (body && body.id) || (parts.length > 4 ? parts[4] : null);
+      if (!certId) throw { message: 'Certificate ID is required' };
+
+      const cert = (db.certificates || []).find(c => String(c.id) === String(certId));
+      if (!cert) throw { message: 'Certificate not found' };
+
+      // Verify ownership: student can only edit their own certificate unless HOD/Teacher
+      const student = findCurrentStudent(db, currentUser);
+      const studentPrn = (student && student.prn_no) || (currentUser && currentUser.prn_no) || '';
+      if (currentUser.role === 'STUDENT') {
+        const ownsByPrn = studentPrn && cert.prn_no && cert.prn_no.toUpperCase().trim() === studentPrn.toUpperCase().trim();
+        const ownsById = cert.student_id == currentUser.id || (student && cert.student_id == student.id);
+        if (!ownsByPrn && !ownsById) {
+          throw { message: 'You can only edit your own certificate submissions' };
+        }
+      }
+
+      if (body.title !== undefined && body.title.trim()) cert.title = body.title.trim();
+      if (body.event_name !== undefined && body.event_name.trim()) cert.event_name = body.event_name.trim();
+      if (body.category !== undefined && body.category) cert.category = body.category;
+      if (body.certificate_date !== undefined && body.certificate_date) cert.certificate_date = body.certificate_date;
+      if (body.description !== undefined) cert.description = body.description.trim();
+      if (body.file_url && body.file_url.length > 20) {
+        cert.file_url = body.file_url;
+        cert.file_name = body.file_name || cert.file_name || 'updated_certificate.jpg';
+      }
+
+      // If certificate was previously rejected, resubmit it back to PENDING for faculty review!
+      if (cert.status === 'REJECTED') {
+        cert.status = 'PENDING';
+        cert.rejection_reason = '';
+      }
+
+      cert.updated_at = new Date().toLocaleString();
+      saveLocalDB(db);
+
+      try {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/' + cert.id + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cert)
+        }).catch(() => {});
+      } catch(e) {}
+
+      return { message: 'Certificate details updated successfully!', certificate: cert, success: true };
+    }
+
     // 7. Teacher / HOD Certificates API
     if ((endpoint === '/api/teacher/certificates' || endpoint === '/api/teacher/certificates/pending') && method === 'GET') {
       if (!currentUser || (currentUser.role !== 'HOD' && currentUser.role !== 'TEACHER')) {

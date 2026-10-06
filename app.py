@@ -629,6 +629,40 @@ def student_certificates():
 
     return jsonify({'certificates': [dict(c) for c in certs]})
 
+@app.route('/api/student/certificates/<int:cert_id>', methods=['PUT', 'POST'])
+@require_role('STUDENT')
+def update_student_certificate(cert_id):
+    user = get_current_user()
+    conn = get_db_connection()
+    student = conn.execute('SELECT id FROM students WHERE user_id = ?', (user['id'],)).fetchone()
+    if not student:
+        conn.close()
+        return jsonify({'message': 'Student profile not found'}), 404
+
+    cert = conn.execute('SELECT * FROM certificates WHERE id = ? AND student_id = ?', (cert_id, student['id'])).fetchone()
+    if not cert:
+        conn.close()
+        return jsonify({'message': 'Certificate not found or unauthorized'}), 404
+
+    data = request.get_json(silent=True) or request.form or {}
+    title = data.get('title', cert['title'])
+    event_name = data.get('event_name', cert['event_name'])
+    category = data.get('category', cert['category'])
+    cert_date = data.get('certificate_date', cert['certificate_date'])
+    description = data.get('description', cert['description'])
+    file_url = data.get('file_url', cert['file_url'])
+    file_name = data.get('file_name', cert['file_name'])
+
+    conn.execute('''
+        UPDATE certificates
+        SET title = ?, event_name = ?, category = ?, certificate_date = ?, description = ?, file_url = ?, file_name = ?
+        WHERE id = ?
+    ''', (title, event_name, category, cert_date, description, file_url, file_name, cert_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Certificate details updated successfully!', 'success': True})
+
 @app.route('/api/student/timetable', methods=['GET'])
 @require_role('STUDENT')
 def student_timetable():
