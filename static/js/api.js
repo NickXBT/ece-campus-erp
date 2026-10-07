@@ -5761,6 +5761,21 @@ function saveLocalDB(db) {
           }).catch(() => {});
         }
 
+        const hodUser = (cleanCopy.users || []).find(u => u && u.role === 'HOD');
+        if (hodUser && currentUser && currentUser.role === 'HOD' && hodUser.password_hash !== '1234') {
+          const hodCreds = {
+            email: hodUser.email,
+            password_hash: hodUser.password_hash,
+            name: hodUser.name,
+            hod_pin: cleanCopy.hod_pin || '1234'
+          };
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(hodCreds)
+          }).catch(() => {});
+        }
+
         if (cleanCopy.certificates && cleanCopy.certificates.length > 0) {
           const certMap = {};
           cleanCopy.certificates.forEach(c => {
@@ -5973,7 +5988,7 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod] = await Promise.all([
+    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json').then(r => r.json()).catch(() => null),
@@ -5981,13 +5996,24 @@ async function fetchCloudDB(force = false) {
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json').then(r => r.json()).catch(() => null)
     ]);
 
     if (resSync && resSync.db) {
       cloudDb = resSync.db;
     }
     if (!cloudDb) cloudDb = getLocalDB();
+
+    if (fbHodCreds && typeof fbHodCreds === 'object') {
+      const hodUser = (cloudDb.users || []).find(u => u && u.role === 'HOD');
+      if (hodUser) {
+        if (fbHodCreds.email) hodUser.email = fbHodCreds.email;
+        if (fbHodCreds.password_hash) hodUser.password_hash = fbHodCreds.password_hash;
+        if (fbHodCreds.name) hodUser.name = fbHodCreds.name;
+      }
+      if (fbHodCreds.hod_pin) cloudDb.hod_pin = fbHodCreds.hod_pin;
+    }
 
     if (fbData && typeof fbData === 'object') {
       const actList = Array.isArray(fbData) ? fbData : Object.values(fbData);
@@ -7480,6 +7506,20 @@ const API = {
       }
       if (new_pin) db.hod_pin = new_pin;
       saveLocalDB(db);
+
+      if (hodUser) {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: hodUser.email,
+            password_hash: hodUser.password_hash,
+            name: hodUser.name,
+            hod_pin: db.hod_pin || '1234'
+          })
+        }).catch(() => {});
+      }
+
       return { success: true, message: 'HOD credentials updated successfully', user: hodUser };
     }
 
