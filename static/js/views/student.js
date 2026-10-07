@@ -903,12 +903,12 @@ const StudentView = {
         if (progressTitle) progressTitle.innerHTML = '🎉 Upload Successful!';
         if (progressDesc) progressDesc.textContent = 'Certificate successfully sent for HOD review. Opening certificates list...';
 
-        Toast.success(res.message || '🎉 Certificate uploaded successfully and sent for HOD review!');
+        Toast.success('Certificate Uploaded');
         setTimeout(() => {
           window.location.hash = '#/student/certificates';
         }, 600);
       }).catch(err => {
-        Toast.error((err && err.message) || 'Failed to upload certificate.');
+        Toast.error('Upload Failed');
         btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Certificate for Review';
         btnSubmit.disabled = false;
         if (btnCancel) btnCancel.style.display = '';

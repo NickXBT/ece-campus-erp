@@ -914,7 +914,11 @@ const App = {
         } catch(err) {}
       }
 
-      if (typeof Toast !== 'undefined') Toast.success('Profile updated successfully!');
+      if (newPassword && newPassword.trim()) {
+        if (typeof Toast !== 'undefined') Toast.success('Password Changed Successfully', 'Your account is now secure.');
+      } else {
+        if (typeof Toast !== 'undefined') Toast.success('Updated Successfully');
+      }
       if (typeof closeModal === 'function') closeModal('modal-universal-edit-profile');
       this.setupNavigation();
       await this.handleRoute();
