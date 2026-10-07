@@ -375,7 +375,7 @@ const AuthView = {
       }
       const portal = this.loginPortalOption || 'DIV_A';
       const res = await API.post('/api/auth/login', { email, password, portal });
-      Toast.success('Login successful!');
+      Toast.success('Login Successful');
       
       App.currentUser = res.user;
       window.currentUser = res.user;
@@ -387,7 +387,7 @@ const AuthView = {
       window.location.hash = res.redirect || ((res.user && (res.user.role === 'HOD' || res.user.role === 'TEACHER')) ? '#/hod/dashboard' : '#/student/dashboard');
       await App.handleRoute();
     } catch (err) {
-      Toast.error(err.message || 'Invalid email or password.');
+      Toast.error('Login Failed');
       if (btnSubmit) {
         btnSubmit.innerHTML = `Sign In to Portal <i class="fa-solid fa-arrow-right"></i>`;
         btnSubmit.disabled = false;

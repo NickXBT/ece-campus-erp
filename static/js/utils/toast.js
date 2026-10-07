@@ -2,6 +2,9 @@
 const Toast = {
   // Mapping of standard message keys to clean title, description, and status types
   presets: {
+    'Login Successful': { title: 'Login Successful', desc: 'Welcome back! You have successfully signed in.', type: 'success' },
+    'Login Failed': { title: 'Login Failed', desc: 'Please check your credentials and try again.', type: 'error' },
+    'Profile Updated': { title: 'Profile Updated', desc: 'Your profile has been updated successfully.', type: 'success' },
     'Saved Successfully': { title: 'Saved Successfully', desc: 'Your changes have been saved successfully.', type: 'success' },
     'Updated Successfully': { title: 'Updated Successfully', desc: 'Your information has been updated successfully.', type: 'success' },
     'Certificate Uploaded': { title: 'Certificate Uploaded', desc: 'Your certificate has been uploaded successfully.', type: 'success' },
@@ -16,7 +19,8 @@ const Toast = {
     'Server Unavailable': { title: 'Server Unavailable', desc: 'Please try again in a moment.', type: 'warning' },
     'Request Timed Out': { title: 'Request Timed Out', desc: 'Please try again.', type: 'warning' },
 
-    'Signing In...': { title: 'Signing In...', desc: 'Verifying your credentials...', type: 'loading' },
+    'Signing In...': { title: 'Signing in...', desc: 'Verifying your credentials...', type: 'loading' },
+    'Signing in...': { title: 'Signing in...', desc: 'Verifying your credentials...', type: 'loading' },
     'Uploading...': { title: 'Uploading...', desc: 'Transferring your file securely...', type: 'loading' },
     'Saving...': { title: 'Saving...', desc: 'Updating backend records...', type: 'loading' },
     'Deleting...': { title: 'Deleting...', desc: 'Removing requested record...', type: 'loading' },
@@ -84,6 +88,15 @@ const Toast = {
   info(title, desc = '') { return this.show(title, desc, 'info'); },
   warning(title, desc = '') { return this.show(title, desc, 'warning'); },
   loading(title, desc = '') { return this.show(title, desc, 'loading'); }
+};
+
+window.Toast = Toast;
+window.showToast = function(msg, type = 'info') {
+  if (type === 'success') return Toast.success(msg);
+  if (type === 'error') return Toast.error(msg);
+  if (type === 'warning') return Toast.warning(msg);
+  if (type === 'loading') return Toast.loading(msg);
+  return Toast.show(msg, '', type);
 };
 
 function closeModal(modalId) {

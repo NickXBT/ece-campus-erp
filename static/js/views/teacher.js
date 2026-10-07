@@ -1116,7 +1116,7 @@ const TeacherView = {
     try {
       Toast.info('Deleting certificate...');
       const res = await API.delete(`/api/teacher/certificates/${certId}`);
-      Toast.success((res && res.message) || 'Certificate deleted permanently.');
+      Toast.success('Certificate Deleted');
       if (window.App && App.updateBadges) await App.updateBadges();
       const container = document.getElementById('view-container');
       container.innerHTML = await TeacherView.renderApprovals();
