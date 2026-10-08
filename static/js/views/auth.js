@@ -72,8 +72,19 @@ const AuthView = {
           </div>
 
           <!-- Pre-Enrolled Student Guidance Banner -->
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.75rem 0.95rem; margin-bottom: 1.15rem; font-size: 0.82rem; color: #1e40af; line-height: 1.45;">
-            <i class="fa-solid fa-id-card" style="color: #2563eb;"></i> <strong>First-Time Student Login:</strong> Select your Division above. Enter your official <strong>PRN Number</strong> (e.g. <code>U251H001</code>, <code>U251H007</code>) and initial password <code>Student@123</code>. You will then set your permanent personal Username/Email & Password!
+          <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd; border-radius: 14px; padding: 0.9rem 1.05rem; margin-bottom: 1.25rem; font-size: 0.83rem; color: #1e3a8a; line-height: 1.55; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.88rem; color: #1e40af; margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-id-card-clip" style="color: #2563eb; font-size: 1rem;"></i> <span>First-Time Student Login Instructions</span>
+            </div>
+            <div style="margin-bottom: 0.45rem;">
+              Select your Division above. Enter your official <strong>PRN Number</strong> (e.g. <code>U251H001</code>, <code>U251H007</code>) and initial password <strong><code>Student@123</code></strong>.
+            </div>
+            <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.55rem 0.75rem; margin: 0.45rem 0; font-size: 0.8rem; color: #1e40af; font-weight: 600;">
+              <i class="fa-solid fa-user-lock" style="color: #2563eb;"></i> <strong>Security Action:</strong> Please update your password and email ID (which is currently an initial default dummy) immediately after signing in so nobody else can access your account.
+            </div>
+            <div style="font-size: 0.78rem; color: #1d4ed8; font-weight: 700; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-headset" style="color: #2563eb;"></i> For any other issue, contact: <strong>7768075930 (Nikhil)</strong>
+            </div>
           </div>
 
           <form id="form-login" onsubmit="AuthView.handleLogin(event)">

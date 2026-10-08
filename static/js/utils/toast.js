@@ -71,7 +71,7 @@ const Toast = {
 
     container.appendChild(toast);
 
-    const duration = finalType === 'loading' ? 8000 : 3500;
+    const duration = finalType === 'loading' ? 8000 : 4000;
     setTimeout(() => {
       if (toast.parentElement) {
         toast.style.opacity = '0';
