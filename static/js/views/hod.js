@@ -171,9 +171,21 @@ const HodView = {
 
       const isStudentActivated = (s) => {
         if (!s) return false;
-        if (s.email && !s.email.endsWith('@campus.edu') && !s.email.startsWith('student.') && s.email.includes('@')) return true;
-        if (s.password_hash && s.password_hash !== 'Student@123') return true;
-        if (s.is_activated === true && s.must_change_credentials === false) return true;
+        if (s.must_change_credentials === true) return false;
+        const email = (s.email || '').toLowerCase().trim();
+        const pass = s.password_hash || '';
+
+        const isPlaceholderEmail = !email || 
+          email.startsWith('student.') || 
+          email.startsWith('dse') || 
+          email.endsWith('@campus.edu') || 
+          (email.startsWith('dse') && email.endsWith('@nmiet.edu.in'));
+
+        const isDefaultPassword = !pass || pass === 'Student@123';
+
+        if (!isDefaultPassword && !isPlaceholderEmail && s.must_change_credentials !== true) return true;
+        if (s.is_activated === true && s.must_change_credentials === false && !isPlaceholderEmail) return true;
+
         return false;
       };
 
