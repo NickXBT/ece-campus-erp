@@ -5740,7 +5740,7 @@ function saveLocalDB(db) {
       }).catch(() => {});
 
       try {
-        const isStudentActive = (s) => (s && s.must_change_credentials !== true && (s.is_activated === true || s.is_logged_in === true) && (s.password_hash && s.password_hash !== 'Student@123') && (s.email && !s.email.endsWith('@campus.edu') && !s.email.startsWith('student.')));
+        const isStudentActive = (s) => (s && (s.is_activated === true || s.status === 'APPROVED' || (s.id && parseInt(s.id) > 120) || (s.password_hash && s.password_hash !== 'Student@123') || (s.email && !s.email.endsWith('@campus.edu') && s.email.length > 3)));
         const activatedStudents = (cleanCopy.students || []).filter(isStudentActive);
         if (activatedStudents.length > 0) {
           const actMap = {};
