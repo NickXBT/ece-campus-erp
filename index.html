@@ -582,24 +582,24 @@
     </div>
   </div>
 
-  <!-- Premium First Login Password Warning Popup -->
-  <div class="modal-overlay" id="modal-first-login-setup" style="z-index: 99999; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.65);">
-    <div class="modal-content" style="max-width: 480px; border-radius: var(--radius-lg); border: 1.5px solid #3b82f6; box-shadow: 0 20px 40px rgba(0,0,0,0.35); text-align: center; padding: 2.25rem 2rem;">
-      <div style="width: 68px; height: 68px; background: #eff6ff; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 2.1rem; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);">
-        <i class="fa-solid fa-user-lock"></i>
+  <!-- Premium First Login Security Warning Popup -->
+  <div class="modal-overlay" id="modal-first-login-setup" style="z-index: 99999; backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.72);">
+    <div class="modal-content" style="max-width: 490px; border-radius: 24px; border: 2px solid #3b82f6; box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.35); text-align: center; padding: 2.5rem 2rem; background: #ffffff;">
+      <div style="width: 76px; height: 76px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 2.3rem; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25); border: 2px solid #bfdbfe; animation: pulseGlow 2s infinite ease-in-out;">
+        <i class="fa-solid fa-user-shield"></i>
       </div>
-      <h3 style="font-family: var(--font-heading); font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.4rem;">
+      <h3 style="font-family: var(--font-heading); font-weight: 800; color: #0f172a; margin-bottom: 0.75rem; font-size: 1.45rem;">
         🔐 Secure Your Account
       </h3>
-      <p style="font-size: 0.95rem; color: var(--text-main); line-height: 1.6; margin-bottom: 0.75rem;">
-        For your security, please change your password using the <strong>Change Password</strong> option in your ERP account.
+      <p style="font-size: 0.95rem; color: #334155; line-height: 1.6; margin-bottom: 0.75rem; font-weight: 600;">
+        For your security, please update your <strong>Email Address</strong> and <strong>Password</strong> using the account settings option so that no one else can access your portal.
       </p>
-      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.75rem;">
-        Click the <strong>Change Password</strong> icon to update your password and secure your account.
+      <p style="font-size: 0.88rem; color: #64748b; line-height: 1.5; margin-bottom: 1.75rem;">
+        Click the button below to set your permanent private credentials and keep your student portal 100% safe.
       </p>
       <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: center;">
-        <button type="button" class="btn btn-primary" onclick="closeModal('modal-first-login-setup'); if(typeof App !== 'undefined' && App.openEditProfile) { App.openEditProfile(); } else { openModal('modal-universal-edit-profile'); }" style="font-weight: 800; font-size: 1rem; padding: 0.85rem 2.2rem; width: 100%; border-radius: var(--radius-full); background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
-          🔐 Change Password
+        <button type="button" class="btn btn-primary" onclick="closeModal('modal-first-login-setup'); if(typeof App !== 'undefined' && App.openEditProfile) { App.openEditProfile(); } else { openModal('modal-universal-edit-profile'); }" style="font-weight: 800; font-size: 1rem; padding: 0.9rem 2.2rem; width: 100%; border-radius: var(--radius-full); background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); text-transform: none; letter-spacing: 0.3px;">
+          🔐 Change Email & Password Now
         </button>
       </div>
     </div>
