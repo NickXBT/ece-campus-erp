@@ -82,8 +82,11 @@ const AuthView = {
             <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.55rem 0.75rem; margin: 0.45rem 0; font-size: 0.8rem; color: #1e40af; font-weight: 600;">
               <i class="fa-solid fa-user-lock" style="color: #2563eb;"></i> <strong>Security Action:</strong> Please update your password and email ID (which is currently an initial default dummy) immediately after signing in so nobody else can access your account.
             </div>
-            <div style="font-size: 0.78rem; color: #1d4ed8; font-weight: 700; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-              <i class="fa-solid fa-headset" style="color: #2563eb;"></i> For any other issue, contact: <strong>7768075930 (Nikhil)</strong>
+            <div style="font-size: 0.78rem; color: #1d4ed8; font-weight: 700; margin-top: 0.4rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem;">
+              <span><i class="fa-solid fa-headset" style="color: #2563eb;"></i> For any issue, contact: <strong>7768075930 (Nikhil)</strong></span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="background: #ffffff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: 8px; padding: 0.25rem 0.65rem; font-size: 0.75rem; cursor: pointer;">
+                <i class="fa-solid fa-headset" style="color: #2563eb;"></i> Help Desk
+              </button>
             </div>
           </div>
 
@@ -115,7 +118,12 @@ const AuthView = {
             </button>
           </form>
 
-          </form>
+          <!-- Sign-In Help & Support Button -->
+          <div style="margin-top: 1.25rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="width: 100%; justify-content: center; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: var(--radius-md); padding: 0.65rem 1rem; font-size: 0.85rem;">
+              <i class="fa-solid fa-headset" style="color: #2563eb;"></i> <span>Need Help? Open Help & Support Desk</span>
+            </button>
+          </div>
         </div>
       </div>
     `;
