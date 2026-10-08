@@ -5925,11 +5925,20 @@ function mergeDBs(localDb, cloudDb) {
 
   // 3. Merge certificates strictly by unique ID & filter out deleted certificates
   const certMap = new Map();
-  (cloudDb.certificates || []).concat(localDb.certificates || []).forEach(c => {
+  const cloudCerts = cloudDb.certificates || [];
+  const localCerts = localDb.certificates || [];
+
+  cloudCerts.forEach(c => {
     if (!c || !c.id) return;
     const cid = String(c.id);
     if (deletedCertIds.has(cid)) return;
+    certMap.set(cid, { ...c });
+  });
 
+  localCerts.forEach(c => {
+    if (!c || !c.id) return;
+    const cid = String(c.id);
+    if (deletedCertIds.has(cid)) return;
     if (!certMap.has(cid)) {
       certMap.set(cid, { ...c });
     } else {
@@ -6813,10 +6822,15 @@ const API = {
       const student = findCurrentStudent(db, currentUser);
       const studentPrn = (student && student.prn_no) || (currentUser && currentUser.prn_no) || '';
       const studentId = student ? student.id : currentUser.id;
+      const studentEmail = (student && student.email) || (currentUser && currentUser.email) || '';
+      const studentName = (student && student.name) || (currentUser && currentUser.name) || '';
 
       const certs = (db.certificates || []).filter(c => {
+        if (!c) return false;
         if (studentPrn && c.prn_no && c.prn_no.toUpperCase().trim() === studentPrn.toUpperCase().trim()) return true;
-        if (studentId && c.student_id == studentId) return true;
+        if (studentId && (c.student_id == studentId || c.user_id == studentId)) return true;
+        if (studentEmail && c.student_email && c.student_email.toLowerCase().trim() === studentEmail.toLowerCase().trim()) return true;
+        if (studentName && c.student_name && c.student_name.trim().toLowerCase() === studentName.trim().toLowerCase()) return true;
         return false;
       });
 
@@ -6900,9 +6914,15 @@ const API = {
       const student = findCurrentStudent(db, currentUser);
       const studentPrn = (student && student.prn_no) || (currentUser && currentUser.prn_no) || '';
       const studentId = student ? student.id : currentUser.id;
+      const studentEmail = (student && student.email) || (currentUser && currentUser.email) || '';
+      const studentName = (student && student.name) || (currentUser && currentUser.name) || '';
+
       const certs = (db.certificates || []).filter(c => {
+        if (!c) return false;
         if (studentPrn && c.prn_no && c.prn_no.toUpperCase().trim() === studentPrn.toUpperCase().trim()) return true;
-        if (studentId && c.student_id == studentId) return true;
+        if (studentId && (c.student_id == studentId || c.user_id == studentId)) return true;
+        if (studentEmail && c.student_email && c.student_email.toLowerCase().trim() === studentEmail.toLowerCase().trim()) return true;
+        if (studentName && c.student_name && c.student_name.trim().toLowerCase() === studentName.trim().toLowerCase()) return true;
         return false;
       });
       return { certificates: certs, success: true };
