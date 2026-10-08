@@ -5615,10 +5615,10 @@ const INITIAL_DB = {
   try {
     if (typeof localStorage !== 'undefined') {
       const currentReset = localStorage.getItem('ece_hard_reset_token');
-      if (currentReset !== 'v900000_fresh_login_nikhil_shreyash') {
+      if (currentReset !== 'v900001_cloud_firebase_certs_only') {
         localStorage.clear();
         if (typeof sessionStorage !== 'undefined') sessionStorage.clear();
-        localStorage.setItem('ece_hard_reset_token', 'v900000_fresh_login_nikhil_shreyash');
+        localStorage.setItem('ece_hard_reset_token', 'v900001_cloud_firebase_certs_only');
         if (typeof document !== 'undefined' && document.cookie) {
           document.cookie.split(";").forEach(function(c) {
             document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
@@ -5629,7 +5629,7 @@ const INITIAL_DB = {
   } catch(e) {}
 })();
 
-const LOCAL_STORAGE_KEY = "ece_campus_db_v900000_fresh_login_nikhil_shreyash";
+const LOCAL_STORAGE_KEY = "ece_campus_db_v900001_cloud_firebase_certs_only";
 
 // Google Firebase Realtime Database Configuration & Client
 const FIREBASE_CONFIG = {
@@ -5673,6 +5673,9 @@ function getLocalDB() {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (raw) {
       g_cloudDB = JSON.parse(raw);
+      if (g_cloudDB && g_cloudDB.certificates) {
+        delete g_cloudDB.certificates;
+      }
     }
   } catch (e) {}
 
@@ -5680,7 +5683,9 @@ function getLocalDB() {
     g_cloudDB = JSON.parse(JSON.stringify(INITIAL_DB));
     g_cloudDB.last_updated = Date.now();
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(g_cloudDB));
+      const dbForLocal = { ...g_cloudDB };
+      delete dbForLocal.certificates;
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
     } catch (e) {}
   }
 
@@ -5721,7 +5726,9 @@ function saveLocalDB(db) {
       db.last_updated = Date.now();
       g_cloudDB = db;
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(db));
+        const dbForLocal = { ...db };
+        delete dbForLocal.certificates;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
       } catch (e) {}
 
       const cleanCopy = JSON.parse(JSON.stringify(db));
@@ -6232,7 +6239,11 @@ async function fetchCloudDB(force = false) {
 
     if (cloudDb) {
       g_cloudDB = mergeDBs(getLocalDB(), cloudDb);
-      try { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(g_cloudDB)); } catch(e) {}
+      try {
+        const dbForLocal = { ...g_cloudDB };
+        delete dbForLocal.certificates;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
+      } catch(e) {}
     }
   } catch (e) {}
   return getLocalDB();
