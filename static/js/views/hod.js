@@ -171,9 +171,9 @@ const HodView = {
 
       const isStudentActivated = (s) => {
         if (!s) return false;
-        if (s.is_activated === true) return true;
-        if (s.email && !s.email.endsWith('@campus.edu') && !s.email.startsWith('student.')) return true;
-        return false;
+        if (s.must_change_credentials === true) return false;
+        if (s.password_hash === 'Student@123' || !s.email || s.email.endsWith('@campus.edu') || s.email.startsWith('student.')) return false;
+        return s.is_activated === true || s.is_logged_in === true;
       };
 
       const divAActiveCount = divAStudents.filter(isStudentActivated).length;
@@ -191,7 +191,7 @@ const HodView = {
             <i class="fa-solid fa-circle-check"></i> Activated & Logged In
            </span>` :
           `<span class="badge-status" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; font-weight: 700; font-size: 0.76rem; padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 0.35rem; border-radius: var(--radius-full);">
-            <i class="fa-solid fa-clock"></i> Not Logged In Yet (Dummy)
+            <i class="fa-solid fa-clock"></i> Awaiting First Login
            </span>`;
 
         return `
