@@ -846,8 +846,9 @@ body.login-page-active .main-content,
     justify-content: space-between;
     width: 52%;
     min-height: 100vh;
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1d4ed8 100%);
-    color: #ffffff;
+    background: #f8fafc;
+    border-right: 1.5px solid var(--border-color);
+    color: var(--text-main);
     padding: 3.5rem 4rem;
     box-sizing: border-box;
     position: relative;
