@@ -1211,7 +1211,10 @@ const HodView = {
       try {
         const certRes = await API.get('/api/teacher/certificates/pending').catch(() => null);
         if (certRes && certRes.certificates && Array.isArray(certRes.certificates) && certRes.certificates.length > 0) {
-          certs = certRes.certificates;
+          const certMap = new Map();
+          (db.certificates || []).forEach(c => { if (c && c.id) certMap.set(String(c.id), c); });
+          certRes.certificates.forEach(c => { if (c && c.id) certMap.set(String(c.id), c); });
+          certs = Array.from(certMap.values());
         }
       } catch (e) {}
 
@@ -1233,6 +1236,7 @@ const HodView = {
       const divBFolder = zip.folder("Division_SE(ECE)-B");
 
       const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').trim();
+      const genericNames = ['', 'student', 'n/a', 'unknown', 'loading...'];
 
       let totalCertFilesAdded = 0;
       let totalStudentsProcessed = 0;
@@ -1244,25 +1248,58 @@ const HodView = {
 
         const rollPadded = String(student.roll_no || '00').padStart(2, '0');
         const studentFolderName = `Roll_${rollPadded}_${sanitize(student.name || 'Student')}`;
+        
+        // Always create the student folder in division (will remain blank if student uploaded 0 certificates)
         const studentFolder = targetDivFolder.folder(studentFolderName);
 
-        // Find all certificates for this student (APPROVED, PENDING, REJECTED)
+        // Strict & Precise Certificate Matching for this Student
+        const sPrn = (student.prn_no || '').trim().toUpperCase();
+        const sName = (student.name || '').trim().toLowerCase();
+        const sId = student.id !== undefined && student.id !== null ? String(student.id) : '';
+        const sUid = student.user_id !== undefined && student.user_id !== null ? String(student.user_id) : '';
+
         const studentCerts = certs.filter(c => {
           if (!c) return false;
-          if (c.student_id && String(c.student_id) === String(student.id)) return true;
-          if (c.student_id && String(c.student_id) === String(student.user_id)) return true;
-          if (c.prn_no && student.prn_no && c.prn_no.trim().toUpperCase() === student.prn_no.trim().toUpperCase()) return true;
-          if (c.student_name && student.name && c.student_name.trim().toLowerCase() === student.name.trim().toLowerCase()) return true;
+
+          // 1. Precise Match by non-empty PRN (min 3 chars)
+          const cPrn = (c.prn_no || '').trim().toUpperCase();
+          if (cPrn && sPrn && cPrn.length >= 3 && sPrn.length >= 3 && cPrn === sPrn) {
+            return true;
+          }
+
+          // 2. Precise Match by Student ID / User ID
+          const cSid = c.student_id !== undefined && c.student_id !== null ? String(c.student_id) : '';
+          if (cSid && cSid !== '0' && (cSid === sId || cSid === sUid)) {
+            return true;
+          }
+
+          // 3. Match by Name + Division Verification (Must be specific, non-generic name)
+          const cName = (c.student_name || '').trim().toLowerCase();
+          if (cName && sName && !genericNames.includes(cName) && !genericNames.includes(sName) && cName === sName) {
+            const cDivIsB = (c.division_name && c.division_name.includes('B')) || c.division_id == 2;
+            if (cDivIsB === isDivB) {
+              return true;
+            }
+          }
+
           return false;
         });
 
-        if (studentCerts.length === 0) {
-          studentFolder.file("no_certificates_submitted.txt", `Student: ${student.name}\nRoll No: ${student.roll_no}\nPRN: ${student.prn_no}\nDivision: ${student.division_name}\nStatus: No certificates uploaded yet.`);
-        } else {
+        // If student has NO certificates uploaded, leave the folder completely BLANK (0 files inside)
+        if (studentCerts.length > 0) {
           for (let i = 0; i < studentCerts.length; i++) {
             const cert = studentCerts[i];
             const fileUrl = cert.file_url || cert.url || '';
-            const statusTag = (cert.status || 'SUBMITTED').toUpperCase();
+
+            let statusTag = 'NON_APPROVED';
+            if (cert.status === 'APPROVED') {
+              statusTag = 'APPROVED';
+            } else if (cert.status === 'REJECTED') {
+              statusTag = 'REJECTED';
+            } else {
+              statusTag = 'NON_APPROVED';
+            }
+
             const certTitle = sanitize(cert.title || `Certificate_${i + 1}`);
             const certDate = sanitize(cert.certificate_date || 'date');
 
