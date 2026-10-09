@@ -122,128 +122,130 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card">
-            <div style="text-align: center; margin-bottom: 1.15rem;">
-              <div class="vibe-badge" style="margin-bottom: 0.85rem;">
-                <span class="vibe-badge-dot"></span>
-                <span>ECE MANAGEMENT SYSTEM</span>
+          <div class="login-card-wrap">
+            <div class="login-card">
+              <div style="text-align: center; margin-bottom: 1.15rem;">
+                <div class="vibe-badge" style="margin-bottom: 0.85rem;">
+                  <span class="vibe-badge-dot"></span>
+                  <span>ECE MANAGEMENT SYSTEM</span>
+                </div>
+
+                <div class="brand-icon" style="margin: 0.25rem auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">
+                  <i class="fa-solid fa-microchip"></i>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">ECE Management</h2>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem;">Student Activity, Certificate & Timetable Portal</p>
               </div>
 
-              <div class="brand-icon" style="margin: 0.25rem auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">
-                <i class="fa-solid fa-microchip"></i>
-              </div>
-              <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">ECE Management</h2>
-              <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem;">Student Activity, Certificate & Timetable Portal</p>
-            </div>
-
-            <!-- Auth Mode Toggle Tabs -->
-            <div style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: var(--radius-full); margin-bottom: 1.15rem; border: 1px solid var(--border-color); gap: 0.25rem;">
-              <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('login')">
-                <i class="fa-solid fa-right-to-bracket"></i> Sign In
-              </button>
-              <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; border: none; background: transparent; color: var(--text-muted); padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('register')">
-                <i class="fa-solid fa-user-plus"></i> Student Sign Up
-              </button>
-            </div>
-
-            <!-- Strict Login Section Selection Tabs (HOD vs Div A vs Div B) -->
-            <div style="margin-bottom: 1.15rem; background: #f8fafc; border: 1.5px solid var(--border-color); padding: 0.85rem; border-radius: 14px;">
-              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a; font-weight: 800; margin-bottom: 0.55rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem;">
-                <span><i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Select Login Section:</span>
-                <span id="login-section-badge" style="background: #2563eb; color: #ffffff; font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 20px; font-weight: 800;">STRICT ENFORCEMENT</span>
+              <!-- Auth Mode Toggle Tabs -->
+              <div style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: var(--radius-full); margin-bottom: 1.15rem; border: 1px solid var(--border-color); gap: 0.25rem;">
+                <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('login')">
+                  <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; border: none; background: transparent; color: var(--text-muted); padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('register')">
+                  <i class="fa-solid fa-user-plus"></i> Student Sign Up
+                </button>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 0.45rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
-                  <!-- Div A Option Button -->
-                  <button type="button" id="btn-login-option-a" onclick="AuthView.selectLoginPortal('DIV_A')"
-                    style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
-                    <i class="fa-solid ${ selectedPortal === 'DIV_A' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
-                    <span>Division A</span>
-                  </button>
+              <!-- Strict Login Section Selection Tabs (HOD vs Div A vs Div B) -->
+              <div style="margin-bottom: 1.15rem; background: #f8fafc; border: 1.5px solid var(--border-color); padding: 0.85rem; border-radius: 14px;">
+                <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a; font-weight: 800; margin-bottom: 0.55rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem;">
+                  <span><i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Select Login Section:</span>
+                  <span id="login-section-badge" style="background: #2563eb; color: #ffffff; font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 20px; font-weight: 800;">STRICT ENFORCEMENT</span>
+                </div>
 
-                  <!-- Div B Option Button -->
-                  <button type="button" id="btn-login-option-b" onclick="AuthView.selectLoginPortal('DIV_B')"
-                    style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
-                    <i class="fa-solid ${ selectedPortal === 'DIV_B' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
-                    <span>Division B</span>
+                <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
+                    <!-- Div A Option Button -->
+                    <button type="button" id="btn-login-option-a" onclick="AuthView.selectLoginPortal('DIV_A')"
+                      style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                      <i class="fa-solid ${ selectedPortal === 'DIV_A' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
+                      <span>Division A</span>
+                    </button>
+
+                    <!-- Div B Option Button -->
+                    <button type="button" id="btn-login-option-b" onclick="AuthView.selectLoginPortal('DIV_B')"
+                      style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                      <i class="fa-solid ${ selectedPortal === 'DIV_B' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
+                      <span>Division B</span>
+                    </button>
+                  </div>
+
+                  <!-- HOD Option Button -->
+                  <button type="button" id="btn-login-option-hod" onclick="AuthView.selectLoginPortal('HOD')"
+                    style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 2px solid #166534; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                    <i class="fa-solid ${ selectedPortal === 'HOD' ? 'fa-shield-halved' : 'fa-chalkboard-user' }"></i>
+                    <span>HOD & Faculty Portal</span>
                   </button>
                 </div>
 
-                <!-- HOD Option Button -->
-                <button type="button" id="btn-login-option-hod" onclick="AuthView.selectLoginPortal('HOD')"
-                  style="padding: 0.65rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 2px solid #166534; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
-                  <i class="fa-solid ${ selectedPortal === 'HOD' ? 'fa-shield-halved' : 'fa-chalkboard-user' }"></i>
-                  <span>HOD & Faculty Portal</span>
-                </button>
+                <!-- Dynamic Live Section Verification Indicator -->
+                <div id="login-section-notice" style="margin-top: 0.65rem; font-size: 0.75rem; font-weight: 700; text-align: center; border-radius: 8px; padding: 0.45rem 0.5rem; transition: all 0.3s ease; ${
+                  selectedPortal === 'DIV_A' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;' :
+                  (selectedPortal === 'DIV_B' ? 'background: #fffbeb; border: 1px solid #fde68a; color: #b45309;' :
+                  'background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;')
+                }">
+                  ${
+                    selectedPortal === 'DIV_A' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division A Student</strong>' :
+                    (selectedPortal === 'DIV_B' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division B Student</strong>' :
+                    '<i class="fa-solid fa-shield-halved"></i> Strict Section: <strong>HOD & Faculty Desk</strong>')
+                  }
+                </div>
               </div>
 
-              <!-- Dynamic Live Section Verification Indicator -->
-              <div id="login-section-notice" style="margin-top: 0.65rem; font-size: 0.75rem; font-weight: 700; text-align: center; border-radius: 8px; padding: 0.45rem 0.5rem; transition: all 0.3s ease; ${
-                selectedPortal === 'DIV_A' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;' :
-                (selectedPortal === 'DIV_B' ? 'background: #fffbeb; border: 1px solid #fde68a; color: #b45309;' :
-                'background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;')
-              }">
-                ${
-                  selectedPortal === 'DIV_A' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division A Student</strong>' :
-                  (selectedPortal === 'DIV_B' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division B Student</strong>' :
-                  '<i class="fa-solid fa-shield-halved"></i> Strict Section: <strong>HOD & Faculty Desk</strong>')
-                }
-              </div>
-            </div>
-
-            <!-- Pre-Enrolled Student Guidance Banner -->
-            <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd; border-radius: 12px; padding: 0.75rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.78rem; color: #1e3a8a; line-height: 1.5; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.06);">
-              <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; font-size: 0.83rem; color: #1e40af; margin-bottom: 0.3rem;">
-                <i class="fa-solid fa-id-card-clip" style="color: #2563eb; font-size: 0.95rem;"></i> <span>First-Time Student Login Instructions</span>
-              </div>
-              <div style="margin-bottom: 0.35rem;">
-                Select your Division above. Enter official <strong>PRN</strong> (e.g. <code>U251H001</code>, <code>U251H007</code>) and password <strong><code>Student@123</code></strong>.
-              </div>
-              <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.45rem 0.65rem; margin: 0.35rem 0; font-size: 0.74rem; color: #1e40af; font-weight: 600; line-height: 1.45;">
-                <i class="fa-solid fa-user-lock" style="color: #2563eb;"></i> <strong>Security:</strong> Please update your password and email immediately after signing in.
-              </div>
-              <div style="font-size: 0.75rem; color: #1d4ed8; font-weight: 700; margin-top: 0.35rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem;">
-                <span><i class="fa-solid fa-headset" style="color: #2563eb;"></i> Support: <strong>7768075930 (Nikhil)</strong></span>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="background: #ffffff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: 8px; padding: 0.2rem 0.55rem; font-size: 0.72rem; cursor: pointer;">
-                  <i class="fa-solid fa-headset" style="color: #2563eb;"></i> Help Desk
-                </button>
-              </div>
-            </div>
-
-            <form id="form-login" onsubmit="AuthView.handleLogin(event)">
-              <div class="form-group">
-                <label><i class="fa-solid fa-user-tag" style="color: var(--primary);"></i> PRN Number / Registered Email</label>
-                <input type="text" id="login-email" class="form-control" placeholder="e.g. U251H001, U251H007, or registered email" required value="">
-              </div>
-
-              <div class="form-group">
-                <label><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Password</label>
-                <div class="password-toggle-group">
-                  <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required value="">
-                  <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide Password">
-                    <i class="fa-solid fa-eye"></i>
+              <!-- Pre-Enrolled Student Guidance Banner -->
+              <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd; border-radius: 12px; padding: 0.75rem 0.85rem; margin-bottom: 1.15rem; font-size: 0.78rem; color: #1e3a8a; line-height: 1.5; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.06);">
+                <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; font-size: 0.83rem; color: #1e40af; margin-bottom: 0.3rem;">
+                  <i class="fa-solid fa-id-card-clip" style="color: #2563eb; font-size: 0.95rem;"></i> <span>First-Time Student Login Instructions</span>
+                </div>
+                <div style="margin-bottom: 0.35rem;">
+                  Select your Division above. Enter official <strong>PRN</strong> (e.g. <code>U251H001</code>, <code>U251H007</code>) and password <strong><code>Student@123</code></strong>.
+                </div>
+                <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.45rem 0.65rem; margin: 0.35rem 0; font-size: 0.74rem; color: #1e40af; font-weight: 600; line-height: 1.45;">
+                  <i class="fa-solid fa-user-lock" style="color: #2563eb;"></i> <strong>Security:</strong> Please update your password and email immediately after signing in.
+                </div>
+                <div style="font-size: 0.75rem; color: #1d4ed8; font-weight: 700; margin-top: 0.35rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem;">
+                  <span><i class="fa-solid fa-headset" style="color: #2563eb;"></i> Support: <strong>7768075930 (Nikhil)</strong></span>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="background: #ffffff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: 8px; padding: 0.2rem 0.55rem; font-size: 0.72rem; cursor: pointer;">
+                    <i class="fa-solid fa-headset" style="color: #2563eb;"></i> Help Desk
                   </button>
                 </div>
               </div>
 
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.82rem;">
-                <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
-                  <input type="checkbox" checked> Remember Me
-                </label>
-                <a href="javascript:void(0)" style="font-weight: 700; color: var(--primary);" onclick="AuthView.switchTab('forgot')">Forgot Password?</a>
+              <form id="form-login" onsubmit="AuthView.handleLogin(event)">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-user-tag" style="color: var(--primary);"></i> PRN Number / Registered Email</label>
+                  <input type="text" id="login-email" class="form-control" placeholder="e.g. U251H001, U251H007, or registered email" required value="">
+                </div>
+
+                <div class="form-group">
+                  <label><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Password</label>
+                  <div class="password-toggle-group">
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required value="">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide Password">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.82rem;">
+                  <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted);">
+                    <input type="checkbox" checked> Remember Me
+                  </label>
+                  <a href="javascript:void(0)" style="font-weight: 700; color: var(--primary);" onclick="AuthView.switchTab('forgot')">Forgot Password?</a>
+                </div>
+
+                <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem; font-size: 0.88rem;">
+                  Sign In to Portal <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </form>
+
+              <!-- Sign-In Help & Support Button -->
+              <div style="margin-top: 1.15rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="width: 100%; justify-content: center; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: var(--radius-md); padding: 0.6rem 0.85rem; font-size: 0.82rem;">
+                  <i class="fa-solid fa-headset" style="color: #2563eb;"></i> <span>Need Help? Open Support Desk</span>
+                </button>
               </div>
-
-              <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem; font-size: 0.88rem;">
-                Sign In to Portal <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </form>
-
-            <!-- Sign-In Help & Support Button -->
-            <div style="margin-top: 1.15rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="width: 100%; justify-content: center; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: var(--radius-md); padding: 0.6rem 0.85rem; font-size: 0.82rem;">
-                <i class="fa-solid fa-headset" style="color: #2563eb;"></i> <span>Need Help? Open Support Desk</span>
-              </button>
             </div>
           </div>
         </div>
@@ -256,91 +258,93 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card">
-            <div style="text-align: center; margin-bottom: 1.15rem;">
-              <div class="vibe-badge" style="margin-bottom: 0.85rem;">
-                <span class="vibe-badge-dot"></span>
-                <span>STUDENT REGISTRATION</span>
-              </div>
-              <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">Create Student Account</h2>
-              <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem;">Enroll into ECE Department Division A or B</p>
-            </div>
-
-            <!-- Auth Mode Toggle Tabs -->
-            <div style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: var(--radius-full); margin-bottom: 1.25rem; border: 1px solid var(--border-color); gap: 0.25rem;">
-              <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; border: none; background: transparent; color: var(--text-muted); padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('login')">
-                <i class="fa-solid fa-right-to-bracket"></i> Sign In
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('register')">
-                <i class="fa-solid fa-user-plus"></i> Student Sign Up
-              </button>
-            </div>
-
-            <form id="form-self-register" onsubmit="AuthView.handleSelfRegister(event)">
-              <div class="form-group">
-                <label>Full Name <span style="color: var(--accent-rose);">*</span></label>
-                <input type="text" id="reg-name" class="form-control" placeholder="e.g. Sonal Deshmukh" required>
+          <div class="login-card-wrap">
+            <div class="login-card">
+              <div style="text-align: center; margin-bottom: 1.15rem;">
+                <div class="vibe-badge" style="margin-bottom: 0.85rem;">
+                  <span class="vibe-badge-dot"></span>
+                  <span>STUDENT REGISTRATION</span>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">Create Student Account</h2>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem;">Enroll into ECE Department Division A or B</p>
               </div>
 
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+              <!-- Auth Mode Toggle Tabs -->
+              <div style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: var(--radius-full); margin-bottom: 1.25rem; border: 1px solid var(--border-color); gap: 0.25rem;">
+                <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; border: none; background: transparent; color: var(--text-muted); padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('login')">
+                  <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; padding: 0.55rem 0.35rem;" onclick="AuthView.switchTab('register')">
+                  <i class="fa-solid fa-user-plus"></i> Student Sign Up
+                </button>
+              </div>
+
+              <form id="form-self-register" onsubmit="AuthView.handleSelfRegister(event)">
                 <div class="form-group">
-                  <label>Roll No <span style="color: var(--accent-rose);">*</span></label>
-                  <input type="text" id="reg-roll" class="form-control" placeholder="e.g. 42" required>
+                  <label>Full Name <span style="color: var(--accent-rose);">*</span></label>
+                  <input type="text" id="reg-name" class="form-control" placeholder="e.g. Sonal Deshmukh" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+                  <div class="form-group">
+                    <label>Roll No <span style="color: var(--accent-rose);">*</span></label>
+                    <input type="text" id="reg-roll" class="form-control" placeholder="e.g. 42" required>
+                  </div>
+
+                  <div class="form-group">
+                    <label>PRN Number <span style="color: var(--accent-rose);">*</span></label>
+                    <input type="text" id="reg-prn" class="form-control" placeholder="e.g. 20240142" required>
+                  </div>
+                </div>
+
+                <!-- Color-Indicated Division Selection Option -->
+                <div class="form-group" style="margin-bottom: 1.15rem;">
+                  <label style="font-weight: 700; font-size: 0.82rem;">Select Division <span style="color: var(--accent-rose);">*</span></label>
+                  <input type="hidden" id="reg-div" value="${this.selectedDivision || '1'}">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.35rem;">
+                    <button type="button" id="btn-select-div-a" 
+                      onclick="AuthView.selectDivision('1')" 
+                      style="padding: 0.65rem 0.5rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ (this.selectedDivision || '1') === '1' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); transform: translateY(-1px);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color); opacity: 0.85;' }">
+                      <i class="fa-solid ${ (this.selectedDivision || '1') === '1' ? 'fa-circle-check' : 'fa-circle' }" style="font-size: 0.85rem;"></i>
+                      <span>Division A</span>
+                    </button>
+                    
+                    <button type="button" id="btn-select-div-b" 
+                      onclick="AuthView.selectDivision('2')" 
+                      style="padding: 0.65rem 0.5rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ (this.selectedDivision || '1') === '2' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35); transform: translateY(-1px);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color); opacity: 0.85;' }">
+                      <i class="fa-solid ${ (this.selectedDivision || '1') === '2' ? 'fa-circle-check' : 'fa-circle' }" style="font-size: 0.85rem;"></i>
+                      <span>Division B</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label>PRN Number <span style="color: var(--accent-rose);">*</span></label>
-                  <input type="text" id="reg-prn" class="form-control" placeholder="e.g. 20240142" required>
+                  <label>Lab Batch <span style="color: var(--accent-rose);">*</span></label>
+                  <select id="reg-batch" class="form-control" required>
+                    ${ (this.selectedDivision || '1') === '1' ? '<option value="1">Batch A1</option><option value="2">Batch A2</option><option value="3">Batch A3</option>' : '<option value="4">Batch B1</option><option value="5">Batch B2</option><option value="6">Batch B3</option>' }
+                  </select>
                 </div>
-              </div>
 
-              <!-- Color-Indicated Division Selection Option -->
-              <div class="form-group" style="margin-bottom: 1.15rem;">
-                <label style="font-weight: 700; font-size: 0.82rem;">Select Division <span style="color: var(--accent-rose);">*</span></label>
-                <input type="hidden" id="reg-div" value="${this.selectedDivision || '1'}">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.35rem;">
-                  <button type="button" id="btn-select-div-a" 
-                    onclick="AuthView.selectDivision('1')" 
-                    style="padding: 0.65rem 0.5rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ (this.selectedDivision || '1') === '1' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); transform: translateY(-1px);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color); opacity: 0.85;' }">
-                    <i class="fa-solid ${ (this.selectedDivision || '1') === '1' ? 'fa-circle-check' : 'fa-circle' }" style="font-size: 0.85rem;"></i>
-                    <span>Division A</span>
-                  </button>
-                  
-                  <button type="button" id="btn-select-div-b" 
-                    onclick="AuthView.selectDivision('2')" 
-                    style="padding: 0.65rem 0.5rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ (this.selectedDivision || '1') === '2' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35); transform: translateY(-1px);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color); opacity: 0.85;' }">
-                    <i class="fa-solid ${ (this.selectedDivision || '1') === '2' ? 'fa-circle-check' : 'fa-circle' }" style="font-size: 0.85rem;"></i>
-                    <span>Division B</span>
-                  </button>
+                <div class="form-group">
+                  <label>Email Address <span style="color: var(--accent-rose);">*</span></label>
+                  <input type="email" id="reg-email" class="form-control" placeholder="e.g. sonal@campus.edu" required>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label>Lab Batch <span style="color: var(--accent-rose);">*</span></label>
-                <select id="reg-batch" class="form-control" required>
-                  ${ (this.selectedDivision || '1') === '1' ? '<option value="1">Batch A1</option><option value="2">Batch A2</option><option value="3">Batch A3</option>' : '<option value="4">Batch B1</option><option value="5">Batch B2</option><option value="6">Batch B3</option>' }
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label>Email Address <span style="color: var(--accent-rose);">*</span></label>
-                <input type="email" id="reg-email" class="form-control" placeholder="e.g. sonal@campus.edu" required>
-              </div>
-
-              <div class="form-group">
-                <label>Password <span style="color: var(--accent-rose);">*</span></label>
-                <div class="password-toggle-group">
-                  <input type="password" id="reg-password" class="form-control" placeholder="Enter Password" required>
-                  <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)" title="Show/Hide Password">
-                    <i class="fa-solid fa-eye"></i>
-                  </button>
+                <div class="form-group">
+                  <label>Password <span style="color: var(--accent-rose);">*</span></label>
+                  <div class="password-toggle-group">
+                    <input type="password" id="reg-password" class="form-control" placeholder="Enter Password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-password', this)" title="Show/Hide Password">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <button type="submit" id="btn-reg-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.5rem;">
-                Complete Registration <i class="fa-solid fa-check"></i>
-              </button>
-            </form>
+                <button type="submit" id="btn-reg-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.5rem;">
+                  Complete Registration <i class="fa-solid fa-check"></i>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -352,46 +356,48 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card" style="max-width: 480px;">
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-              <div class="vibe-badge">
-                <span class="vibe-badge-dot"></span>
-                <span>STRICT HOD APPROVAL REQUIRED</span>
-              </div>
-              <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800;">Request Password Change</h2>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Submit a password reset request for HOD review & approval</p>
-            </div>
-
-            <form id="form-forgot-password" onsubmit="AuthView.handleRequestPasswordReset(event)">
-              <div class="form-group">
-                <label><i class="fa-solid fa-envelope" style="color: var(--primary);"></i> Account Email Address <span style="color: var(--accent-rose);">*</span></label>
-                <input type="email" id="reset-email" class="form-control" placeholder="e.g. student@campus.edu" required>
+          <div class="login-card-wrap">
+            <div class="login-card">
+              <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="vibe-badge">
+                  <span class="vibe-badge-dot"></span>
+                  <span>STRICT HOD APPROVAL REQUIRED</span>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800;">Request Password Change</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">Submit a password reset request for HOD review & approval</p>
               </div>
 
-              <div class="form-group">
-                <label><i class="fa-solid fa-id-card" style="color: var(--primary);"></i> Student PRN Number <span style="color: var(--accent-rose);">*</span></label>
-                <input type="text" id="reset-prn" class="form-control" placeholder="e.g. 20240123" required>
-              </div>
+              <form id="form-forgot-password" onsubmit="AuthView.handleRequestPasswordReset(event)">
+                <div class="form-group">
+                  <label><i class="fa-solid fa-envelope" style="color: var(--primary);"></i> Account Email Address <span style="color: var(--accent-rose);">*</span></label>
+                  <input type="email" id="reset-email" class="form-control" placeholder="e.g. student@campus.edu" required>
+                </div>
 
-              <div class="form-group">
-                <label><i class="fa-solid fa-key" style="color: var(--primary);"></i> Requested New Password <span style="color: var(--accent-rose);">*</span></label>
-                <div class="password-toggle-group">
-                  <input type="password" id="reset-new-password" class="form-control" placeholder="Enter Requested Password" required>
-                  <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reset-new-password', this)" title="Show/Hide Password">
-                    <i class="fa-solid fa-eye"></i>
+                <div class="form-group">
+                  <label><i class="fa-solid fa-id-card" style="color: var(--primary);"></i> Student PRN Number <span style="color: var(--accent-rose);">*</span></label>
+                  <input type="text" id="reset-prn" class="form-control" placeholder="e.g. 20240123" required>
+                </div>
+
+                <div class="form-group">
+                  <label><i class="fa-solid fa-key" style="color: var(--primary);"></i> Requested New Password <span style="color: var(--accent-rose);">*</span></label>
+                  <div class="password-toggle-group">
+                    <input type="password" id="reset-new-password" class="form-control" placeholder="Enter Requested Password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reset-new-password', this)" title="Show/Hide Password">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                  <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="AuthView.switchTab('login')">
+                    Cancel
+                  </button>
+                  <button type="submit" id="btn-request-reset-submit" class="btn btn-primary" style="flex: 1.8; justify-content: center;">
+                    Submit Request to HOD <i class="fa-solid fa-paper-plane"></i>
                   </button>
                 </div>
-              </div>
-
-              <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-                <button type="button" class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="AuthView.switchTab('login')">
-                  Cancel
-                </button>
-                <button type="submit" id="btn-request-reset-submit" class="btn btn-primary" style="flex: 1.8; justify-content: center;">
-                  Submit Request to HOD <i class="fa-solid fa-paper-plane"></i>
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
