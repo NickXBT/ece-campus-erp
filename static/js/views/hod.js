@@ -1201,24 +1201,20 @@ const HodView = {
     }
 
     try {
-      Toast.info('📦 Gathering certificates across Division A & Division B...');
+      Toast.info('📦 Fetching cloud database and compiling certificates ZIP...');
 
-      // Sync latest database records
+      // 1. Force cloud database sync to fetch all certificates from Firebase
       if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
       const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [], certificates: [] };
       
-      let certs = db.certificates || [];
-      try {
-        const certRes = await API.get('/api/teacher/certificates/pending').catch(() => null);
-        if (certRes && certRes.certificates && Array.isArray(certRes.certificates) && certRes.certificates.length > 0) {
-          const certMap = new Map();
-          (db.certificates || []).forEach(c => { if (c && c.id) certMap.set(String(c.id), c); });
-          certRes.certificates.forEach(c => { if (c && c.id) certMap.set(String(c.id), c); });
-          certs = Array.from(certMap.values());
-        }
-      } catch (e) {}
+      // 2. Collect all unique certificates by ID
+      const certMap = new Map();
+      (db.certificates || []).forEach(c => {
+        if (c && c.id) certMap.set(String(c.id), c);
+      });
+      const certs = Array.from(certMap.values());
 
-      // Collect unique students
+      // 3. Collect unique official students for Division A and Division B
       const stMap = new Map();
       (db.students || []).forEach(s => {
         if (!s || !s.name || !s.roll_no) return;
@@ -1230,6 +1226,12 @@ const HodView = {
         }
       });
       const allStudents = Array.from(stMap.values());
+
+      // Sort students by division and roll number
+      allStudents.sort((a, b) => {
+        if (a.division_id !== b.division_id) return a.division_id - b.division_id;
+        return (parseInt(a.roll_no) || 0) - (parseInt(b.roll_no) || 0);
+      });
 
       const zip = new JSZip();
       const divAFolder = zip.folder("Division_SE(ECE)-A");
@@ -1249,35 +1251,45 @@ const HodView = {
         const rollPadded = String(student.roll_no || '00').padStart(2, '0');
         const studentFolderName = `Roll_${rollPadded}_${sanitize(student.name || 'Student')}`;
         
-        // Always create the student folder in division (will remain blank if student uploaded 0 certificates)
+        // Create student folder inside division (remains 100% BLANK if student uploaded 0 certificates)
         const studentFolder = targetDivFolder.folder(studentFolderName);
 
-        // Strict & Precise Certificate Matching for this Student
         const sPrn = (student.prn_no || '').trim().toUpperCase();
         const sName = (student.name || '').trim().toLowerCase();
-        const sId = student.id !== undefined && student.id !== null ? String(student.id) : '';
-        const sUid = student.user_id !== undefined && student.user_id !== null ? String(student.user_id) : '';
+        const sEmail = (student.email || '').trim().toLowerCase();
 
+        // 4. Ultra-Strict & Fail-Proof Certificate Matching for this exact student
         const studentCerts = certs.filter(c => {
           if (!c) return false;
 
-          // 1. Precise Match by non-empty PRN (min 3 chars)
           const cPrn = (c.prn_no || '').trim().toUpperCase();
-          if (cPrn && sPrn && cPrn.length >= 3 && sPrn.length >= 3 && cPrn === sPrn) {
-            return true;
-          }
-
-          // 2. Precise Match by Student ID / User ID
-          const cSid = c.student_id !== undefined && c.student_id !== null ? String(c.student_id) : '';
-          if (cSid && cSid !== '0' && (cSid === sId || cSid === sUid)) {
-            return true;
-          }
-
-          // 3. Match by Name + Division Verification (Must be specific, non-generic name)
+          const cEmail = (c.student_email || '').trim().toLowerCase();
           const cName = (c.student_name || '').trim().toLowerCase();
-          if (cName && sName && !genericNames.includes(cName) && !genericNames.includes(sName) && cName === sName) {
-            const cDivIsB = (c.division_name && c.division_name.includes('B')) || c.division_id == 2;
-            if (cDivIsB === isDivB) {
+          const cDivIsB = (c.division_name && c.division_name.includes('B')) || c.division_id == 2;
+
+          // RULE A: PRN Matching (Authoritative)
+          if (cPrn && sPrn && cPrn.length >= 3 && sPrn.length >= 3) {
+            return cPrn === sPrn; // True if match, False if different PRN!
+          }
+
+          // RULE B: Email Matching
+          if (cEmail && sEmail && cEmail.length > 3 && !cEmail.endsWith('@campus.edu')) {
+            if (cEmail === sEmail) return true;
+            return false; // Different emails = different student!
+          }
+
+          // RULE C: Name + Division Matching
+          if (cName && sName && !genericNames.includes(cName) && !genericNames.includes(sName)) {
+            if (cName === sName && cDivIsB === isDivB) {
+              return true;
+            }
+          }
+
+          // RULE D: Division + Roll Number Matching
+          const cRoll = c.roll_no ? String(parseInt(c.roll_no) || c.roll_no) : '';
+          const sRoll = student.roll_no ? String(parseInt(student.roll_no) || student.roll_no) : '';
+          if (cRoll && sRoll && cRoll === sRoll && cDivIsB === isDivB) {
+            if (!cName || !sName || genericNames.includes(cName) || genericNames.includes(sName) || cName === sName) {
               return true;
             }
           }
@@ -1285,7 +1297,7 @@ const HodView = {
           return false;
         });
 
-        // If student has NO certificates uploaded, leave the folder completely BLANK (0 files inside)
+        // If student uploaded NO certificates, leave folder completely BLANK (0 files)
         if (studentCerts.length > 0) {
           for (let i = 0; i < studentCerts.length; i++) {
             const cert = studentCerts[i];
@@ -1338,7 +1350,7 @@ const HodView = {
         }
       }
 
-      Toast.info(`⏳ Compiling ${totalCertFilesAdded} certificate files across ${totalStudentsProcessed} student folders...`);
+      Toast.info(`⏳ Generating ZIP archive containing ${totalCertFilesAdded} certificate files...`);
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const downloadLink = document.createElement('a');
