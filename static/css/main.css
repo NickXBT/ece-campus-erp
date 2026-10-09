@@ -753,26 +753,71 @@ a:hover {
   background: var(--primary);
 }
 
-/* Login Page Specific - White Theme */
+/* Login Page Specific - Responsive PC Desktop Portal vs Mobile View */
 .login-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 2rem;
-  background: var(--bg-page);
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 50%, #e2e8f0 100%);
+}
+
+.login-container-responsive {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  gap: 1.5rem;
+}
+
+.login-desktop-hero {
+  display: none;
 }
 
 .login-card {
   background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 3rem 2.5rem;
+  padding: 2.25rem 1.85rem;
   width: 100%;
-  max-width: 460px;
   box-shadow: var(--shadow-lg);
   color: var(--text-main);
 }
+
+@media (min-width: 900px) {
+  .login-container-responsive {
+    flex-direction: row;
+    align-items: stretch;
+    max-width: 1080px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 45px -15px rgba(15, 23, 42, 0.12), 0 10px 15px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    gap: 0;
+  }
+
+  .login-desktop-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1.15;
+    padding-right: 2.5rem;
+    border-right: 1px solid #e2e8f0;
+  }
+
+  .login-card {
+    flex: 1;
+    max-width: 460px;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0.25rem 0 0.25rem 2.5rem !important;
+    background: transparent !important;
+  }
+}
+
 
 /* WhatsApp-Style Upper Corner Notification Badges */
 .badge-whatsapp-top {
