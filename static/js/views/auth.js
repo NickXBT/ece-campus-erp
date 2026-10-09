@@ -74,32 +74,6 @@ const AuthView = {
               <p style="font-size: 0.74rem; color: #64748b; margin: 0; line-height: 1.35;">Bulk export verified student certificates.</p>
             </div>
           </div>
-
-          <!-- Academic Enrolment Quick Stats Card -->
-          <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 16px; padding: 1.1rem; color: #ffffff; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 0.5rem;">
-              <span style="font-size: 0.78rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 0.45rem;">
-                <i class="fa-solid fa-graduation-cap" style="color: #60a5fa;"></i> Academic Enrollment Stats
-              </span>
-              <span style="font-size: 0.7rem; background: rgba(37, 99, 235, 0.4); color: #93c5fd; padding: 0.18rem 0.6rem; border-radius: 12px; font-weight: 700; border: 1px solid rgba(147, 197, 253, 0.3);">
-                SE(ECE) 2024-25
-              </span>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; text-align: center;">
-              <div style="background: rgba(255,255,255,0.06); padding: 0.65rem 0.4rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 1.3rem; font-weight: 800; color: #ffffff;">158</div>
-                <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Total Enrolled</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.06); padding: 0.65rem 0.4rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 1.3rem; font-weight: 800; color: #60a5fa;">79</div>
-                <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Division A</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.06); padding: 0.65rem 0.4rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 1.3rem; font-weight: 800; color: #fbbf24;">79</div>
-                <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">Division B</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Desktop Hero Footer Badge -->
