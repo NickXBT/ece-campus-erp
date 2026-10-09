@@ -1330,21 +1330,21 @@ const HodView = {
 
             if (fileUrl.startsWith('data:')) {
               const base64Data = fileUrl.split(',')[1];
-              if (base64Data) {
+              if (base64Data && base64Data.length > 20) {
                 studentFolder.file(fileName, base64Data, { base64: true });
                 totalCertFilesAdded++;
               }
             } else if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
               try {
                 const response = await fetch(fileUrl);
-                const blob = await response.blob();
-                studentFolder.file(fileName, blob);
-                totalCertFilesAdded++;
+                if (response.ok) {
+                  const blob = await response.blob();
+                  studentFolder.file(fileName, blob);
+                  totalCertFilesAdded++;
+                }
               } catch (e) {
-                studentFolder.file(`${fileName}.txt`, `Remote URL: ${fileUrl}\nTitle: ${cert.title}\nStatus: ${cert.status}`);
+                console.warn('Could not fetch remote certificate document:', fileUrl, e);
               }
-            } else {
-              studentFolder.file(`[${statusTag}]_${certTitle}_info.txt`, `Title: ${cert.title}\nEvent: ${cert.event_name}\nCategory: ${cert.category}\nDate: ${cert.certificate_date}\nStatus: ${cert.status}\nDescription: ${cert.description || 'N/A'}`);
             }
           }
         }
