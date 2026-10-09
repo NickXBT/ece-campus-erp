@@ -73,6 +73,63 @@ const AuthView = {
               <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">HOD ZIP Exporter</h4>
               <p style="font-size: 0.74rem; color: #64748b; margin: 0; line-height: 1.35;">Bulk export verified student certificates.</p>
             </div>
+          <!-- Classy Premium Animated Academic ERP Showcase Card -->
+          <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 1.15rem; box-shadow: 0 8px 25px rgba(37, 99, 235, 0.06); position: relative; overflow: hidden; margin-top: 0.15rem;">
+            <!-- Ambient Glow Effect -->
+            <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(255,255,255,0) 70%); pointer-events: none;"></div>
+
+            <!-- Card Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.55rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 30px; height: 30px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                  <h4 style="font-size: 0.82rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1;">Academic Credit Engine</h4>
+                  <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">NMIET Autonomous Portal</span>
+                </div>
+              </div>
+
+              <!-- Live Status Pill with Pulse Dot -->
+              <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.65rem; border-radius: 20px;">
+                <span class="live-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                <span>SYSTEM ACTIVE</span>
+              </div>
+            </div>
+
+            <!-- Animated Feature Stream -->
+            <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+              <!-- Stream Item 1: Smart Verification -->
+              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.65rem 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                  <div style="width: 30px; height: 30px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; box-shadow: 0 4px 10px rgba(37,99,235,0.25);">
+                    <i class="fa-solid fa-certificate"></i>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #0f172a;">Smart Certificate Verification</div>
+                    <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Auto-sync & instant credit calculation</div>
+                  </div>
+                </div>
+                <span class="floating-badge-item" style="background: #eff6ff; color: #1d4ed8; font-size: 0.68rem; font-weight: 800; padding: 0.18rem 0.55rem; border-radius: 8px; border: 1px solid #bfdbfe;">
+                  <i class="fa-solid fa-bolt" style="color: #2563eb;"></i> Instant
+                </span>
+              </div>
+
+              <!-- Stream Item 2: Animated Compensation Progress Meter -->
+              <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.65rem 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+                  <span style="font-size: 0.74rem; font-weight: 800; color: #334155; display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="fa-solid fa-chart-line" style="color: #d97706;"></i> Attendance Compensation Sync
+                  </span>
+                  <span style="font-size: 0.72rem; font-weight: 800; color: #2563eb;">96% Automated</span>
+                </div>
+
+                <!-- Animated Progress Bar -->
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid #e2e8f0;">
+                  <div class="animated-progress-bar-fill" style="height: 100%; width: 88%; background: linear-gradient(90deg, #2563eb, #60a5fa, #3b82f6); border-radius: 10px; position: relative;"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
