@@ -288,13 +288,14 @@ const App = {
   },
 
   setupNavigation() {
+    document.body.classList.remove('login-page-active');
     const sidebar = document.getElementById('app-sidebar');
     const navbar = document.getElementById('app-navbar');
     const navContainer = document.getElementById('sidebar-nav');
     const roleBadge = document.getElementById('navbar-role-badge');
 
-    sidebar.style.display = 'flex';
-    navbar.style.display = 'flex';
+    if (sidebar) sidebar.style.display = 'flex';
+    if (navbar) navbar.style.display = 'flex';
 
     const role = this.currentUser.role;
     roleBadge.className = `badge-role role-${role}`;
@@ -496,8 +497,11 @@ const App = {
   },
 
   hideShell() {
-    document.getElementById('app-sidebar').style.display = 'none';
-    document.getElementById('app-navbar').style.display = 'none';
+    document.body.classList.add('login-page-active');
+    const sidebar = document.getElementById('app-sidebar');
+    const navbar = document.getElementById('app-navbar');
+    if (sidebar) sidebar.style.display = 'none';
+    if (navbar) navbar.style.display = 'none';
   },
 
   async handleRoute() {

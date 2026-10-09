@@ -100,12 +100,16 @@ a:hover {
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Sidebar Collapsed Mode (Full Width Canvas for Data Tables) */
+/* Sidebar Collapsed or Hidden (Login / Full Width Mode) */
 #app-shell.sidebar-collapsed .sidebar {
   transform: translateX(-275px) !important;
 }
 
-#app-shell.sidebar-collapsed .main-content {
+#app-shell.sidebar-collapsed .main-content,
+#app-sidebar[style*="display: none"] ~ .main-content,
+#app-sidebar[style*="display: none"] + .main-content,
+body.login-page-active .main-content,
+.login-page-active .main-content {
   margin-left: 0 !important;
   width: 100% !important;
 }
@@ -826,13 +830,13 @@ a:hover {
   .login-wrapper {
     background: #ffffff;
     min-height: 100vh;
-    width: 100vw;
+    width: 100%;
     overflow: hidden;
   }
 
   .login-container-responsive {
     flex-direction: row;
-    width: 100vw;
+    width: 100%;
     min-height: 100vh;
   }
 
