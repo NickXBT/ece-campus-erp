@@ -14,20 +14,20 @@ const AuthView = {
   renderDesktopHero() {
     return `
       <div class="login-desktop-hero">
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 1.15rem;">
           <!-- Department Badge -->
-          <div style="display: inline-flex; align-items: center; gap: 0.55rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.75rem; font-weight: 800; padding: 0.45rem 1rem; border-radius: 9999px; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 1.5rem;">
+          <div style="display: inline-flex; align-items: center; gap: 0.55rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.75rem; font-weight: 800; padding: 0.45rem 1rem; border-radius: 9999px; letter-spacing: 0.8px; text-transform: uppercase; width: fit-content;">
             <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
             <span>SANJIVANI COLLEGE OF ENGINEERING</span>
           </div>
 
           <!-- Hero Header -->
-          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #1d4ed8, #1e40af); color: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 8px 20px rgba(29, 78, 216, 0.3); flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 52px; height: 52px; background: linear-gradient(135deg, #1d4ed8, #1e40af); color: #ffffff; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; box-shadow: 0 8px 20px rgba(29, 78, 216, 0.3); flex-shrink: 0;">
               <i class="fa-solid fa-microchip"></i>
             </div>
             <div>
-              <h1 style="font-family: var(--font-heading); font-size: 1.85rem; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.5px;">
+              <h1 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.5px;">
                 ECE Campus ERP
               </h1>
               <span style="font-size: 0.82rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 1px;">
@@ -36,50 +36,76 @@ const AuthView = {
             </div>
           </div>
 
-          <p style="color: #475569; font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.75rem;">
+          <p style="color: #475569; font-size: 0.88rem; line-height: 1.55; margin: 0;">
             Official Academic & Student Activity Management Portal. Access certificate approvals, attendance compensation tracking, timetables, and department administration.
           </p>
 
           <!-- Desktop Feature Highlights Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1.5rem;">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 14px;">
-              <div style="width: 34px; height: 34px; background: #eff6ff; color: #2563eb; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem; border-radius: 12px;">
+              <div style="width: 32px; height: 32px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; margin-bottom: 0.35rem;">
                 <i class="fa-solid fa-award"></i>
               </div>
-              <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Certificate Portal</h4>
-              <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Upload co-curricular & extra-curricular certificates.</p>
+              <h4 style="font-size: 0.83rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">Certificate Portal</h4>
+              <p style="font-size: 0.73rem; color: #64748b; margin: 0; line-height: 1.35;">Upload co-curricular & extra-curricular certificates.</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 14px;">
-              <div style="width: 34px; height: 34px; background: #fef3c7; color: #d97706; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.5rem;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem; border-radius: 12px;">
+              <div style="width: 32px; height: 32px; background: #fef3c7; color: #d97706; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; margin-bottom: 0.35rem;">
                 <i class="fa-solid fa-calendar-check"></i>
               </div>
-              <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Attendance Credit</h4>
-              <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Automated lecture compensation & duty leave.</p>
+              <h4 style="font-size: 0.83rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">Attendance Credit</h4>
+              <p style="font-size: 0.73rem; color: #64748b; margin: 0; line-height: 1.35;">Automated lecture compensation & duty leave.</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 14px;">
-              <div style="width: 34px; height: 34px; background: #f0fdf4; color: #16a34a; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.5rem;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem; border-radius: 12px;">
+              <div style="width: 32px; height: 32px; background: #f0fdf4; color: #16a34a; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; margin-bottom: 0.35rem;">
                 <i class="fa-solid fa-shield-halved"></i>
               </div>
-              <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Strict Division Auth</h4>
-              <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Isolated logins for Div A, Div B & HOD Desk.</p>
+              <h4 style="font-size: 0.83rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">Strict Division Auth</h4>
+              <p style="font-size: 0.73rem; color: #64748b; margin: 0; line-height: 1.35;">Isolated logins for Div A, Div B & HOD Desk.</p>
             </div>
 
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 14px;">
-              <div style="width: 34px; height: 34px; background: #f3e8ff; color: #9333ea; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 0.5rem;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.85rem; border-radius: 12px;">
+              <div style="width: 32px; height: 32px; background: #f3e8ff; color: #9333ea; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; margin-bottom: 0.35rem;">
                 <i class="fa-solid fa-file-zipper"></i>
               </div>
-              <h4 style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">HOD ZIP Exporter</h4>
-              <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Bulk export verified student certificates.</p>
+              <h4 style="font-size: 0.83rem; font-weight: 800; color: #0f172a; margin-bottom: 0.15rem;">HOD ZIP Exporter</h4>
+              <p style="font-size: 0.73rem; color: #64748b; margin: 0; line-height: 1.35;">Bulk export verified student certificates.</p>
+            </div>
+          </div>
+
+          <!-- Academic Enrolment Quick Stats Card -->
+          <div style="background: linear-gradient(135deg, #0f172a, #1e293b); border-radius: 14px; padding: 1rem 1.1rem; color: #ffffff; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.45rem;">
+              <span style="font-size: 0.75rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-graduation-cap" style="color: #60a5fa;"></i> Academic Enrollment Stats
+              </span>
+              <span style="font-size: 0.68rem; background: rgba(37, 99, 235, 0.4); color: #93c5fd; padding: 0.15rem 0.5rem; border-radius: 12px; font-weight: 700; border: 1px solid rgba(147, 197, 253, 0.3);">
+                SE(ECE) 2024-25
+              </span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.45rem; text-align: center;">
+              <div style="background: rgba(255,255,255,0.06); padding: 0.55rem 0.35rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #ffffff;">122</div>
+                <div style="font-size: 0.67rem; color: #94a3b8; font-weight: 600;">Total Enrolled</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); padding: 0.55rem 0.35rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #60a5fa;">62</div>
+                <div style="font-size: 0.67rem; color: #94a3b8; font-weight: 600;">Division A</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.06); padding: 0.55rem 0.35rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #fbbf24;">60</div>
+                <div style="font-size: 0.67rem; color: #94a3b8; font-weight: 600;">Division B</div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Desktop Hero Footer Badge -->
-        <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 0.78rem; font-weight: 700; color: #64748b;">
-            <i class="fa-solid fa-building-columns" style="color: #2563eb;"></i> SE(ECE) Department • AY 2024-25
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 0.85rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="fa-solid fa-building-columns" style="color: #2563eb;"></i> Dept. of Electronics & Computer Engineering
           </span>
           <span style="background: #2563eb; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 20px;">
             v2.5 LIVE
