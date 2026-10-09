@@ -372,6 +372,9 @@ const HodView = {
 
             <!-- Row 2: Action Buttons Bar -->
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.6rem;">
+              <button class="btn btn-primary btn-sm" onclick="HodView.downloadAllCertificatesZip()" style="font-weight: 800; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: var(--radius-full); padding: 0.4rem 0.95rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);" title="Download ZIP archive containing all certificates organized Division & Roll Number wise">
+                <i class="fa-solid fa-file-zipper"></i> Download Certificates (ZIP)
+              </button>
               <button class="btn btn-warning btn-sm" onclick="HodView.openRecoveryModal()" style="font-weight: 800; background: #d97706; border-color: #d97706; color: #ffffff; border-radius: var(--radius-full); padding: 0.4rem 0.9rem;" title="Search student by Name and re-upload/restore certificate data">
                 <i class="fa-solid fa-file-shield"></i> Recover Data
               </button>
@@ -1189,5 +1192,129 @@ const HodView = {
       const text = tr.innerText.toLowerCase();
       tr.style.display = text.includes(q) ? '' : 'none';
     });
+  },
+
+  async downloadAllCertificatesZip() {
+    if (typeof JSZip === 'undefined') {
+      Toast.error('JSZip library is loading. Please try again in a moment.');
+      return;
+    }
+
+    try {
+      Toast.info('📦 Gathering certificates across Division A & Division B...');
+
+      // Sync latest database records
+      if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
+      const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [], certificates: [] };
+      
+      let certs = db.certificates || [];
+      try {
+        const certRes = await API.get('/api/teacher/certificates/pending').catch(() => null);
+        if (certRes && certRes.certificates && Array.isArray(certRes.certificates) && certRes.certificates.length > 0) {
+          certs = certRes.certificates;
+        }
+      } catch (e) {}
+
+      // Collect unique students
+      const stMap = new Map();
+      (db.students || []).forEach(s => {
+        if (!s || !s.name || !s.roll_no) return;
+        const isB = (s.division_id == 2) || (s.division_name && s.division_name.includes('B'));
+        const divKey = isB ? 'B' : 'A';
+        const key = divKey + '_' + String(parseInt(s.roll_no) || s.roll_no);
+        if (!stMap.has(key)) {
+          stMap.set(key, { ...s, division_name: isB ? 'SE(ECE)-B' : 'SE(ECE)-A', division_id: isB ? 2 : 1 });
+        }
+      });
+      const allStudents = Array.from(stMap.values());
+
+      const zip = new JSZip();
+      const divAFolder = zip.folder("Division_SE(ECE)-A");
+      const divBFolder = zip.folder("Division_SE(ECE)-B");
+
+      const sanitize = (str) => (str || '').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').trim();
+
+      let totalCertFilesAdded = 0;
+      let totalStudentsProcessed = 0;
+
+      for (const student of allStudents) {
+        totalStudentsProcessed++;
+        const isDivB = student.division_id === 2 || (student.division_name && student.division_name.includes('B'));
+        const targetDivFolder = isDivB ? divBFolder : divAFolder;
+
+        const rollPadded = String(student.roll_no || '00').padStart(2, '0');
+        const studentFolderName = `Roll_${rollPadded}_${sanitize(student.name || 'Student')}`;
+        const studentFolder = targetDivFolder.folder(studentFolderName);
+
+        // Find all certificates for this student (APPROVED, PENDING, REJECTED)
+        const studentCerts = certs.filter(c => {
+          if (!c) return false;
+          if (c.student_id && String(c.student_id) === String(student.id)) return true;
+          if (c.student_id && String(c.student_id) === String(student.user_id)) return true;
+          if (c.prn_no && student.prn_no && c.prn_no.trim().toUpperCase() === student.prn_no.trim().toUpperCase()) return true;
+          if (c.student_name && student.name && c.student_name.trim().toLowerCase() === student.name.trim().toLowerCase()) return true;
+          return false;
+        });
+
+        if (studentCerts.length === 0) {
+          studentFolder.file("no_certificates_submitted.txt", `Student: ${student.name}\nRoll No: ${student.roll_no}\nPRN: ${student.prn_no}\nDivision: ${student.division_name}\nStatus: No certificates uploaded yet.`);
+        } else {
+          for (let i = 0; i < studentCerts.length; i++) {
+            const cert = studentCerts[i];
+            const fileUrl = cert.file_url || cert.url || '';
+            const statusTag = (cert.status || 'SUBMITTED').toUpperCase();
+            const certTitle = sanitize(cert.title || `Certificate_${i + 1}`);
+            const certDate = sanitize(cert.certificate_date || 'date');
+
+            let ext = '.pdf';
+            if (cert.file_name && cert.file_name.includes('.')) {
+              ext = '.' + cert.file_name.split('.').pop().toLowerCase();
+            } else if (fileUrl.startsWith('data:image/png')) {
+              ext = '.png';
+            } else if (fileUrl.startsWith('data:image/jpeg') || fileUrl.startsWith('data:image/jpg')) {
+              ext = '.jpg';
+            } else if (fileUrl.startsWith('data:application/pdf')) {
+              ext = '.pdf';
+            }
+
+            const fileName = `[${statusTag}]_${certTitle}_${certDate}${ext}`;
+
+            if (fileUrl.startsWith('data:')) {
+              const base64Data = fileUrl.split(',')[1];
+              if (base64Data) {
+                studentFolder.file(fileName, base64Data, { base64: true });
+                totalCertFilesAdded++;
+              }
+            } else if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+              try {
+                const response = await fetch(fileUrl);
+                const blob = await response.blob();
+                studentFolder.file(fileName, blob);
+                totalCertFilesAdded++;
+              } catch (e) {
+                studentFolder.file(`${fileName}.txt`, `Remote URL: ${fileUrl}\nTitle: ${cert.title}\nStatus: ${cert.status}`);
+              }
+            } else {
+              studentFolder.file(`[${statusTag}]_${certTitle}_info.txt`, `Title: ${cert.title}\nEvent: ${cert.event_name}\nCategory: ${cert.category}\nDate: ${cert.certificate_date}\nStatus: ${cert.status}\nDescription: ${cert.description || 'N/A'}`);
+            }
+          }
+        }
+      }
+
+      Toast.info(`⏳ Compiling ${totalCertFilesAdded} certificate files across ${totalStudentsProcessed} student folders...`);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(zipBlob);
+      downloadLink.download = `ECE_All_Student_Certificates_RollWise_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      Toast.success(`🎉 Downloaded ZIP archive with ${totalCertFilesAdded} certificates across Division A & Division B!`);
+    } catch (err) {
+      console.error('Error generating certificate ZIP:', err);
+      Toast.error('Failed to generate certificates ZIP archive: ' + (err.message || err));
+    }
   }
 };

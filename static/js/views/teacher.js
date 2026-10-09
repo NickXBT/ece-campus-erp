@@ -402,8 +402,11 @@ const TeacherView = {
 
           <!-- HOD Certificate Approvals Workspace -->
           <div class="glass-panel">
-            <div class="panel-header">
+            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <h3><i class="fa-solid fa-file-signature" style="color: var(--primary);"></i> HOD Certificate Review & Approvals Desk</h3>
+              <button class="btn btn-primary btn-sm" onclick="HodView.downloadAllCertificatesZip()" style="font-weight: 800; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: var(--radius-full); padding: 0.45rem 1rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);" title="Download ZIP archive containing all certificates organized Division & Roll Number wise">
+                <i class="fa-solid fa-file-zipper"></i> Download All Certificates (ZIP)
+              </button>
             </div>
 
             <!-- Top Level Switcher: Section 1 (Pending for Approval) vs Section 2 (Approved History) -->
