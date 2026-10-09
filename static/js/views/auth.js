@@ -40,23 +40,25 @@ const AuthView = {
             </button>
           </div>
 
-          <!-- Color-Coded Portal Options (Div A, Div B, HOD) -->
-          <div style="margin-bottom: 1.5rem;">
-            <label style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 700; margin-bottom: 0.4rem; display: block;">
-              Select Login Portal Option:
+          <!-- Strict Login Section Selection Tabs (HOD vs Div A vs Div B) -->
+          <div style="margin-bottom: 1.25rem; background: #f8fafc; border: 1.5px solid var(--border-color); padding: 1rem; border-radius: 16px;">
+            <label style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; color: #1e3a8a; font-weight: 800; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
+              <span><i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Select Login Section:</span>
+              <span id="login-section-badge" style="background: #2563eb; color: #ffffff; font-size: 0.68rem; padding: 0.15rem 0.55rem; border-radius: 20px; font-weight: 800;">STRICT ENFORCEMENT</span>
             </label>
+
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                 <!-- Div A Option Button -->
                 <button type="button" id="btn-login-option-a" onclick="AuthView.selectLoginPortal('DIV_A')"
-                  style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                  style="padding: 0.75rem 0.75rem; border-radius: 12px; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 2px solid #1e40af; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
                   <i class="fa-solid ${ selectedPortal === 'DIV_A' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
                   <span>Division A</span>
                 </button>
 
                 <!-- Div B Option Button -->
                 <button type="button" id="btn-login-option-b" onclick="AuthView.selectLoginPortal('DIV_B')"
-                  style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                  style="padding: 0.75rem 0.75rem; border-radius: 12px; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 2px solid #92400e; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
                   <i class="fa-solid ${ selectedPortal === 'DIV_B' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
                   <span>Division B</span>
                 </button>
@@ -64,10 +66,23 @@ const AuthView = {
 
               <!-- HOD Option Button -->
               <button type="button" id="btn-login-option-hod" onclick="AuthView.selectLoginPortal('HOD')"
-                style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 2px solid #166534; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);' : 'background: #f8fafc; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                style="padding: 0.75rem 0.75rem; border-radius: 12px; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.45rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 2px solid #166534; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
                 <i class="fa-solid ${ selectedPortal === 'HOD' ? 'fa-shield-halved' : 'fa-chalkboard-user' }"></i>
                 <span>HOD & Faculty Portal</span>
               </button>
+            </div>
+
+            <!-- Dynamic Live Section Verification Indicator -->
+            <div id="login-section-notice" style="margin-top: 0.75rem; font-size: 0.78rem; font-weight: 700; text-align: center; border-radius: 8px; padding: 0.5rem 0.75rem; transition: all 0.3s ease; ${
+              selectedPortal === 'DIV_A' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;' :
+              (selectedPortal === 'DIV_B' ? 'background: #fffbeb; border: 1px solid #fde68a; color: #b45309;' :
+              'background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;')
+            }">
+              ${
+                selectedPortal === 'DIV_A' ? '<i class="fa-solid fa-lock"></i> Strict Section: Logging in as <strong>SE(ECE) Division A Student</strong>' :
+                (selectedPortal === 'DIV_B' ? '<i class="fa-solid fa-lock"></i> Strict Section: Logging in as <strong>SE(ECE) Division B Student</strong>' :
+                '<i class="fa-solid fa-shield-halved"></i> Strict Section: Logging in to <strong>HOD & Faculty Administration Desk</strong>')
+              }
             </div>
           </div>
 
@@ -290,47 +305,72 @@ const AuthView = {
     const btnA = document.getElementById('btn-login-option-a');
     const btnB = document.getElementById('btn-login-option-b');
     const btnHod = document.getElementById('btn-login-option-hod');
+    const notice = document.getElementById('login-section-notice');
 
     if (btnA) {
-      btnA.style.background = '#f8fafc';
+      btnA.style.background = '#ffffff';
       btnA.style.color = 'var(--text-main)';
       btnA.style.border = '1.5px solid var(--border-color)';
       btnA.style.boxShadow = 'none';
       btnA.innerHTML = '<i class="fa-solid fa-circle-user"></i> <span>Division A</span>';
     }
     if (btnB) {
-      btnB.style.background = '#f8fafc';
+      btnB.style.background = '#ffffff';
       btnB.style.color = 'var(--text-main)';
       btnB.style.border = '1.5px solid var(--border-color)';
       btnB.style.boxShadow = 'none';
       btnB.innerHTML = '<i class="fa-solid fa-circle-user"></i> <span>Division B</span>';
     }
     if (btnHod) {
-      btnHod.style.background = '#f8fafc';
+      btnHod.style.background = '#ffffff';
       btnHod.style.color = 'var(--text-main)';
       btnHod.style.border = '1.5px solid var(--border-color)';
       btnHod.style.boxShadow = 'none';
       btnHod.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> <span>HOD & Faculty Portal</span>';
     }
 
-    if (portalType === 'DIV_A' && btnA) {
-      btnA.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
-      btnA.style.color = '#ffffff';
-      btnA.style.border = '2px solid #1e40af';
-      btnA.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.35)';
-      btnA.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Division A</span>';
-    } else if (portalType === 'DIV_B' && btnB) {
-      btnB.style.background = 'linear-gradient(135deg, #d97706, #b45309)';
-      btnB.style.color = '#ffffff';
-      btnB.style.border = '2px solid #92400e';
-      btnB.style.boxShadow = '0 4px 12px rgba(217, 119, 6, 0.35)';
-      btnB.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Division B</span>';
-    } else if (portalType === 'HOD' && btnHod) {
-      btnHod.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
-      btnHod.style.color = '#ffffff';
-      btnHod.style.border = '2px solid #166534';
-      btnHod.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.35)';
-      btnHod.innerHTML = '<i class="fa-solid fa-shield-halved"></i> <span>HOD & Faculty Portal</span>';
+    if (portalType === 'DIV_A') {
+      if (btnA) {
+        btnA.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)';
+        btnA.style.color = '#ffffff';
+        btnA.style.border = '2px solid #1e40af';
+        btnA.style.boxShadow = '0 4px 14px rgba(37, 99, 235, 0.4)';
+        btnA.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Division A</span>';
+      }
+      if (notice) {
+        notice.style.background = '#eff6ff';
+        notice.style.border = '1px solid #bfdbfe';
+        notice.style.color = '#1e40af';
+        notice.innerHTML = '<i class="fa-solid fa-lock"></i> Strict Section: Logging in as <strong>SE(ECE) Division A Student</strong>';
+      }
+    } else if (portalType === 'DIV_B') {
+      if (btnB) {
+        btnB.style.background = 'linear-gradient(135deg, #d97706, #b45309)';
+        btnB.style.color = '#ffffff';
+        btnB.style.border = '2px solid #92400e';
+        btnB.style.boxShadow = '0 4px 14px rgba(217, 119, 6, 0.4)';
+        btnB.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Division B</span>';
+      }
+      if (notice) {
+        notice.style.background = '#fffbeb';
+        notice.style.border = '1px solid #fde68a';
+        notice.style.color = '#b45309';
+        notice.innerHTML = '<i class="fa-solid fa-lock"></i> Strict Section: Logging in as <strong>SE(ECE) Division B Student</strong>';
+      }
+    } else if (portalType === 'HOD') {
+      if (btnHod) {
+        btnHod.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+        btnHod.style.color = '#ffffff';
+        btnHod.style.border = '2px solid #166534';
+        btnHod.style.boxShadow = '0 4px 14px rgba(22, 163, 74, 0.4)';
+        btnHod.innerHTML = '<i class="fa-solid fa-shield-halved"></i> <span>HOD & Faculty Portal</span>';
+      }
+      if (notice) {
+        notice.style.background = '#f0fdf4';
+        notice.style.border = '1px solid #bbf7d0';
+        notice.style.color = '#166534';
+        notice.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Strict Section: Logging in to <strong>HOD & Faculty Administration Desk</strong>';
+      }
     }
   },
 
@@ -406,7 +446,8 @@ const AuthView = {
       window.location.hash = res.redirect || ((res.user && (res.user.role === 'HOD' || res.user.role === 'TEACHER')) ? '#/hod/dashboard' : '#/student/dashboard');
       await App.handleRoute();
     } catch (err) {
-      Toast.error('Login Failed');
+      const errMsg = err ? (err.message || err.error || (typeof err === 'string' ? err : 'Login Failed')) : 'Login Failed';
+      Toast.error(errMsg);
       if (btnSubmit) {
         btnSubmit.innerHTML = `Sign In to Portal <i class="fa-solid fa-arrow-right"></i>`;
         btnSubmit.disabled = false;
