@@ -4754,6 +4754,7 @@ const INITIAL_DB = {
   certificates: [],
   deleted_cert_ids: [],
   deleted_student_ids: [],
+  deleted_teacher_ids: [],
   activity_records: [],
   activity_subjects: [],
   password_requests: [],
@@ -5793,8 +5794,144 @@ function initFirebaseRealtimeListeners() {
           if (val.password_hash) hodUser.password_hash = val.password_hash;
           if (val.name) hodUser.name = val.name;
         }
+        (db.teachers || []).forEach(t => {
+          if (t.teacher_id_code === 'HOD101' || (hodUser && t.user_id == hodUser.id)) {
+            if (val.name) t.name = val.name;
+            if (val.email) t.email = val.email;
+          }
+        });
         if (val.hod_pin) db.hod_pin = val.hod_pin;
         g_cloudDB = db;
+      }
+    });
+
+    // 6. Live Push Listener: Faculty / Teachers List
+    firebaseDb.ref('teachers').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(t => t && (t.id || t.teacher_id_code));
+        if (valid.length > 0) {
+          const db = getLocalDB();
+          const delTeacherSet = new Set((db.deleted_teacher_ids || []).map(x => String(x).toUpperCase()));
+          const filtered = valid.filter(t => !delTeacherSet.has(String(t.id).toUpperCase()) && (!t.teacher_id_code || !delTeacherSet.has(String(t.teacher_id_code).toUpperCase())));
+
+          const tMap = new Map();
+          (db.teachers || []).forEach(t => {
+            if (t) tMap.set(t.teacher_id_code ? t.teacher_id_code.toUpperCase() : String(t.id).toUpperCase(), t);
+          });
+          filtered.forEach(t => {
+            const k = (t.teacher_id_code ? t.teacher_id_code : String(t.id)).toUpperCase();
+            if (tMap.has(k)) {
+              Object.assign(tMap.get(k), t);
+            } else {
+              tMap.set(k, { ...t });
+            }
+          });
+          db.teachers = Array.from(tMap.values()).filter(t => !delTeacherSet.has(String(t.id).toUpperCase()) && (!t.teacher_id_code || !delTeacherSet.has(String(t.teacher_id_code).toUpperCase())));
+
+          // Synchronize users in db.users for all active faculty
+          filtered.forEach(t => {
+            const tCodeUpper = (t.teacher_id_code || '').toUpperCase();
+            const tEmailLower = (t.email || '').toLowerCase();
+            let u = (db.users || []).find(user => 
+              (t.user_id && user.id == t.user_id) || 
+              (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
+              (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+            );
+            if (u) {
+              if (t.name) u.name = t.name;
+              if (t.email) u.email = t.email;
+            } else {
+              db.users = db.users || [];
+              db.users.push({
+                id: t.user_id || t.id,
+                email: t.email,
+                username: t.teacher_id_code || t.email,
+                name: t.name,
+                role: (t.designation && t.designation.includes('Head')) ? 'HOD' : 'TEACHER',
+                password_hash: '1234',
+                status: 'APPROVED',
+                is_activated: true,
+                must_change_credentials: false
+              });
+            }
+          });
+
+          g_cloudDB = db;
+          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+            App.onRealtimeUpdate('teachers');
+          }
+        }
+      }
+    });
+
+    // 7. Live Push Listener: Faculty Credentials
+    firebaseDb.ref('faculty_credentials').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(c => c && (c.email || c.teacher_id_code || c.id || c.user_id));
+        if (valid.length > 0) {
+          const db = getLocalDB();
+          valid.forEach(cred => {
+            const normEmail = (cred.email || '').trim().toLowerCase();
+            const normCode = (cred.teacher_id_code || '').trim().toUpperCase();
+
+            // Live update users
+            (db.users || []).forEach(u => {
+              if ((normEmail && u.email && u.email.toLowerCase() === normEmail) || 
+                  (normCode && u.username && u.username.toUpperCase() === normCode) || 
+                  (cred.user_id && u.id == cred.user_id) || 
+                  (cred.id && u.id == cred.id)) {
+                if (cred.name) u.name = cred.name;
+                if (cred.email) u.email = cred.email;
+                if (cred.password_hash) u.password_hash = cred.password_hash;
+              }
+            });
+
+            // Live update teachers
+            (db.teachers || []).forEach(t => {
+              if ((normEmail && t.email && t.email.toLowerCase() === normEmail) || 
+                  (normCode && t.teacher_id_code && t.teacher_id_code.toUpperCase() === normCode) || 
+                  (cred.user_id && t.user_id == cred.user_id) || 
+                  (cred.id && t.id == cred.id)) {
+                if (cred.name) t.name = cred.name;
+                if (cred.email) t.email = cred.email;
+                if (cred.designation) t.designation = cred.designation;
+              }
+            });
+          });
+          g_cloudDB = db;
+          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+            App.onRealtimeUpdate('faculty_credentials');
+          }
+        }
+      }
+    });
+
+    // 8. Live Push Listener: Deleted Teachers
+    firebaseDb.ref('deleted_teacher_ids').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        const rawIds = Array.isArray(val) ? val : (typeof val === 'object' ? Object.keys(val) : []);
+        const upperIds = rawIds.map(x => String(x).toUpperCase());
+        if (upperIds.length > 0) {
+          const db = getLocalDB();
+          db.deleted_teacher_ids = Array.from(new Set((db.deleted_teacher_ids || []).concat(upperIds)));
+          const delSet = new Set(db.deleted_teacher_ids);
+          db.teachers = (db.teachers || []).filter(t => !delSet.has(String(t.id).toUpperCase()) && (!t.teacher_id_code || !delSet.has(String(t.teacher_id_code).toUpperCase())));
+          db.users = (db.users || []).filter(u => {
+            if ((u.role === 'TEACHER' || u.role === 'HOD') && (delSet.has(String(u.id).toUpperCase()) || (u.username && delSet.has(String(u.username).toUpperCase())))) {
+              return false;
+            }
+            return true;
+          });
+          g_cloudDB = db;
+          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+            App.onRealtimeUpdate('teachers');
+          }
+        }
       }
     });
   } catch(err) {
@@ -5867,6 +6004,28 @@ function getLocalDB() {
         if (!u) return false;
         if (delSet.has(String(u.id).toUpperCase())) return false;
         if (u.prn_no && delSet.has(String(u.prn_no).toUpperCase())) return false;
+        return true;
+      });
+    }
+
+    const delTeacherSet = new Set(
+      (INITIAL_DB.deleted_teacher_ids || [])
+        .concat(g_cloudDB.deleted_teacher_ids || [])
+        .map(x => String(x).toUpperCase())
+    );
+    g_cloudDB.deleted_teacher_ids = Array.from(delTeacherSet);
+    if (g_cloudDB.teachers) {
+      g_cloudDB.teachers = g_cloudDB.teachers.filter(t => {
+        if (!t) return false;
+        if (delTeacherSet.has(String(t.id).toUpperCase())) return false;
+        if (t.teacher_id_code && delTeacherSet.has(String(t.teacher_id_code).toUpperCase())) return false;
+        return true;
+      });
+    }
+    if (g_cloudDB.users) {
+      g_cloudDB.users = g_cloudDB.users.filter(u => {
+        if (!u) return false;
+        if ((u.role === 'TEACHER' || u.role === 'HOD') && (delTeacherSet.has(String(u.id).toUpperCase()) || (u.username && delTeacherSet.has(String(u.username).toUpperCase())))) return false;
         return true;
       });
     }
@@ -6012,6 +6171,70 @@ function saveLocalDB(db) {
             body: JSON.stringify(reqMap)
           }).catch(() => {});
         }
+
+        // Realtime Firebase RTDB Sync: Teachers / Faculty Roster
+        if (cleanCopy.teachers && cleanCopy.teachers.length > 0) {
+          const teacherMap = {};
+          cleanCopy.teachers.forEach(t => {
+            if (t) {
+              const k = (t.teacher_id_code || String(t.id)).replace(/[.#$\[\]]/g, '_');
+              teacherMap[k] = t;
+            }
+          });
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers.json', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(teacherMap)
+          }).catch(() => {});
+        }
+
+        // Realtime Firebase RTDB Sync: Deleted Faculty
+        if (cleanCopy.deleted_teacher_ids && cleanCopy.deleted_teacher_ids.length > 0) {
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleanCopy.deleted_teacher_ids)
+          }).catch(() => {});
+
+          cleanCopy.deleted_teacher_ids.forEach(delId => {
+            const safeKey = String(delId).replace(/[.#$\[\]]/g, '_');
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+          });
+        }
+
+        // Realtime Firebase RTDB Sync: Faculty Credentials (Passwords, Emails, Designations)
+        if (cleanCopy.users && cleanCopy.users.length > 0) {
+          const facultyCredMap = {};
+          cleanCopy.users.forEach(u => {
+            if (u && (u.role === 'TEACHER' || u.role === 'HOD')) {
+              const matchedTeacher = (cleanCopy.teachers || []).find(t => 
+                t.user_id == u.id || 
+                (u.email && t.email && u.email.toLowerCase() === t.email.toLowerCase()) ||
+                (u.role === 'HOD' && t.teacher_id_code === 'HOD101')
+              );
+              const code = (matchedTeacher && matchedTeacher.teacher_id_code) || u.username || String(u.id);
+              const safeKey = code.replace(/[.#$\[\]]/g, '_');
+              facultyCredMap[safeKey] = {
+                id: u.id,
+                user_id: u.id,
+                name: u.name,
+                email: u.email,
+                role: u.role,
+                password_hash: u.password_hash || '1234',
+                teacher_id_code: code,
+                designation: (matchedTeacher && matchedTeacher.designation) || (u.role === 'HOD' ? 'Head of Department' : 'Faculty')
+              };
+            }
+          });
+          if (Object.keys(facultyCredMap).length > 0) {
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(facultyCredMap)
+            }).catch(() => {});
+          }
+        }
       } catch(e) {}
     }
   } catch (e) {}
@@ -6140,10 +6363,19 @@ function mergeDBs(localDb, cloudDb) {
   merged.time_slots = INITIAL_DB.time_slots;
   merged.activity_records = cloudDb.activity_records || localDb.activity_records || [];
   merged.activity_subjects = cloudDb.activity_subjects || localDb.activity_subjects || [];
+  const deletedTeacherIds = new Set(
+    (INITIAL_DB.deleted_teacher_ids || [])
+      .concat(localDb.deleted_teacher_ids || [])
+      .concat(cloudDb.deleted_teacher_ids || [])
+      .map(x => String(x).toUpperCase())
+  );
+
   const teacherMap = new Map();
   (INITIAL_DB.teachers || []).concat(localDb.teachers || []).concat(cloudDb.teachers || []).forEach(t => {
     if (!t) return;
-    const key = t.teacher_id_code ? t.teacher_id_code : String(t.id);
+    const key = (t.teacher_id_code ? t.teacher_id_code : String(t.id)).toUpperCase();
+    const idKey = String(t.id).toUpperCase();
+    if (deletedTeacherIds.has(key) || deletedTeacherIds.has(idKey)) return;
     if (!teacherMap.has(key)) {
       teacherMap.set(key, { ...t });
     } else {
@@ -6151,19 +6383,31 @@ function mergeDBs(localDb, cloudDb) {
       if (t.name) ex.name = t.name;
       if (t.email) ex.email = t.email;
       if (t.designation) ex.designation = t.designation;
+      if (t.teacher_id_code) ex.teacher_id_code = t.teacher_id_code;
     }
   });
   merged.teachers = Array.from(teacherMap.values());
+  merged.deleted_teacher_ids = Array.from(deletedTeacherIds);
 
-  // Synchronize teacher emails with updated user emails
+  // Synchronize teacher emails and names with updated user emails
   (merged.users || []).forEach(u => {
     if ((u.role === 'HOD' || u.role === 'TEACHER') && u.email) {
       (merged.teachers || []).forEach(t => {
         if (t.user_id == u.id || (u.role === 'HOD' && t.teacher_id_code === 'HOD101') || (u.email && t.email && u.email.toLowerCase() === t.email.toLowerCase())) {
           t.email = u.email;
+          if (u.name) t.name = u.name;
         }
       });
     }
+  });
+
+  // Filter out any deleted teachers from merged.users
+  merged.users = (merged.users || []).filter(u => {
+    if (!u) return false;
+    if ((u.role === 'TEACHER' || u.role === 'HOD') && (deletedTeacherIds.has(String(u.id).toUpperCase()) || (u.username && deletedTeacherIds.has(String(u.username).toUpperCase())))) {
+      return false;
+    }
+    return true;
   });
 
   return merged;
@@ -6184,7 +6428,7 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds] = await Promise.all([
+    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds, fbTeachers, fbFacultyCreds, fbDeletedTeachers] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json').then(r => r.json()).catch(() => null),
@@ -6193,7 +6437,10 @@ async function fetchCloudDB(force = false) {
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json').then(r => r.json()).catch(() => null)
     ]);
 
     if (resSync && resSync.db) {
@@ -6208,7 +6455,100 @@ async function fetchCloudDB(force = false) {
         if (fbHodCreds.password_hash) hodUser.password_hash = fbHodCreds.password_hash;
         if (fbHodCreds.name) hodUser.name = fbHodCreds.name;
       }
+      (cloudDb.teachers || []).forEach(t => {
+        if (t.teacher_id_code === 'HOD101' || (hodUser && t.user_id == hodUser.id)) {
+          if (fbHodCreds.name) t.name = fbHodCreds.name;
+          if (fbHodCreds.email) t.email = fbHodCreds.email;
+        }
+      });
       if (fbHodCreds.hod_pin) cloudDb.hod_pin = fbHodCreds.hod_pin;
+    }
+
+    if (fbDeletedTeachers) {
+      const rawDel = Array.isArray(fbDeletedTeachers) ? fbDeletedTeachers : (typeof fbDeletedTeachers === 'object' ? Object.keys(fbDeletedTeachers) : []);
+      const upperDel = rawDel.map(x => String(x).toUpperCase());
+      cloudDb.deleted_teacher_ids = Array.from(new Set((cloudDb.deleted_teacher_ids || []).concat(upperDel)));
+    }
+
+    if (fbTeachers && typeof fbTeachers === 'object') {
+      const tList = Array.isArray(fbTeachers) ? fbTeachers : Object.values(fbTeachers);
+      const delTSet = new Set((cloudDb.deleted_teacher_ids || []).map(x => String(x).toUpperCase()));
+      const validTeachers = tList.filter(t => t && (t.id || t.teacher_id_code) && !delTSet.has(String(t.id).toUpperCase()) && (!t.teacher_id_code || !delTSet.has(String(t.teacher_id_code).toUpperCase())));
+      
+      if (validTeachers.length > 0) {
+        const tMap = new Map();
+        (cloudDb.teachers || []).forEach(t => {
+          if (t) tMap.set((t.teacher_id_code || String(t.id)).toUpperCase(), t);
+        });
+        validTeachers.forEach(t => {
+          const k = (t.teacher_id_code || String(t.id)).toUpperCase();
+          if (tMap.has(k)) {
+            Object.assign(tMap.get(k), t);
+          } else {
+            tMap.set(k, { ...t });
+          }
+        });
+        cloudDb.teachers = Array.from(tMap.values()).filter(t => !delTSet.has(String(t.id).toUpperCase()) && (!t.teacher_id_code || !delTSet.has(String(t.teacher_id_code).toUpperCase())));
+
+        // Ensure matching users exist in cloudDb.users
+        validTeachers.forEach(t => {
+          const tCodeUpper = (t.teacher_id_code || '').toUpperCase();
+          const tEmailLower = (t.email || '').toLowerCase();
+          let u = (cloudDb.users || []).find(user => 
+            (t.user_id && user.id == t.user_id) || 
+            (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
+            (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+          );
+          if (u) {
+            if (t.name) u.name = t.name;
+            if (t.email) u.email = t.email;
+          } else {
+            cloudDb.users = cloudDb.users || [];
+            cloudDb.users.push({
+              id: t.user_id || t.id,
+              email: t.email,
+              username: t.teacher_id_code || t.email,
+              name: t.name,
+              role: (t.designation && t.designation.includes('Head')) ? 'HOD' : 'TEACHER',
+              password_hash: '1234',
+              status: 'APPROVED',
+              is_activated: true,
+              must_change_credentials: false
+            });
+          }
+        });
+      }
+    }
+
+    if (fbFacultyCreds && typeof fbFacultyCreds === 'object') {
+      const credList = Array.isArray(fbFacultyCreds) ? fbFacultyCreds : Object.values(fbFacultyCreds);
+      credList.forEach(cred => {
+        if (!cred || typeof cred !== 'object') return;
+        const normEmail = (cred.email || '').trim().toLowerCase();
+        const normCode = (cred.teacher_id_code || '').trim().toUpperCase();
+
+        (cloudDb.users || []).forEach(u => {
+          if ((normEmail && u.email && u.email.toLowerCase() === normEmail) || 
+              (normCode && u.username && u.username.toUpperCase() === normCode) || 
+              (cred.user_id && u.id == cred.user_id) || 
+              (cred.id && u.id == cred.id)) {
+            if (cred.name) u.name = cred.name;
+            if (cred.email) u.email = cred.email;
+            if (cred.password_hash) u.password_hash = cred.password_hash;
+          }
+        });
+
+        (cloudDb.teachers || []).forEach(t => {
+          if ((normEmail && t.email && t.email.toLowerCase() === normEmail) || 
+              (normCode && t.teacher_id_code && t.teacher_id_code.toUpperCase() === normCode) || 
+              (cred.user_id && t.user_id == cred.user_id) || 
+              (cred.id && t.id == cred.id)) {
+            if (cred.name) t.name = cred.name;
+            if (cred.email) t.email = cred.email;
+            if (cred.designation) t.designation = cred.designation;
+          }
+        });
+      });
     }
 
     if (fbData && typeof fbData === 'object') {
@@ -7425,18 +7765,36 @@ const API = {
     // 9.5. Delete Faculty Endpoint
     if (endpoint.startsWith('/api/hod/teachers/') && method === 'DELETE') {
       const teacherId = endpoint.split('/').pop();
-      const teacher = (db.teachers || []).find(t => String(t.id) === String(teacherId));
-      if (teacher) {
-        if (teacher.user_id) {
-          db.users = (db.users || []).filter(u => String(u.id) !== String(teacher.user_id));
-        }
-        db.teachers = (db.teachers || []).filter(t => String(t.id) !== String(teacherId));
-        saveLocalDB(db);
-        return { success: true, message: 'Faculty member ' + teacher.name + ' deleted successfully' };
+      const teacher = (db.teachers || []).find(t => String(t.id) === String(teacherId) || (t.teacher_id_code && t.teacher_id_code.toUpperCase() === String(teacherId).toUpperCase()));
+      const codeOrId = teacher ? (teacher.teacher_id_code || String(teacher.id)) : String(teacherId);
+
+      db.deleted_teacher_ids = db.deleted_teacher_ids || [];
+      if (!db.deleted_teacher_ids.includes(codeOrId)) db.deleted_teacher_ids.push(codeOrId);
+      if (teacher && teacher.id && !db.deleted_teacher_ids.includes(String(teacher.id))) db.deleted_teacher_ids.push(String(teacher.id));
+      if (teacher && teacher.teacher_id_code && !db.deleted_teacher_ids.includes(teacher.teacher_id_code)) db.deleted_teacher_ids.push(teacher.teacher_id_code);
+
+      db.teachers = (db.teachers || []).filter(t => String(t.id) !== String(teacherId) && t.teacher_id_code !== teacherId && (teacher ? t.teacher_id_code !== teacher.teacher_id_code : true));
+
+      if (teacher && teacher.user_id) {
+        db.users = (db.users || []).filter(u => String(u.id) !== String(teacher.user_id));
+      } else if (teacher && teacher.email) {
+        db.users = (db.users || []).filter(u => u.email && u.email.toLowerCase() !== teacher.email.toLowerCase());
       }
-      db.teachers = (db.teachers || []).filter(t => String(t.id) !== String(teacherId));
+
       saveLocalDB(db);
-      return { success: true, message: 'Faculty member deleted' };
+
+      try {
+        const safeKey = codeOrId.replace(/[.#$\[\]]/g, '_');
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids/' + safeKey + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(true)
+        }).catch(() => {});
+      } catch(e) {}
+
+      return { success: true, message: 'Faculty member ' + (teacher ? teacher.name : '') + ' deleted successfully' };
     }
 
     // 10. Delete Certificate Endpoint
@@ -7508,26 +7866,69 @@ const API = {
     }
 
     if (endpoint === '/api/hod/teachers' && method === 'POST') {
+      const autoCode = body.teacher_id_code || ('T' + Math.floor(100 + Math.random() * 900));
       const newTeacher = {
-        id: Date.now(),
-        user_id: 1000 + Date.now() % 10000,
+        id: body.id || Date.now(),
+        user_id: body.user_id || (1000 + Date.now() % 10000),
         name: body.name,
-        teacher_id_code: body.teacher_id_code,
-        designation: body.designation,
+        teacher_id_code: autoCode,
+        designation: body.designation || 'Faculty',
         email: body.email,
         department_id: 1
       };
       db.teachers = db.teachers || [];
+      db.teachers = db.teachers.filter(t => t.teacher_id_code !== autoCode && String(t.id) !== String(newTeacher.id));
       db.teachers.push(newTeacher);
-      saveLocalDB(db);
-      return { success: true, message: 'Faculty member added successfully', teacher: newTeacher };
-    }
 
-    if (endpoint.startsWith('/api/hod/teachers/') && method === 'DELETE') {
-      const teacherId = endpoint.split('/').pop();
-      db.teachers = (db.teachers || []).filter(t => String(t.id) !== String(teacherId));
+      // Create or update matching user in db.users for login access
+      db.users = db.users || [];
+      const newUser = {
+        id: newTeacher.user_id,
+        email: newTeacher.email,
+        username: autoCode,
+        name: newTeacher.name,
+        role: (newTeacher.designation && newTeacher.designation.includes('Head')) ? 'HOD' : 'TEACHER',
+        password_hash: body.password || '1234',
+        status: 'APPROVED',
+        is_activated: true,
+        must_change_credentials: false
+      };
+      db.users = db.users.filter(u => u.id !== newUser.id && u.email !== newUser.email && (u.username ? u.username.toUpperCase() !== autoCode.toUpperCase() : true));
+      db.users.push(newUser);
+
+      // Remove from deleted_teacher_ids if previously deleted
+      db.deleted_teacher_ids = (db.deleted_teacher_ids || []).filter(x => x !== autoCode && x !== String(newTeacher.id));
+
       saveLocalDB(db);
-      return { success: true, message: 'Faculty member deleted' };
+
+      // Direct Firebase write for immediate multi-device visibility
+      try {
+        const safeKey = autoCode.replace(/[.#$\[\]]/g, '_');
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newTeacher)
+        }).catch(() => {});
+
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: newTeacher.id,
+            user_id: newTeacher.user_id,
+            name: newTeacher.name,
+            email: newTeacher.email,
+            teacher_id_code: autoCode,
+            designation: newTeacher.designation,
+            password_hash: body.password || '1234',
+            role: newUser.role
+          })
+        }).catch(() => {});
+
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+      } catch(e) {}
+
+      return { success: true, message: 'Faculty member added successfully', teacher: newTeacher };
     }
 
     // 13. HOD Students Management Endpoints
@@ -7744,31 +8145,40 @@ const API = {
     if (endpoint.startsWith('/api/hod/students/') && method === 'DELETE') {
       const studentId = endpoint.split('/').pop();
       const st = (db.students || []).find(s => String(s.id) === String(studentId) || (s.prn_no && String(s.prn_no) === String(studentId)));
-      if (st) {
-        const targetUserId = st.user_id || st.id;
-        const targetPrn = st.prn_no;
+      const targetUserId = st ? (st.user_id || st.id) : studentId;
+      const targetPrn = st ? st.prn_no : null;
 
-        db.users = (db.users || []).filter(u => {
-          if (!u) return false;
-          if (targetUserId && String(u.id) === String(targetUserId)) return false;
-          if (targetPrn && u.prn_no && u.prn_no.toUpperCase() === targetPrn.toUpperCase()) return false;
-          return true;
-        });
+      db.deleted_student_ids = db.deleted_student_ids || [];
+      if (studentId && !db.deleted_student_ids.includes(String(studentId))) db.deleted_student_ids.push(String(studentId));
+      if (st && st.id && !db.deleted_student_ids.includes(String(st.id))) db.deleted_student_ids.push(String(st.id));
+      if (targetPrn && !db.deleted_student_ids.includes(targetPrn)) db.deleted_student_ids.push(targetPrn);
 
-        db.students = (db.students || []).filter(s => {
-          if (!s) return false;
-          if (String(s.id) === String(studentId)) return false;
-          if (targetPrn && s.prn_no && s.prn_no.toUpperCase() === targetPrn.toUpperCase()) return false;
-          return true;
-        });
+      db.users = (db.users || []).filter(u => {
+        if (!u) return false;
+        if (targetUserId && String(u.id) === String(targetUserId)) return false;
+        if (targetPrn && u.prn_no && u.prn_no.toUpperCase() === targetPrn.toUpperCase()) return false;
+        return true;
+      });
 
-        saveLocalDB(db);
-        return { success: true, message: 'Student removed successfully and session revoked' };
-      }
+      db.students = (db.students || []).filter(s => {
+        if (!s) return false;
+        if (String(s.id) === String(studentId)) return false;
+        if (targetPrn && s.prn_no && s.prn_no.toUpperCase() === targetPrn.toUpperCase()) return false;
+        return true;
+      });
 
-      db.students = (db.students || []).filter(s => String(s.id) !== String(studentId));
       saveLocalDB(db);
-      return { success: true, message: 'Student removed' };
+
+      // Direct Firebase delete
+      try {
+        if (st && st.id) fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + st.id + '.json', { method: 'DELETE' }).catch(() => {});
+        if (targetPrn) {
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + targetPrn + '.json', { method: 'DELETE' }).catch(() => {});
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students/' + targetPrn.replace(/[.#$\[\]]/g, '_') + '.json', { method: 'DELETE' }).catch(() => {});
+        }
+      } catch(e) {}
+
+      return { success: true, message: 'Student removed successfully and session revoked' };
     }
 
     if (endpoint.startsWith('/api/hod/students/') && endpoint.includes('/reset-password') && method === 'POST') {
@@ -7777,9 +8187,20 @@ const API = {
       const st = (db.students || []).find(s => String(s.id) === String(studentId));
       if (st) {
         st.password_hash = new_password || 'Student@123';
-        const u = (db.users || []).find(user => user.id === st.user_id);
-        if (u) u.password_hash = new_password || 'Student@123';
+        st.must_change_credentials = false;
+        const u = (db.users || []).find(user => user.id === st.user_id || (st.prn_no && user.prn_no && user.prn_no.toUpperCase() === st.prn_no.toUpperCase()));
+        if (u) {
+          u.password_hash = new_password || 'Student@123';
+          u.must_change_credentials = false;
+        }
         saveLocalDB(db);
+
+        try {
+          const patchObj = { password_hash: new_password || 'Student@123' };
+          if (st.id) fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + st.id + '.json', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patchObj) }).catch(() => {});
+          if (st.prn_no) fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + st.prn_no + '.json', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patchObj) }).catch(() => {});
+        } catch(e) {}
+
         return { success: true, message: 'Password reset successfully' };
       }
       throw { message: 'Student not found' };
@@ -7821,6 +8242,27 @@ const API = {
             password_hash: hodUser.password_hash,
             name: hodUser.name,
             hod_pin: db.hod_pin || '1234'
+          })
+        }).catch(() => {});
+
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/HOD101.json', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: hodUser.email,
+            password_hash: hodUser.password_hash,
+            name: hodUser.name,
+            teacher_id_code: 'HOD101',
+            role: 'HOD'
+          })
+        }).catch(() => {});
+
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/HOD101.json', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: hodUser.email,
+            name: hodUser.name
           })
         }).catch(() => {});
       }

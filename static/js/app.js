@@ -78,9 +78,11 @@ const App = {
         container.innerHTML = await TeacherView.renderApprovals();
       } else if ((type === 'students' || type === 'pending_students') && hash === '#/hod/students' && typeof HodView !== 'undefined' && HodView.renderStudents) {
         container.innerHTML = await HodView.renderStudents();
+      } else if ((type === 'teachers' || type === 'faculty_credentials') && hash === '#/hod/teachers' && typeof HodView !== 'undefined' && HodView.renderTeachers) {
+        container.innerHTML = await HodView.renderTeachers();
       } else if (type === 'password_requests' && hash === '#/hod/password-approvals' && typeof TeacherView !== 'undefined' && TeacherView.renderPasswordApprovals) {
         container.innerHTML = await TeacherView.renderPasswordApprovals();
-      } else if ((type === 'certificates' || type === 'students') && (hash === '#/hod/dashboard' || !hash) && typeof TeacherView !== 'undefined' && TeacherView.renderDashboard) {
+      } else if ((type === 'certificates' || type === 'students' || type === 'teachers') && (hash === '#/hod/dashboard' || !hash) && typeof TeacherView !== 'undefined' && TeacherView.renderDashboard) {
         container.innerHTML = await TeacherView.renderDashboard();
       }
     } else if (this.currentUser.role === 'STUDENT') {
@@ -1096,6 +1098,75 @@ const App = {
       if (typeof setSessionUser === 'function') setSessionUser(user);
       this.currentUser = user;
       window.currentUser = user;
+
+      // Realtime Firebase RTDB Sync for Profile Updates
+      try {
+        if (user.role === 'HOD' || user.role === 'TEACHER') {
+          const matchedT = (db.teachers || []).find(t => 
+            t.user_id == user.id || 
+            (isHod && t.teacher_id_code === 'HOD101') || 
+            (t.email && t.email.toLowerCase() === newEmail.toLowerCase())
+          );
+          const tCode = (matchedT && matchedT.teacher_id_code) || user.username || (isHod ? 'HOD101' : String(user.id));
+          const safeKey = tCode.replace(/[.#$\[\]]/g, '_');
+          
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName, email: newEmail })
+          }).catch(() => {});
+
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: newName,
+              email: newEmail,
+              teacher_id_code: tCode,
+              role: user.role,
+              ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim() } : {})
+            })
+          }).catch(() => {});
+
+          if (isHod) {
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: newName,
+                email: newEmail,
+                ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim() } : {}),
+                hod_pin: db.hod_pin || '1234'
+              })
+            }).catch(() => {});
+          }
+        } else if (student) {
+          const sPrn = (student.prn_no || `STU_${student.id}`).replace(/[.#$\[\]]/g, '_');
+          const studentPatch = {
+            name: student.name,
+            email: student.email,
+            prn_no: student.prn_no,
+            roll_no: student.roll_no,
+            division_name: student.division_name,
+            batch_name: student.batch_name,
+            is_activated: true,
+            status: 'APPROVED',
+            ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim(), must_change_credentials: false } : {})
+          };
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + sPrn + '.json', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentPatch)
+          }).catch(() => {});
+          if (student.id) {
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + student.id + '.json', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(studentPatch)
+            }).catch(() => {});
+          }
+        }
+      } catch(e) {}
 
       // Update Supabase Auth metadata if connected
       if (typeof supabaseClient !== 'undefined' && supabaseClient && supabaseClient.auth) {

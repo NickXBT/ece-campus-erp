@@ -4855,6 +4855,7 @@ INITIAL_DB_STATE = {
     "certificates": [],
     "deleted_cert_ids": [],
     "deleted_student_ids": [],
+    "deleted_teacher_ids": [],
     "activity_records": [],
     "activity_subjects": [],
     "password_requests": [],
@@ -5800,10 +5801,15 @@ def get_db():
     del_ids = set([str(x).upper() for x in data.get("deleted_student_ids", []) + INITIAL_DB_STATE.get("deleted_student_ids", [])])
     data["deleted_student_ids"] = list(del_ids)
 
+    del_t_ids = set([str(x).upper() for x in data.get("deleted_teacher_ids", []) + INITIAL_DB_STATE.get("deleted_teacher_ids", [])])
+    data["deleted_teacher_ids"] = list(del_t_ids)
+
     if "students" in data and isinstance(data["students"], list):
         data["students"] = [s for s in data["students"] if str(s.get("id")) not in del_ids and str(s.get("prn_no", "")).upper() not in del_ids]
+    if "teachers" in data and isinstance(data["teachers"], list):
+        data["teachers"] = [t for t in data["teachers"] if str(t.get("id")) not in del_t_ids and str(t.get("teacher_id_code", "")).upper() not in del_t_ids]
     if "users" in data and isinstance(data["users"], list):
-        data["users"] = [u for u in data["users"] if str(u.get("id")) not in del_ids and str(u.get("prn_no", "")).upper() not in del_ids]
+        data["users"] = [u for u in data["users"] if str(u.get("id")) not in del_ids and str(u.get("prn_no", "")).upper() not in del_ids and str(u.get("id")) not in del_t_ids and str(u.get("username", "")).upper() not in del_t_ids]
     return data
 
 def save_db(db):
@@ -5865,6 +5871,12 @@ class handler(BaseHTTPRequestHandler):
                     cur_del = set(db.get("deleted_student_ids", []))
                     cur_del.update(payload["deleted_student_ids"])
                     db["deleted_student_ids"] = list(cur_del)
+                if "teachers" in payload and isinstance(payload["teachers"], list):
+                    db["teachers"] = payload["teachers"]
+                if "deleted_teacher_ids" in payload and isinstance(payload["deleted_teacher_ids"], list):
+                    cur_t_del = set(db.get("deleted_teacher_ids", []))
+                    cur_t_del.update(payload["deleted_teacher_ids"])
+                    db["deleted_teacher_ids"] = list(cur_t_del)
 
                 save_db(db)
 
