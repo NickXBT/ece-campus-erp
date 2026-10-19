@@ -20,53 +20,57 @@
   <!-- JSZip Library for Bulk Zip Downloads -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100044">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100044">
+  <link rel="stylesheet" href="./static/css/main.css?v=100045">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100045">
 </head>
 <body>
-  <!-- First-Time Launch Splash Screen Animation ("ECE ERP") -->
+  <!-- User-Designed First-Time Launch Splash Screen ("ECE ERP") -->
   <div id="app-first-load-splash">
-    <div class="splash-box">
-      <div class="splash-logo-container">
-        <i class="fa-solid fa-microchip splash-icon"></i>
-        <div class="splash-glow-ring"></div>
+    <div class="splash-welcome-orb orb-one" aria-hidden="true"></div>
+    <div class="splash-welcome-orb orb-two" aria-hidden="true"></div>
+    <section class="splash-welcome-panel" id="firstLoadSplashPanel" aria-live="polite">
+      <div class="splash-logo-wrap">
+        <img class="splash-chip-logo" alt="ECE ERP chip logo" src="data:image/png;base64,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">
       </div>
-      <div class="splash-title">ECE <span>ERP</span></div>
-      <div class="splash-subtitle">Student Activity, Certificate & Timetable System</div>
-      <div class="splash-progress-track">
-        <div class="splash-progress-fill"></div>
-      </div>
-      <div class="splash-status-text" id="splash-status-msg">Connecting to Realtime Academic Engine...</div>
-    </div>
-  </div>
-
-  <!-- Personalized Animated Welcome Celebration Overlay (with Name of that Person) -->
-  <div id="app-welcome-overlay" class="welcome-overlay" style="display: none;">
-    <div class="welcome-modal-card">
-      <div class="welcome-avatar-wrapper">
-        <div class="welcome-orbit-ring"></div>
-        <div class="welcome-avatar-icon" id="welcome-avatar-icon">
-          <i class="fa-solid fa-graduation-cap" style="color: #38bdf8;"></i>
+      <p class="splash-eyebrow" id="firstLoadEyebrow">Student &amp; Activity Portal</p>
+      <h1 class="splash-headline" id="firstLoadHeadline">ECE <span>ERP</span></h1>
+      <p class="splash-subtitle" id="firstLoadSubtitle">A smarter space for your campus journey.</p>
+      <div class="splash-loader-area" id="firstLoadLoaderArea">
+        <div class="splash-loader-label">
+          <span id="firstLoadText">Preparing your portal</span>
+          <strong id="firstLoadPercent">0%</strong>
+        </div>
+        <div class="splash-track" role="progressbar" aria-label="Portal loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="firstLoadProgressbar">
+          <div class="splash-progress" id="firstLoadProgress"></div>
         </div>
       </div>
-      <div class="welcome-status-badge" id="welcome-status-badge">
-        <span class="welcome-badge-dot"></span>
-        <span id="welcome-badge-text">ACCESS GRANTED</span>
-      </div>
-      <div class="welcome-salutation" id="welcome-salutation">Welcome,</div>
-      <div class="welcome-name" id="welcome-person-name">Academic User</div>
-      <div class="welcome-role-tag" id="welcome-role-tag">
-        <i class="fa-solid fa-id-badge" style="color: #38bdf8;"></i> <span id="welcome-role-text">Faculty Member</span>
-      </div>
-      <div class="welcome-divider"></div>
-      <div class="welcome-progress-wrap">
-        <div class="welcome-progress-bar" id="welcome-progress-bar"></div>
-      </div>
-      <div class="welcome-hint">Entering ECE ERP Portal...</div>
-      <button type="button" class="welcome-dismiss-btn" onclick="App.dismissWelcomeAnimation()">
-        Enter Portal <i class="fa-solid fa-arrow-right"></i>
+      <div class="splash-dots" id="firstLoadDots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="splash-status" id="firstLoadStatus">Getting everything ready…</div>
+      <button class="splash-enter-btn" id="firstLoadEnterBtn" type="button" onclick="App.dismissFirstLoadSplash()">
+        Enter Portal <span aria-hidden="true">→</span>
       </button>
-    </div>
+      <div class="splash-footer">LEARN · PARTICIPATE · ACHIEVE</div>
+    </section>
+  </div>
+
+  <!-- User-Designed Personalized Welcome Celebration Overlay ("Welcome, [Name]") -->
+  <div id="app-welcome-overlay" style="display: none;">
+    <div class="splash-welcome-orb orb-one" aria-hidden="true"></div>
+    <div class="splash-welcome-orb orb-two" aria-hidden="true"></div>
+    <section class="splash-welcome-panel welcome" id="welcomePanel" aria-live="polite">
+      <div class="splash-logo-wrap">
+        <img class="splash-chip-logo" alt="ECE ERP chip logo" src="data:image/png;base64,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">
+      </div>
+      <p class="splash-eyebrow" id="welcomeEyebrow">Academic Access Granted</p>
+      <h1 class="splash-headline" id="welcomeHeadline">Welcome, <span id="welcomePersonName">Academic User</span></h1>
+      <p class="splash-subtitle" id="welcomeSubtitle">Your student and activity portal is ready. Let’s make this a great semester.</p>
+      <div style="margin-top: 18px;">
+        <button class="splash-enter-btn" id="welcomeEnterBtn" type="button" style="display: inline-flex;" onclick="App.dismissWelcomeAnimation()">
+          Enter Portal <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div class="splash-footer">LEARN · PARTICIPATE · ACHIEVE</div>
+    </section>
   </div>
 
   <!-- Mobile Backdrop Overlay -->
@@ -580,16 +584,16 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- JavaScript Modules with Cache Buster v=100044 -->
-  <script src="./static/js/api.js?v=100044"></script>
-  <script src="./static/js/utils/toast.js?v=100044"></script>
-  <script src="./static/js/utils/exporter.js?v=100044"></script>
-  <script src="./static/js/views/auth.js?v=100044"></script>
-  <script src="./static/js/views/student.js?v=100044"></script>
-  <script src="./static/js/views/teacher.js?v=100044"></script>
-  <script src="./static/js/views/hod.js?v=100044"></script>
-  <script src="./static/js/views/timetable.js?v=100044"></script>
-  <script src="./static/js/views/reports.js?v=100044"></script>
-  <script src="./static/js/app.js?v=100044"></script>
+  <!-- JavaScript Modules with Cache Buster v=100045 -->
+  <script src="./static/js/api.js?v=100045"></script>
+  <script src="./static/js/utils/toast.js?v=100045"></script>
+  <script src="./static/js/utils/exporter.js?v=100045"></script>
+  <script src="./static/js/views/auth.js?v=100045"></script>
+  <script src="./static/js/views/student.js?v=100045"></script>
+  <script src="./static/js/views/teacher.js?v=100045"></script>
+  <script src="./static/js/views/hod.js?v=100045"></script>
+  <script src="./static/js/views/timetable.js?v=100045"></script>
+  <script src="./static/js/views/reports.js?v=100045"></script>
+  <script src="./static/js/app.js?v=100045"></script>
 </body>
 </html>

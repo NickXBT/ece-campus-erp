@@ -106,15 +106,66 @@ const App = {
     }
   },
 
+  startFirstLoadAnimation() {
+    const splash = document.getElementById('app-first-load-splash');
+    if (!splash) return;
+
+    const progress = document.getElementById('firstLoadProgress');
+    const percent = document.getElementById('firstLoadPercent');
+    const status = document.getElementById('firstLoadStatus');
+    const loadText = document.getElementById('firstLoadText');
+    const progressbar = document.getElementById('firstLoadProgressbar');
+    const enterBtn = document.getElementById('firstLoadEnterBtn');
+    const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const messages = [
+      [0, 'Preparing your portal', 'Getting everything ready…'],
+      [30, 'Loading student services', 'Organizing your campus space…'],
+      [62, 'Almost there', 'Just a moment more…'],
+      [88, 'Finishing up', 'Your portal is nearly ready…']
+    ];
+
+    const duration = reducedMotion ? 250 : 2000;
+    const start = performance.now();
+    this._firstLoadDone = false;
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      const value = Math.min(100, Math.round(100 * (1 - Math.pow(1 - Math.min(elapsed / duration, 1), 2.2))));
+      if (progress) progress.style.width = value + '%';
+      if (percent) percent.textContent = value + '%';
+      if (progressbar) progressbar.setAttribute('aria-valuenow', String(value));
+      const current = [...messages].reverse().find(item => value >= item[0]) || messages[0];
+      if (loadText) loadText.textContent = current[1];
+      if (status) status.textContent = current[2];
+
+      if (value < 100) {
+        requestAnimationFrame(animate);
+      } else {
+        this._firstLoadDone = true;
+        if (enterBtn) enterBtn.style.display = 'inline-flex';
+        if (status) status.textContent = 'Portal ready';
+        if (this._firstLoadReadyToDismiss) {
+          this.dismissFirstLoadSplash();
+        }
+      }
+    };
+    requestAnimationFrame(animate);
+  },
+
   dismissFirstLoadSplash() {
     const splash = document.getElementById('app-first-load-splash');
     if (!splash) return;
+    this._firstLoadReadyToDismiss = true;
+    if (!this._firstLoadDone) {
+      return;
+    }
     setTimeout(() => {
       splash.classList.add('splash-hidden');
       setTimeout(() => {
         try { splash.remove(); } catch(e) {}
-      }, 550);
-    }, 450);
+      }, 500);
+    }, 300);
   },
 
   showWelcomeAnimation(name, role = '', designation = '') {
@@ -125,50 +176,25 @@ const App = {
         return;
       }
 
-      const nameEl = document.getElementById('welcome-person-name');
-      const roleTextEl = document.getElementById('welcome-role-text');
-      const badgeTextEl = document.getElementById('welcome-badge-text');
-      const iconEl = document.getElementById('welcome-avatar-icon');
-      const barEl = document.getElementById('welcome-progress-bar');
-      const salutationEl = document.getElementById('welcome-salutation');
+      const nameEl = document.getElementById('welcomePersonName');
+      const eyebrowEl = document.getElementById('welcomeEyebrow');
+      const subtitleEl = document.getElementById('welcomeSubtitle');
 
       const isHod = role === 'HOD' || (designation && designation.includes('Head'));
       const isTeacher = role === 'TEACHER' || (designation && (designation.includes('Professor') || designation.includes('Faculty')));
 
       if (nameEl) nameEl.innerText = name || 'Academic User';
-      
-      if (salutationEl) {
-        const hour = new Date().getHours();
-        const timeGreeting = hour < 12 ? 'Good Morning' : (hour < 17 ? 'Good Afternoon' : 'Good Evening');
-        salutationEl.innerText = `${timeGreeting},`;
+      if (eyebrowEl) {
+        eyebrowEl.innerText = isHod ? 'HOD Administration Access' : (isTeacher ? 'Faculty Portal Access' : 'Academic Access Granted');
+      }
+      if (subtitleEl) {
+        const title = designation || (isHod ? 'Head of Department (ECE)' : (isTeacher ? 'Faculty Member (ECE)' : 'Student • Electronics & Computer Eng.'));
+        subtitleEl.innerText = `${title} • Your student and activity portal is ready. Let’s make this a great semester.`;
       }
 
-      if (iconEl) {
-        if (isHod) {
-          iconEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i>';
-        } else if (isTeacher) {
-          iconEl.innerHTML = '<i class="fa-solid fa-chalkboard-user" style="color: #38bdf8;"></i>';
-        } else {
-          iconEl.innerHTML = '<i class="fa-solid fa-graduation-cap" style="color: #38bdf8;"></i>';
-        }
-      }
-
-      if (badgeTextEl) {
-        badgeTextEl.innerText = isHod ? 'HOD ADMINISTRATION' : (isTeacher ? 'FACULTY PORTAL' : 'STUDENT PORTAL');
-      }
-
-      if (roleTextEl) {
-        roleTextEl.innerText = designation || (isHod ? 'Head of Department (ECE)' : (isTeacher ? 'Faculty Member (ECE)' : 'Student • Electronics & Computer Eng.'));
-      }
-
-      overlay.style.display = 'flex';
+      overlay.style.display = 'grid';
       overlay.classList.remove('welcome-hidden');
       overlay.classList.add('welcome-active');
-
-      if (barEl) {
-        barEl.style.width = '0%';
-        setTimeout(() => { barEl.style.width = '100%'; }, 50);
-      }
 
       let dismissed = false;
       const doDismiss = () => {
@@ -183,7 +209,7 @@ const App = {
       };
 
       this._dismissWelcome = doDismiss;
-      setTimeout(doDismiss, 2300);
+      setTimeout(doDismiss, 2600);
     });
   },
 
@@ -194,6 +220,7 @@ const App = {
   },
 
   async init() {
+    this.startFirstLoadAnimation();
     if (typeof initFirebaseRealtimeListeners === 'function') {
       try { initFirebaseRealtimeListeners(); } catch(e) {}
     }
