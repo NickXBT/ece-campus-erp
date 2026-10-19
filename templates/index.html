@@ -20,8 +20,8 @@
   <!-- JSZip Library for Bulk Zip Downloads -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100043">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100043">
+  <link rel="stylesheet" href="./static/css/main.css?v=100044">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100044">
 </head>
 <body>
   <!-- First-Time Launch Splash Screen Animation ("ECE ERP") -->
@@ -37,6 +37,35 @@
         <div class="splash-progress-fill"></div>
       </div>
       <div class="splash-status-text" id="splash-status-msg">Connecting to Realtime Academic Engine...</div>
+    </div>
+  </div>
+
+  <!-- Personalized Animated Welcome Celebration Overlay (with Name of that Person) -->
+  <div id="app-welcome-overlay" class="welcome-overlay" style="display: none;">
+    <div class="welcome-modal-card">
+      <div class="welcome-avatar-wrapper">
+        <div class="welcome-orbit-ring"></div>
+        <div class="welcome-avatar-icon" id="welcome-avatar-icon">
+          <i class="fa-solid fa-graduation-cap" style="color: #38bdf8;"></i>
+        </div>
+      </div>
+      <div class="welcome-status-badge" id="welcome-status-badge">
+        <span class="welcome-badge-dot"></span>
+        <span id="welcome-badge-text">ACCESS GRANTED</span>
+      </div>
+      <div class="welcome-salutation" id="welcome-salutation">Welcome,</div>
+      <div class="welcome-name" id="welcome-person-name">Academic User</div>
+      <div class="welcome-role-tag" id="welcome-role-tag">
+        <i class="fa-solid fa-id-badge" style="color: #38bdf8;"></i> <span id="welcome-role-text">Faculty Member</span>
+      </div>
+      <div class="welcome-divider"></div>
+      <div class="welcome-progress-wrap">
+        <div class="welcome-progress-bar" id="welcome-progress-bar"></div>
+      </div>
+      <div class="welcome-hint">Entering ECE ERP Portal...</div>
+      <button type="button" class="welcome-dismiss-btn" onclick="App.dismissWelcomeAnimation()">
+        Enter Portal <i class="fa-solid fa-arrow-right"></i>
+      </button>
     </div>
   </div>
 
@@ -551,16 +580,16 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- JavaScript Modules with Cache Buster v=100043 -->
-  <script src="./static/js/api.js?v=100043"></script>
-  <script src="./static/js/utils/toast.js?v=100043"></script>
-  <script src="./static/js/utils/exporter.js?v=100043"></script>
-  <script src="./static/js/views/auth.js?v=100043"></script>
-  <script src="./static/js/views/student.js?v=100043"></script>
-  <script src="./static/js/views/teacher.js?v=100043"></script>
-  <script src="./static/js/views/hod.js?v=100043"></script>
-  <script src="./static/js/views/timetable.js?v=100043"></script>
-  <script src="./static/js/views/reports.js?v=100043"></script>
-  <script src="./static/js/app.js?v=100043"></script>
+  <!-- JavaScript Modules with Cache Buster v=100044 -->
+  <script src="./static/js/api.js?v=100044"></script>
+  <script src="./static/js/utils/toast.js?v=100044"></script>
+  <script src="./static/js/utils/exporter.js?v=100044"></script>
+  <script src="./static/js/views/auth.js?v=100044"></script>
+  <script src="./static/js/views/student.js?v=100044"></script>
+  <script src="./static/js/views/teacher.js?v=100044"></script>
+  <script src="./static/js/views/hod.js?v=100044"></script>
+  <script src="./static/js/views/timetable.js?v=100044"></script>
+  <script src="./static/js/views/reports.js?v=100044"></script>
+  <script src="./static/js/app.js?v=100044"></script>
 </body>
 </html>

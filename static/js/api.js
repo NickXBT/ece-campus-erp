@@ -6539,8 +6539,36 @@ const API = {
       const portal = (body.portal || 'DIV_A').toUpperCase();
 
       let user = null;
-      if (email === 'hod' || email === 'admin' || email === 'teacher' || email === 'teacher@campus.edu' || email === 'hod@campus.edu' || email === 'dhanashree.kulkarni@nmiet.edu.in' || email.includes('dhanashree.kulkarni')) {
+      if (email === 'hod' || email === 'admin' || email === 'teacher' || email === 'teacher@campus.edu' || email === 'hod@campus.edu' || email === 'dhanashree.kulkarni@nmiet.edu.in' || email.includes('dhanashree.kulkarni') || email === 'hod101') {
         user = (db.users || []).find(u => u.role === 'HOD') || db.users[0];
+      }
+
+      if (!user) {
+        // Faculty lookup by Email, Teacher Code (e.g. T102, T103, T104, T105, T106, T107), or Name
+        const matchedTeacher = (db.teachers || []).find(t => {
+          if (!t) return false;
+          const tEmail = (t.email || '').trim().toLowerCase();
+          const tCode = (t.teacher_id_code || '').trim().toLowerCase();
+          const tName = (t.name || '').trim().toLowerCase();
+          if (tEmail && tEmail === email) return true;
+          if (tCode && tCode === email) return true;
+          if (tName && tName === email) return true;
+          if ((email === 'faculty' || email === 'faculty@campus.edu') && tCode === 't102') return true;
+          return false;
+        });
+
+        if (matchedTeacher) {
+          user = (db.users || []).find(u => u && (u.id === matchedTeacher.user_id || (u.email && u.email.toLowerCase() === matchedTeacher.email.toLowerCase()))) || {
+            id: matchedTeacher.user_id || matchedTeacher.id,
+            name: matchedTeacher.name,
+            email: matchedTeacher.email,
+            role: (matchedTeacher.designation && matchedTeacher.designation.includes('Head')) ? 'HOD' : 'TEACHER',
+            password_hash: '1234',
+            status: 'APPROVED',
+            is_activated: true,
+            must_change_credentials: false
+          };
+        }
       }
 
       if (!user) {

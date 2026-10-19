@@ -536,8 +536,18 @@ const AuthView = {
       const meData = await API.get('/api/auth/me').catch(() => ({ profile: null }));
       App.currentProfile = meData.profile;
 
+      const personName = (meData.profile && meData.profile.name) || (res.user && res.user.name) || (res.profile && res.profile.name) || 'User';
+      const personRole = (res.user && res.user.role) || '';
+      const personDesignation = (meData.profile && (meData.profile.designation || meData.profile.division_name)) || '';
+
       App.setupNavigation();
       window.location.hash = res.redirect || ((res.user && (res.user.role === 'HOD' || res.user.role === 'TEACHER')) ? '#/hod/dashboard' : '#/student/dashboard');
+
+      // Launch personalized welcome celebration animation with the person's name
+      if (typeof App.showWelcomeAnimation === 'function') {
+        await App.showWelcomeAnimation(personName, personRole, personDesignation);
+      }
+
       await App.handleRoute();
     } catch (err) {
       const errMsg = err ? (err.message || err.error || (typeof err === 'string' ? err : 'Login Failed')) : 'Login Failed';
@@ -736,12 +746,21 @@ const AuthView = {
     const meData = await API.get('/api/auth/me').catch(() => ({ profile: null }));
     App.currentProfile = meData.profile;
 
-    Toast.success(`🔐 Logged in via ${providerName}! Welcome ${userObj.name}`);
+    const personName = (meData.profile && meData.profile.name) || userObj.name || trimmedEmail.split('@')[0];
+    const personRole = userObj.role || 'STUDENT';
+    const personDesignation = (meData.profile && (meData.profile.designation || meData.profile.division_name)) || userObj.division_name || '';
+
+    Toast.success(`🔐 Logged in via ${providerName}! Welcome ${personName}`);
     App.setupNavigation();
 
     if (userObj.role === 'HOD') window.location.hash = '#/hod/dashboard';
     else if (userObj.role === 'TEACHER') window.location.hash = '#/teacher/dashboard';
     else window.location.hash = '#/student/dashboard';
+
+    // Launch personalized welcome celebration animation with the person's name
+    if (typeof App.showWelcomeAnimation === 'function') {
+      await App.showWelcomeAnimation(personName, personRole, personDesignation);
+    }
 
     await App.handleRoute();
   },

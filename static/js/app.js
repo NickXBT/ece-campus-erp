@@ -117,6 +117,82 @@ const App = {
     }, 450);
   },
 
+  showWelcomeAnimation(name, role = '', designation = '') {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('app-welcome-overlay');
+      if (!overlay) {
+        resolve();
+        return;
+      }
+
+      const nameEl = document.getElementById('welcome-person-name');
+      const roleTextEl = document.getElementById('welcome-role-text');
+      const badgeTextEl = document.getElementById('welcome-badge-text');
+      const iconEl = document.getElementById('welcome-avatar-icon');
+      const barEl = document.getElementById('welcome-progress-bar');
+      const salutationEl = document.getElementById('welcome-salutation');
+
+      const isHod = role === 'HOD' || (designation && designation.includes('Head'));
+      const isTeacher = role === 'TEACHER' || (designation && (designation.includes('Professor') || designation.includes('Faculty')));
+
+      if (nameEl) nameEl.innerText = name || 'Academic User';
+      
+      if (salutationEl) {
+        const hour = new Date().getHours();
+        const timeGreeting = hour < 12 ? 'Good Morning' : (hour < 17 ? 'Good Afternoon' : 'Good Evening');
+        salutationEl.innerText = `${timeGreeting},`;
+      }
+
+      if (iconEl) {
+        if (isHod) {
+          iconEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i>';
+        } else if (isTeacher) {
+          iconEl.innerHTML = '<i class="fa-solid fa-chalkboard-user" style="color: #38bdf8;"></i>';
+        } else {
+          iconEl.innerHTML = '<i class="fa-solid fa-graduation-cap" style="color: #38bdf8;"></i>';
+        }
+      }
+
+      if (badgeTextEl) {
+        badgeTextEl.innerText = isHod ? 'HOD ADMINISTRATION' : (isTeacher ? 'FACULTY PORTAL' : 'STUDENT PORTAL');
+      }
+
+      if (roleTextEl) {
+        roleTextEl.innerText = designation || (isHod ? 'Head of Department (ECE)' : (isTeacher ? 'Faculty Member (ECE)' : 'Student • Electronics & Computer Eng.'));
+      }
+
+      overlay.style.display = 'flex';
+      overlay.classList.remove('welcome-hidden');
+      overlay.classList.add('welcome-active');
+
+      if (barEl) {
+        barEl.style.width = '0%';
+        setTimeout(() => { barEl.style.width = '100%'; }, 50);
+      }
+
+      let dismissed = false;
+      const doDismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        overlay.classList.add('welcome-hidden');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          overlay.classList.remove('welcome-active', 'welcome-hidden');
+          resolve();
+        }, 400);
+      };
+
+      this._dismissWelcome = doDismiss;
+      setTimeout(doDismiss, 2300);
+    });
+  },
+
+  dismissWelcomeAnimation() {
+    if (typeof this._dismissWelcome === 'function') {
+      this._dismissWelcome();
+    }
+  },
+
   async init() {
     if (typeof initFirebaseRealtimeListeners === 'function') {
       try { initFirebaseRealtimeListeners(); } catch(e) {}
