@@ -29,12 +29,29 @@
   <!-- Clerk Auth JS SDK — deferred, only needed for optional OAuth integration -->
   <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" defer></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100040">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100040">
+  <link rel="stylesheet" href="./static/css/main.css?v=100042">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100042">
 </head>
 <body>
   <!-- Mobile Backdrop Overlay -->
   <div class="mobile-overlay-backdrop" id="mobile-backdrop"></div>
+
+  <!-- High-Performance Route Transition Buffer & Animation Shield -->
+  <div id="app-route-loader" class="app-route-loader">
+    <div class="loader-card">
+      <div class="loader-logo-ring">
+        <i class="fa-solid fa-microchip loader-icon"></i>
+        <div class="orbital-glow"></div>
+      </div>
+      <div class="loader-text">
+        <div class="loader-title">ECE Management</div>
+        <div class="loader-subtitle" id="loader-status-msg">Synchronizing academic portal...</div>
+      </div>
+      <div class="loader-shimmer-bar">
+        <div class="loader-shimmer-fill"></div>
+      </div>
+    </div>
+  </div>
 
   <div id="app-shell">
     <!-- Sidebar -->
@@ -761,16 +778,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
-  <!-- JavaScript Modules with Cache Buster v=100041 -->
-  <script src="./static/js/api.js?v=100041"></script>
-  <script src="./static/js/utils/toast.js?v=100041"></script>
-  <script src="./static/js/utils/exporter.js?v=100041"></script>
-  <script src="./static/js/views/auth.js?v=100041"></script>
-  <script src="./static/js/views/student.js?v=100041"></script>
-  <script src="./static/js/views/teacher.js?v=100041"></script>
-  <script src="./static/js/views/hod.js?v=100041"></script>
-  <script src="./static/js/views/timetable.js?v=100041"></script>
-  <script src="./static/js/views/reports.js?v=100041"></script>
-  <script src="./static/js/app.js?v=100041"></script>
+  <!-- JavaScript Modules with Cache Buster v=100042 -->
+  <script src="./static/js/api.js?v=100042"></script>
+  <script src="./static/js/utils/toast.js?v=100042"></script>
+  <script src="./static/js/utils/exporter.js?v=100042"></script>
+  <script src="./static/js/views/auth.js?v=100042"></script>
+  <script src="./static/js/views/student.js?v=100042"></script>
+  <script src="./static/js/views/teacher.js?v=100042"></script>
+  <script src="./static/js/views/hod.js?v=100042"></script>
+  <script src="./static/js/views/timetable.js?v=100042"></script>
+  <script src="./static/js/views/reports.js?v=100042"></script>
+  <script src="./static/js/app.js?v=100042"></script>
 </body>
 </html>

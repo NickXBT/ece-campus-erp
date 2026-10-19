@@ -51,7 +51,65 @@ const App = {
   currentUser: null,
   currentProfile: null,
 
+  showRouteLoader(title = 'ECE Management', subtitle = 'Synchronizing academic portal...') {
+    const loader = document.getElementById('app-route-loader');
+    if (!loader) return;
+    const msg = document.getElementById('loader-status-msg');
+    if (msg && subtitle) msg.innerText = subtitle;
+    loader.classList.add('active');
+  },
+
+  hideRouteLoader() {
+    const loader = document.getElementById('app-route-loader');
+    if (!loader) return;
+    loader.classList.remove('active');
+  },
+
+  async onRealtimeUpdate(type) {
+    if (typeof this.updateBadges === 'function') {
+      try { await this.updateBadges(); } catch(e) {}
+    }
+    const hash = window.location.hash || '';
+    const container = document.getElementById('view-container');
+    if (!container || !this.currentUser) return;
+
+    if (this.currentUser.role === 'HOD' || this.currentUser.role === 'TEACHER') {
+      if (type === 'certificates' && (hash === '#/hod/approvals' || hash === '#/teacher/approvals') && typeof TeacherView !== 'undefined' && TeacherView.renderApprovals) {
+        container.innerHTML = await TeacherView.renderApprovals();
+      } else if ((type === 'students' || type === 'pending_students') && hash === '#/hod/students' && typeof HodView !== 'undefined' && HodView.renderStudents) {
+        container.innerHTML = await HodView.renderStudents();
+      } else if (type === 'password_requests' && hash === '#/hod/password-approvals' && typeof TeacherView !== 'undefined' && TeacherView.renderPasswordApprovals) {
+        container.innerHTML = await TeacherView.renderPasswordApprovals();
+      } else if ((type === 'certificates' || type === 'students') && (hash === '#/hod/dashboard' || !hash) && typeof TeacherView !== 'undefined' && TeacherView.renderDashboard) {
+        container.innerHTML = await TeacherView.renderDashboard();
+      }
+    } else if (this.currentUser.role === 'STUDENT') {
+      if (type === 'certificates') {
+        if (hash === '#/student/certificates' && typeof StudentView !== 'undefined' && StudentView.renderCertificates) {
+          container.innerHTML = await StudentView.renderCertificates();
+        } else if (hash === '#/student/dashboard' && typeof StudentView !== 'undefined' && StudentView.renderDashboard) {
+          container.innerHTML = await StudentView.renderDashboard();
+        }
+      } else if (type === 'students') {
+        const db = typeof getLocalDB === 'function' ? getLocalDB() : null;
+        if (db && this.currentUser.status !== 'APPROVED') {
+          const s = (db.students || []).find(st => st && (st.id == this.currentUser.id || (st.prn_no && this.currentUser.prn_no && st.prn_no.toUpperCase() === this.currentUser.prn_no.toUpperCase())));
+          if (s && s.status === 'APPROVED') {
+            this.currentUser.status = 'APPROVED';
+            if (typeof setSessionUser === 'function') setSessionUser(this.currentUser);
+            Toast.success('🎉 Your HOD has approved your registration. Access granted!');
+            window.location.hash = '#/student/dashboard';
+            await this.handleRoute();
+          }
+        }
+      }
+    }
+  },
+
   async init() {
+    if (typeof initFirebaseRealtimeListeners === 'function') {
+      try { initFirebaseRealtimeListeners(); } catch(e) {}
+    }
     window.addEventListener('hashchange', () => {
       this.closeMobileMenu();
       this.handleRoute();
@@ -67,9 +125,9 @@ const App = {
     this.lastPendingCertCount = -1;
     this.lastPendingPassCount = -1;
 
+    // Realtime WebSockets push updates instantly (<50ms). Heartbeat runs every 45s as a quiet backup.
     this.pollingTimer = setInterval(async () => {
       if (typeof fetchCloudDB === 'function') {
-        // Continuous live background sync
         await fetchCloudDB(false);
       }
 
@@ -608,58 +666,72 @@ const App = {
     const activeNavEl = document.getElementById(activeNavId);
     if (activeNavEl) activeNavEl.classList.add('active');
 
-    if (hash === '#/student/dashboard') {
-      pageTitle.innerText = 'Student Dashboard';
-      container.innerHTML = await StudentView.renderDashboard();
-    } else if (hash === '#/student/upload') {
-      pageTitle.innerText = 'Upload New Certificate';
-      container.innerHTML = await StudentView.renderUploadForm();
-    } else if (hash === '#/student/certificates') {
-      pageTitle.innerText = 'My Certificate Submissions';
-      container.innerHTML = await StudentView.renderCertificates();
-    } else if (hash === '#/student/timetable') {
-      pageTitle.innerText = 'My Class Timetable';
-      container.innerHTML = await Timetable.render(true);
-    } else if (hash === '#/student/profile') {
-      pageTitle.innerText = 'Student Academic Profile';
-      container.innerHTML = await StudentView.renderProfile();
-    } else if (hash === '#/hod/dashboard' || hash === '#/teacher/dashboard') {
-      pageTitle.innerText = 'HOD & Faculty Dashboard';
-      container.innerHTML = await TeacherView.renderDashboard();
-    } else if (hash === '#/hod/teachers') {
-      pageTitle.innerText = 'Faculty / Add Teachers Panel';
-      container.innerHTML = await HodView.renderTeachers();
-    } else if (hash === '#/hod/students') {
-      pageTitle.innerText = 'Student Registration & Division Panel';
-      container.innerHTML = await HodView.renderStudents();
-    } else if (hash === '#/hod/approvals' || hash === '#/teacher/approvals') {
-      pageTitle.innerText = 'HOD Certificate Approvals Desk';
-      container.innerHTML = await TeacherView.renderApprovals();
-    } else if (hash === '#/hod/password-approvals') {
-      pageTitle.innerText = 'HOD Student Password Reset Approvals';
-      container.innerHTML = await TeacherView.renderPasswordApprovals();
-    } else if (hash === '#/hod/timetable' || hash === '#/teacher/timetable') {
-      pageTitle.innerText = 'Manage Official Timetable';
-      container.innerHTML = await Timetable.render(false);
-    } else if (hash === '#/hod/search' || hash === '#/teacher/students') {
-      pageTitle.innerText = 'Student Activity Search';
-      container.innerHTML = await TeacherView.renderStudentSearch();
-    } else if (hash === '#/reports') {
-      pageTitle.innerText = 'Master System Reports';
-      container.innerHTML = await ReportsView.render();
-    } else if (hash === '#/pending-approval') {
-      pageTitle.innerText = 'Pending HOD Approval';
-      const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [] };
-      const student = (db.students || []).find(s => (s.user_id == this.currentUser.id || s.id == this.currentUser.id) || (s.email && this.currentUser.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()));
-      const userInDb = (db.users || []).find(u => u.id == this.currentUser.id || (u.email && this.currentUser.email && u.email.toLowerCase() === this.currentUser.email.toLowerCase()));
-      container.innerHTML = AuthView.renderPendingApprovalView(this.currentUser, student || userInDb);
-    } else {
-      if (role === 'STUDENT') {
-        window.location.hash = '#/student/dashboard';
+    let renderedHtml = '';
+    const cleanTitle = (pageTitle && pageTitle.innerText) ? pageTitle.innerText : 'View';
+    this.showRouteLoader('ECE Management', 'Loading ' + cleanTitle + '...');
+
+    try {
+      container.classList.remove('erp-fade-in');
+
+      if (hash === '#/student/dashboard') {
+        pageTitle.innerText = 'Student Dashboard';
+        renderedHtml = await StudentView.renderDashboard();
+      } else if (hash === '#/student/upload') {
+        pageTitle.innerText = 'Upload New Certificate';
+        renderedHtml = await StudentView.renderUploadForm();
+      } else if (hash === '#/student/certificates') {
+        pageTitle.innerText = 'My Certificate Submissions';
+        renderedHtml = await StudentView.renderCertificates();
+      } else if (hash === '#/student/timetable') {
+        pageTitle.innerText = 'My Class Timetable';
+        renderedHtml = await Timetable.render(true);
+      } else if (hash === '#/student/profile') {
+        pageTitle.innerText = 'Student Academic Profile';
+        renderedHtml = await StudentView.renderProfile();
+      } else if (hash === '#/hod/dashboard' || hash === '#/teacher/dashboard') {
+        pageTitle.innerText = 'HOD & Faculty Dashboard';
+        renderedHtml = await TeacherView.renderDashboard();
+      } else if (hash === '#/hod/teachers') {
+        pageTitle.innerText = 'Faculty / Add Teachers Panel';
+        renderedHtml = await HodView.renderTeachers();
+      } else if (hash === '#/hod/students') {
+        pageTitle.innerText = 'Student Registration & Division Panel';
+        renderedHtml = await HodView.renderStudents();
+      } else if (hash === '#/hod/approvals' || hash === '#/teacher/approvals') {
+        pageTitle.innerText = 'HOD Certificate Approvals Desk';
+        renderedHtml = await TeacherView.renderApprovals();
+      } else if (hash === '#/hod/password-approvals') {
+        pageTitle.innerText = 'HOD Student Password Reset Approvals';
+        renderedHtml = await TeacherView.renderPasswordApprovals();
+      } else if (hash === '#/hod/timetable' || hash === '#/teacher/timetable') {
+        pageTitle.innerText = 'Manage Official Timetable';
+        renderedHtml = await Timetable.render(false);
+      } else if (hash === '#/hod/search' || hash === '#/teacher/students') {
+        pageTitle.innerText = 'Student Activity Search';
+        renderedHtml = await TeacherView.renderStudentSearch();
+      } else if (hash === '#/reports') {
+        pageTitle.innerText = 'Master System Reports';
+        renderedHtml = await ReportsView.render();
+      } else if (hash === '#/pending-approval') {
+        pageTitle.innerText = 'Pending HOD Approval';
+        const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [] };
+        const student = (db.students || []).find(s => (s.user_id == this.currentUser.id || s.id == this.currentUser.id) || (s.email && this.currentUser.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()));
+        const userInDb = (db.users || []).find(u => u.id == this.currentUser.id || (u.email && this.currentUser.email && u.email.toLowerCase() === this.currentUser.email.toLowerCase()));
+        renderedHtml = AuthView.renderPendingApprovalView(this.currentUser, student || userInDb);
       } else {
-        window.location.hash = '#/hod/dashboard';
+        if (role === 'STUDENT') {
+          window.location.hash = '#/student/dashboard';
+        } else {
+          window.location.hash = '#/hod/dashboard';
+        }
+        return;
       }
-      return;
+
+      container.innerHTML = renderedHtml;
+      void container.offsetWidth;
+      container.classList.add('erp-fade-in');
+    } finally {
+      this.hideRouteLoader();
     }
 
     // Mandatory First-Login Credentials Setup Modal Trigger for Students

@@ -5652,6 +5652,149 @@ if (typeof firebase !== 'undefined' && firebase.initializeApp) {
   } catch(e) {}
 }
 
+let g_isRealtimeActive = false;
+function initFirebaseRealtimeListeners() {
+  if (g_isRealtimeActive || !firebaseDb) return;
+  g_isRealtimeActive = true;
+
+  try {
+    // 1. Live Push Listener: Certificates Metadata (Submissions, Approvals, Rejections, Deletions)
+    firebaseDb.ref('certificates_meta').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(c => c && c.id);
+        if (valid.length > 0) {
+          const db = getLocalDB();
+          const loadedUrls = new Map();
+          (db.certificates || []).forEach(c => {
+            if (c && c.id && c.file_url && c.file_url.length > 50) loadedUrls.set(String(c.id), c.file_url);
+          });
+          valid.forEach(c => {
+            if ((!c.file_url || c.file_url.length < 50) && loadedUrls.has(String(c.id))) {
+              c.file_url = loadedUrls.get(String(c.id));
+            }
+          });
+          db.certificates = valid;
+          g_cloudDB = db;
+          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+            App.onRealtimeUpdate('certificates');
+          }
+        }
+      }
+    });
+
+    // 2. Live Push Listener: Activated / Registered Students
+    firebaseDb.ref('activated_students').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(s => s && s.id);
+        if (valid.length > 0) {
+          const db = getLocalDB();
+          valid.forEach(actSt => {
+            let matched = false;
+            (db.students || []).forEach(s => {
+              if (s.id == actSt.id || (actSt.prn_no && s.prn_no && actSt.prn_no.toUpperCase() === s.prn_no.toUpperCase()) || (actSt.email && s.email && actSt.email.toLowerCase() === s.email.toLowerCase())) {
+                matched = true;
+                s.name = actSt.name || s.name;
+                s.email = actSt.email || s.email;
+                s.prn_no = actSt.prn_no || s.prn_no;
+                s.password_hash = actSt.password_hash || s.password_hash;
+                s.status = 'APPROVED';
+                s.is_activated = true;
+                s.is_logged_in = true;
+              }
+            });
+            if (!matched && actSt.id) {
+              db.students.push({ ...actSt, status: 'APPROVED', is_activated: true });
+            }
+
+            (db.users || []).forEach(u => {
+              if (u.id == actSt.user_id || u.id == actSt.id || (actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || (actSt.email && u.email && actSt.email.toLowerCase() === u.email.toLowerCase())) {
+                u.name = actSt.name || u.name;
+                u.email = actSt.email || u.email;
+                u.prn_no = actSt.prn_no || u.prn_no;
+                u.password_hash = actSt.password_hash || u.password_hash;
+                u.status = 'APPROVED';
+                u.is_activated = true;
+                u.is_logged_in = true;
+              }
+            });
+          });
+          g_cloudDB = db;
+          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+            App.onRealtimeUpdate('students');
+          }
+        }
+      }
+    });
+
+    // 3. Live Push Listener: Pending Signups
+    firebaseDb.ref('pending_students').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(s => s && s.id);
+        const db = getLocalDB();
+        valid.forEach(pst => {
+          let matched = false;
+          (db.students || []).forEach(s => {
+            if (s.id == pst.id || (pst.prn_no && s.prn_no && pst.prn_no.toUpperCase() === s.prn_no.toUpperCase())) {
+              matched = true;
+              if (s.status !== 'APPROVED') s.status = 'PENDING_APPROVAL';
+            }
+          });
+          if (!matched && pst.id) {
+            db.students.push({ ...pst, status: 'PENDING_APPROVAL' });
+          }
+        });
+        g_cloudDB = db;
+        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+          App.onRealtimeUpdate('pending_students');
+        }
+      }
+    });
+
+    // 4. Live Push Listener: Password Reset Requests
+    firebaseDb.ref('password_requests').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(r => r && r.id);
+        const db = getLocalDB();
+        db.password_requests = valid;
+        g_cloudDB = db;
+        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+          App.onRealtimeUpdate('password_requests');
+        }
+      }
+    });
+
+    // 5. Live Push Listener: HOD Credentials
+    firebaseDb.ref('hod_credentials').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const db = getLocalDB();
+        const hodUser = (db.users || []).find(u => u && u.role === 'HOD');
+        if (hodUser) {
+          if (val.email) hodUser.email = val.email;
+          if (val.password_hash) hodUser.password_hash = val.password_hash;
+          if (val.name) hodUser.name = val.name;
+        }
+        if (val.hod_pin) db.hod_pin = val.hod_pin;
+        g_cloudDB = db;
+      }
+    });
+  } catch(err) {
+    console.warn('Realtime listener registration error:', err);
+  }
+}
+
+if (typeof window !== 'undefined' && firebaseDb) {
+  setTimeout(() => initFirebaseRealtimeListeners(), 100);
+}
+
 let g_cloudDB = null;
 
 function getLocalDB() {
@@ -6017,8 +6160,12 @@ function mergeDBs(localDb, cloudDb) {
 
 let g_lastCloudFetchTime = 0;
 async function fetchCloudDB(force = false) {
+  if (typeof initFirebaseRealtimeListeners === 'function') initFirebaseRealtimeListeners();
   const now = Date.now();
-  if (!force && g_cloudDB && (now - g_lastCloudFetchTime < 2500)) {
+  if (!force && g_cloudDB && (g_isRealtimeActive || (now - g_lastCloudFetchTime < 30000))) {
+    return g_cloudDB;
+  }
+  if (force && g_cloudDB && g_isRealtimeActive && (now - g_lastCloudFetchTime < 5000)) {
     return g_cloudDB;
   }
   g_lastCloudFetchTime = now;
@@ -7859,6 +8006,7 @@ if (typeof window !== 'undefined') {
   window.saveLocalDB = saveLocalDB;
   window.setSessionUser = setSessionUser;
   window.getSessionUser = getSessionUser;
+  window.initFirebaseRealtimeListeners = initFirebaseRealtimeListeners;
 }
 if (typeof global !== 'undefined') {
   global.API = API;
@@ -7867,4 +8015,5 @@ if (typeof global !== 'undefined') {
   global.saveLocalDB = saveLocalDB;
   global.setSessionUser = setSessionUser;
   global.getSessionUser = getSessionUser;
+  global.initFirebaseRealtimeListeners = initFirebaseRealtimeListeners;
 }
