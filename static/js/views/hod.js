@@ -1301,7 +1301,19 @@ const HodView = {
         if (studentCerts.length > 0) {
           for (let i = 0; i < studentCerts.length; i++) {
             const cert = studentCerts[i];
-            const fileUrl = cert.file_url || cert.url || '';
+            let fileUrl = cert.file_url || cert.url || '';
+
+            // If fileUrl is not yet loaded in memory, fetch single certificate on demand from Firebase
+            if ((!fileUrl || fileUrl.length < 50 || fileUrl === 'SYNC_STORED') && cert.id) {
+              try {
+                const singleCert = await fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/${cert.id}.json`).then(r => r.json()).catch(() => null);
+                if (singleCert && singleCert.file_url && singleCert.file_url.length > 30) {
+                  fileUrl = singleCert.file_url;
+                  cert.file_url = fileUrl;
+                  if (!cert.file_name && singleCert.file_name) cert.file_name = singleCert.file_name;
+                }
+              } catch(e) {}
+            }
 
             let statusTag = 'NON_APPROVED';
             if (cert.status === 'APPROVED') {

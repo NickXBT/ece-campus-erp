@@ -305,7 +305,7 @@ const TeacherView = {
           <td><span class="badge-status status-PENDING" style="background: #fef3c7; color: #d97706; border: 1px solid #fde68a; font-weight: 800;"><i class="fa-solid fa-clock"></i> Awaiting Review</span></td>
           <td>
             <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
-              <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${c.file_url || ''}', '${c.file_name || c.title}', '${(c.title || '').replace(/'/g, "\\'")}', '${(c.student_name || '').replace(/'/g, "\\'")}', '${c.id}')">
+              <button class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${c.id}')">
                 <i class="fa-solid fa-eye"></i> View
               </button>
               <button class="btn btn-success btn-sm" onclick="TeacherView.openApproveModal('${c.id}')" style="background: #16a34a; border-color: #16a34a; font-weight: 800;">
@@ -381,7 +381,7 @@ const TeacherView = {
             </td>
             <td>
               <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
-                <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${c.file_url || ''}', '${c.file_name || c.title}', '${(c.title || '').replace(/'/g, "\\'")}', '${(c.student_name || '').replace(/'/g, "\\'")}', '${c.id}')">
+                <button class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${c.id}')">
                   <i class="fa-solid fa-eye"></i> View
                 </button>
                 <button class="btn btn-secondary btn-sm" onclick="TeacherView.openApproveModal('${c.id}')" style="font-size: 0.78rem; padding: 0.25rem 0.5rem;" title="Modify attendance lecture credits">
@@ -837,8 +837,8 @@ const TeacherView = {
             <div style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">
               <i class="fa-solid fa-align-left" style="color: #2563eb;"></i> Student's Submitted Description / Activity Details:
             </div>
-            ${s.cert.file_url ? `
-              <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${s.cert.file_url || ''}', '${s.cert.file_name || s.cert.title}', '${(s.cert.title || '').replace(/'/g, "\\'")}', '${(s.cert.student_name || '').replace(/'/g, "\\'")}', '${s.cert.id}')" style="font-size: 0.76rem; padding: 0.25rem 0.55rem; font-weight: 700;">
+            ${(s.cert.file_url || s.cert.has_file || s.cert.id) ? `
+              <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${s.cert.id}')" style="font-size: 0.76rem; padding: 0.25rem 0.55rem; font-weight: 700;">
                 <i class="fa-solid fa-file-image"></i> View Uploaded File
               </button>
             ` : ''}

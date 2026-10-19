@@ -5732,6 +5732,17 @@ function saveLocalDB(db) {
       } catch (e) {}
 
       const cleanCopy = JSON.parse(JSON.stringify(db));
+      // Keep sync payload lightweight (< 64KB) by stripping large file_url base64 strings
+      if (cleanCopy.certificates && Array.isArray(cleanCopy.certificates)) {
+        cleanCopy.certificates = cleanCopy.certificates.map(c => {
+          const { file_url, file_data, ...rest } = c;
+          return {
+            ...rest,
+            file_url: (file_url && file_url.length < 200) ? file_url : '',
+            has_file: !!(file_url && file_url.length > 50)
+          };
+        });
+      }
       fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5784,20 +5795,31 @@ function saveLocalDB(db) {
         }
 
         if (cleanCopy.certificates && cleanCopy.certificates.length > 0) {
-          const certMap = {};
+          const certMetaMap = {};
           cleanCopy.certificates.forEach(c => {
-            if (c && c.id) certMap[c.id] = c;
+            if (c && c.id) {
+              const meta = { ...c };
+              delete meta.file_data;
+              if (meta.file_url && meta.file_url.length > 200) {
+                meta.has_file = true;
+                meta.file_url = '';
+              }
+              certMetaMap[c.id] = meta;
+            }
           });
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json', {
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(certMap)
+            body: JSON.stringify(certMetaMap)
           }).catch(() => {});
         }
 
         if (cleanCopy.deleted_cert_ids && cleanCopy.deleted_cert_ids.length > 0) {
           cleanCopy.deleted_cert_ids.forEach(delId => {
             fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/' + delId + '.json', {
+              method: 'DELETE'
+            }).catch(() => {});
+            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + delId + '.json', {
               method: 'DELETE'
             }).catch(() => {});
           });
@@ -6007,7 +6029,7 @@ async function fetchCloudDB(force = false) {
     const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/timetable.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
@@ -6214,10 +6236,25 @@ async function fetchCloudDB(force = false) {
       });
     }
 
-    if (fbCerts && typeof fbCerts === 'object') {
-      const certList = Array.isArray(fbCerts) ? fbCerts : Object.values(fbCerts);
+    let certSource = fbCerts;
+    if (!certSource || (typeof certSource === 'object' && Object.keys(certSource).length === 0)) {
+      certSource = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates.json').then(r => r.json()).catch(() => null);
+    }
+    if (certSource && typeof certSource === 'object') {
+      const certList = Array.isArray(certSource) ? certSource : Object.values(certSource);
       const validCerts = certList.filter(c => c && c.id);
       if (validCerts.length > 0) {
+        const loadedUrls = new Map();
+        (cloudDb.certificates || []).forEach(c => {
+          if (c && c.id && c.file_url && c.file_url.length > 50) {
+            loadedUrls.set(String(c.id), c.file_url);
+          }
+        });
+        validCerts.forEach(c => {
+          if ((!c.file_url || c.file_url.length < 50) && loadedUrls.has(String(c.id))) {
+            c.file_url = loadedUrls.get(String(c.id));
+          }
+        });
         cloudDb.certificates = validCerts;
       }
     }
@@ -6982,6 +7019,13 @@ const API = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newCert)
         }).catch(() => {});
+
+        const metaCert = { ...newCert, file_url: '', has_file: !!(newCert.file_url && newCert.file_url.length > 50) };
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + newCert.id + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(metaCert)
+        }).catch(() => {});
       } catch(e) {}
 
       return { message: 'Certificate submitted successfully!', certificate: newCert, success: true };
@@ -7033,6 +7077,13 @@ const API = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cert)
+        }).catch(() => {});
+
+        const metaCert = { ...cert, file_url: '', has_file: !!(cert.file_url && cert.file_url.length > 50) };
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + cert.id + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(metaCert)
         }).catch(() => {});
       } catch(e) {}
 
@@ -7109,10 +7160,25 @@ const API = {
       saveLocalDB(db);
 
       try {
+        const patchData = {
+          status: cert.status,
+          approved_at: cert.approved_at,
+          approved_by: cert.approved_by,
+          verified_by: cert.verified_by,
+          credited_lectures_count: cert.credited_lectures_count,
+          subject_credits: cert.subject_credits,
+          approved_num_days: cert.approved_num_days,
+          num_days: cert.num_days
+        };
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/' + cert.id + '.json', {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cert)
+          body: JSON.stringify(patchData)
+        }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + cert.id + '.json', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
         }).catch(() => {});
       } catch(e) {}
 
@@ -7141,10 +7207,23 @@ const API = {
       saveLocalDB(db);
 
       try {
+        const patchData = {
+          status: cert.status,
+          rejection_reason: cert.rejection_reason,
+          rejected_by: cert.rejected_by,
+          verified_by: cert.verified_by,
+          approved_by: cert.approved_by,
+          rejected_at: cert.rejected_at
+        };
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/' + cert.id + '.json', {
-          method: 'PUT',
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cert)
+          body: JSON.stringify(patchData)
+        }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + cert.id + '.json', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
         }).catch(() => {});
       } catch(e) {}
 
@@ -7183,6 +7262,9 @@ const API = {
 
         try {
           fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/' + certId + '.json', {
+            method: 'DELETE'
+          }).catch(() => {});
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta/' + certId + '.json', {
             method: 'DELETE'
           }).catch(() => {});
         } catch(e) {}

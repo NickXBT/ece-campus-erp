@@ -994,7 +994,7 @@ const StudentView = {
             </td>
             <td>
               <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
-                <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${c.file_url}', '${c.file_name}', '${safeTitle}', '${safeStudent}', '${c.id}')">
+                <button class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${c.id}')">
                   <i class="fa-solid fa-eye"></i> View
                 </button>
                 ${(isPending || c.status === 'REJECTED') ? `
@@ -1335,6 +1335,59 @@ const StudentView = {
     }
   },
 
+  async openCertificatePreview(certId) {
+    if (!certId) {
+      if (typeof Toast !== 'undefined') Toast.error('Invalid certificate ID');
+      return;
+    }
+    const cidStr = String(certId);
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { certificates: [] };
+    const cert = (db.certificates || []).find(c => c && String(c.id) === cidStr);
+
+    const titleText = (cert && (cert.file_name || cert.title)) || 'Activity Certificate Document';
+    const certTitle = (cert && cert.title) || '';
+    const studentName = (cert && cert.student_name) || '';
+
+    // Show responsive spinner immediately in the preview modal
+    const titleEl = document.getElementById('preview-modal-title');
+    if (titleEl) titleEl.innerText = `Certificate Document Preview: ${titleText}`;
+    const body = document.getElementById('preview-modal-body');
+    if (body) {
+      body.innerHTML = `
+        <div style="text-align: center; padding: 3rem 1.5rem;">
+          <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary);"></i>
+          <p style="margin-top: 1rem; color: var(--text-main); font-weight: 700; font-size: 1rem;">Loading certificate document preview...</p>
+          <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.82rem;">Fetching high-resolution document securely from cloud...</p>
+        </div>`;
+    }
+    if (typeof openModal === 'function') openModal('modal-file-preview');
+
+    let fileUrl = cert ? (cert.file_url || '') : '';
+
+    // 1. If document already in memory, display immediately
+    if (fileUrl && (fileUrl.startsWith('data:') || fileUrl.startsWith('http://') || fileUrl.startsWith('https://') || fileUrl.startsWith('blob:'))) {
+      return this.previewFile(fileUrl, cert ? cert.file_name : '', certTitle, studentName, certId);
+    }
+
+    // 2. Try fetching from Firebase child endpoint on demand
+    try {
+      const singleCert = await fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/${cidStr}.json`).then(r => r.json()).catch(() => null);
+      if (singleCert && singleCert.file_url && singleCert.file_url.length > 30) {
+        fileUrl = singleCert.file_url;
+        if (cert) {
+          cert.file_url = fileUrl;
+          if (!cert.file_name && singleCert.file_name) cert.file_name = singleCert.file_name;
+        }
+        return this.previewFile(fileUrl, (cert && cert.file_name) || singleCert.file_name, certTitle || singleCert.title, studentName || singleCert.student_name, certId);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch certificate document from Firebase RTDB:', err);
+    }
+
+    // 3. Fallback to previewFile logic
+    return this.previewFile(fileUrl, cert ? cert.file_name : '', certTitle, studentName, certId);
+  },
+
   async previewFile(url, fileName, certTitle = '', studentName = '', certId = '') {
     this._previewOriginalSrc = '';
     this._previewCroppedSrc = '';
@@ -1343,10 +1396,11 @@ const StudentView = {
     this._previewIsCropped = false;
 
     const titleText = fileName || certTitle || 'Activity Certificate Document';
-    document.getElementById('preview-modal-title').innerText = `Certificate Document Preview: ${titleText}`;
+    const titleEl = document.getElementById('preview-modal-title');
+    if (titleEl) titleEl.innerText = `Certificate Document Preview: ${titleText}`;
     const body = document.getElementById('preview-modal-body');
-    body.innerHTML = `<div style="text-align: center; padding: 2rem;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i><p style="margin-top: 0.5rem; color: var(--text-muted);">Loading certificate document preview...</p></div>`;
-    openModal('modal-file-preview');
+    if (body) body.innerHTML = `<div style="text-align: center; padding: 2rem;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i><p style="margin-top: 0.5rem; color: var(--text-muted);">Loading certificate document preview...</p></div>`;
+    if (typeof openModal === 'function') openModal('modal-file-preview');
 
     let fileUrl = url || '';
 
@@ -1370,12 +1424,17 @@ const StudentView = {
       }
     }
 
-    // 2. If still SYNC_STORED or missing, fetch direct high-res image from cloud KV
+    // 2. If still missing or placeholder, fetch direct high-res image from Firebase RTDB
     if ((!fileUrl || fileUrl === 'SYNC_STORED' || fileUrl.startsWith('LOCAL_')) && certId) {
       try {
-        const cloudImg = await fetch(`https://keyvalue.immanuel.co/api/KeyVal/GetValue/${CLOUD_DB_KEY}/cert_img_${certId}`).then(r => r.text()).catch(() => '');
-        if (cloudImg && cloudImg.length > 50 && cloudImg !== 'EMPTY') {
-          fileUrl = decodeURIComponent(cloudImg.replace(/^"|"$/g, ''));
+        const singleCert = await fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/certificates/${certId}.json`).then(r => r.json()).catch(() => null);
+        if (singleCert && singleCert.file_url && singleCert.file_url.length > 30) {
+          fileUrl = singleCert.file_url;
+          const db = typeof getLocalDB === 'function' ? getLocalDB() : null;
+          if (db && db.certificates) {
+            const matchedCert = db.certificates.find(c => c && String(c.id) === String(certId));
+            if (matchedCert) matchedCert.file_url = fileUrl;
+          }
         }
       } catch(e) {}
     }
