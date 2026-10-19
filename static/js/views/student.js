@@ -425,39 +425,7 @@ const StudentView = {
 
   previewCertificate(url, encodedTitle) {
     const title = decodeURIComponent(encodedTitle || 'Certificate Document');
-    const existing = document.getElementById('modal-cert-preview-dialog');
-    if (existing) existing.remove();
-
-    const isPdf = url && (url.includes('application/pdf') || url.toLowerCase().endsWith('.pdf') || url === 'PDF_SUBMITTED');
-    const contentHtml = isPdf 
-      ? `<iframe src="${url}" style="width: 100%; height: 500px; border: none; border-radius: 8px;"></iframe>`
-      : `<img src="${url}" alt="Certificate Preview" style="max-width: 100%; max-height: 520px; border-radius: 8px; display: block; margin: 0 auto; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
-
-    const modalHtml = `
-      <div id="modal-cert-preview-dialog" class="modal modal-open" style="display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 99999; backdrop-filter: blur(4px);">
-        <div style="background: #ffffff; border-radius: 16px; max-width: 700px; width: 92%; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.25); animation: modalFadeIn 0.2s ease;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem;">
-            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;">
-              <i class="fa-solid fa-award" style="color: #2563eb;"></i> ${title}
-            </h4>
-            <button type="button" onclick="document.getElementById('modal-cert-preview-dialog').remove()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-          <div style="margin-bottom: 1rem;">
-            ${contentHtml}
-          </div>
-          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-            ${url && url.startsWith('http') ? `<a href="${url}" target="_blank" download class="btn btn-secondary btn-sm" style="font-weight: 700;"><i class="fa-solid fa-download"></i> Download</a>` : ''}
-            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('modal-cert-preview-dialog').remove()" style="font-weight: 800;">
-              Close Preview
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    return this.previewFile(url, title, title);
   },
 
   async renderUploadForm() {
@@ -1335,6 +1303,22 @@ const StudentView = {
     }
   },
 
+  renderFileOpeningLoader(title = 'Opening Certificate Document...') {
+    return `
+      <div class="cert-file-loader-container">
+        <div class="cert-doc-scanner-frame">
+          <div class="cert-laser-beam"></div>
+          <i class="fa-solid fa-file-shield cert-doc-icon"></i>
+        </div>
+        <div class="cert-loader-badge"><i class="fa-solid fa-lock"></i> ECE ERP Document Vault</div>
+        <div class="cert-loader-title">${title}</div>
+        <div class="cert-loader-subtitle">Decrypting high-resolution certificate stream securely from cloud...</div>
+        <div class="cert-loader-progress">
+          <div class="cert-loader-bar"></div>
+        </div>
+      </div>`;
+  },
+
   async openCertificatePreview(certId) {
     if (!certId) {
       if (typeof Toast !== 'undefined') Toast.error('Invalid certificate ID');
@@ -1348,24 +1332,20 @@ const StudentView = {
     const certTitle = (cert && cert.title) || '';
     const studentName = (cert && cert.student_name) || '';
 
-    // Show responsive spinner immediately in the preview modal
+    // Show high-tech laser scanner loader immediately in the preview modal
     const titleEl = document.getElementById('preview-modal-title');
     if (titleEl) titleEl.innerText = `Certificate Document Preview: ${titleText}`;
     const body = document.getElementById('preview-modal-body');
     if (body) {
-      body.innerHTML = `
-        <div style="text-align: center; padding: 3rem 1.5rem;">
-          <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary);"></i>
-          <p style="margin-top: 1rem; color: var(--text-main); font-weight: 700; font-size: 1rem;">Loading certificate document preview...</p>
-          <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.82rem;">Fetching high-resolution document securely from cloud...</p>
-        </div>`;
+      body.innerHTML = this.renderFileOpeningLoader(`Opening ${titleText}...`);
     }
     if (typeof openModal === 'function') openModal('modal-file-preview');
 
     let fileUrl = cert ? (cert.file_url || '') : '';
 
-    // 1. If document already in memory, display immediately
+    // 1. If document already in memory, display with smooth scanner animation
     if (fileUrl && (fileUrl.startsWith('data:') || fileUrl.startsWith('http://') || fileUrl.startsWith('https://') || fileUrl.startsWith('blob:'))) {
+      await new Promise(r => setTimeout(r, 450));
       return this.previewFile(fileUrl, cert ? cert.file_name : '', certTitle, studentName, certId);
     }
 
@@ -1378,6 +1358,7 @@ const StudentView = {
           cert.file_url = fileUrl;
           if (!cert.file_name && singleCert.file_name) cert.file_name = singleCert.file_name;
         }
+        await new Promise(r => setTimeout(r, 350));
         return this.previewFile(fileUrl, (cert && cert.file_name) || singleCert.file_name, certTitle || singleCert.title, studentName || singleCert.student_name, certId);
       }
     } catch (err) {
@@ -1385,6 +1366,7 @@ const StudentView = {
     }
 
     // 3. Fallback to previewFile logic
+    await new Promise(r => setTimeout(r, 350));
     return this.previewFile(fileUrl, cert ? cert.file_name : '', certTitle, studentName, certId);
   },
 
@@ -1399,7 +1381,9 @@ const StudentView = {
     const titleEl = document.getElementById('preview-modal-title');
     if (titleEl) titleEl.innerText = `Certificate Document Preview: ${titleText}`;
     const body = document.getElementById('preview-modal-body');
-    if (body) body.innerHTML = `<div style="text-align: center; padding: 2rem;"><i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i><p style="margin-top: 0.5rem; color: var(--text-muted);">Loading certificate document preview...</p></div>`;
+    if (body) {
+      body.innerHTML = this.renderFileOpeningLoader(`Loading ${titleText}...`);
+    }
     if (typeof openModal === 'function') openModal('modal-file-preview');
 
     let fileUrl = url || '';

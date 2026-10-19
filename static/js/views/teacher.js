@@ -67,7 +67,7 @@ const TeacherView = {
           <div class="glass-panel" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-color: #bfdbfe;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">ECE MANAGEMENT — HOD PORTAL</span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">ECE ERP — HOD PORTAL</span>
                 <h2 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-top: 0.25rem;">Welcome, ${teacher.name || 'HOD'}</h2>
                 <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem;">Teacher ID Code: ${teacher.teacher_id_code || 'HOD101'} | Department: ${teacher.department_name || 'ECE'} | ${teacher.designation || 'Head of Department'}</p>
               </div>

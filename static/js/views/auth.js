@@ -28,7 +28,7 @@ const AuthView = {
             </div>
             <div>
               <h1 style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.5px; margin: 0;">
-                ECE Campus ERP
+                ECE ERP
               </h1>
               <span style="font-size: 0.85rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 1.2px;">
                 Electronics & Computer Engineering (NMIET)
@@ -101,13 +101,13 @@ const AuthView = {
               <div style="text-align: center; margin-bottom: 1.15rem;">
                 <div class="vibe-badge" style="margin-bottom: 0.85rem;">
                   <span class="vibe-badge-dot"></span>
-                  <span>ECE MANAGEMENT SYSTEM</span>
+                  <span>ECE ERP</span>
                 </div>
 
                 <div class="brand-icon" style="margin: 0.25rem auto 0.75rem; width: 48px; height: 48px; font-size: 1.5rem;">
                   <i class="fa-solid fa-microchip"></i>
                 </div>
-                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">ECE Management</h2>
+                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; color: var(--text-main);">ECE ERP</h2>
                 <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.2rem;">Student Activity, Certificate & Timetable Portal</p>
               </div>
 

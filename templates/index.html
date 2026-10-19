@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="./static/manifest.json">
-  <title>ECE Management — Student Activity, Certificate & Timetable System</title>
+  <title>ECE ERP — Student Activity, Certificate & Timetable System</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,10 +20,26 @@
   <!-- JSZip Library for Bulk Zip Downloads -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100042">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100042">
+  <link rel="stylesheet" href="./static/css/main.css?v=100043">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100043">
 </head>
 <body>
+  <!-- First-Time Launch Splash Screen Animation ("ECE ERP") -->
+  <div id="app-first-load-splash">
+    <div class="splash-box">
+      <div class="splash-logo-container">
+        <i class="fa-solid fa-microchip splash-icon"></i>
+        <div class="splash-glow-ring"></div>
+      </div>
+      <div class="splash-title">ECE <span>ERP</span></div>
+      <div class="splash-subtitle">Student Activity, Certificate & Timetable System</div>
+      <div class="splash-progress-track">
+        <div class="splash-progress-fill"></div>
+      </div>
+      <div class="splash-status-text" id="splash-status-msg">Connecting to Realtime Academic Engine...</div>
+    </div>
+  </div>
+
   <!-- Mobile Backdrop Overlay -->
   <div class="mobile-overlay-backdrop" id="mobile-backdrop"></div>
 
@@ -35,7 +51,7 @@
         <div class="orbital-glow"></div>
       </div>
       <div class="loader-text">
-        <div class="loader-title">ECE Management</div>
+        <div class="loader-title">ECE ERP</div>
         <div class="loader-subtitle" id="loader-status-msg">Synchronizing academic portal...</div>
       </div>
       <div class="loader-shimmer-bar">
@@ -52,7 +68,7 @@
           <i class="fa-solid fa-microchip"></i>
         </div>
         <div class="brand-text">
-          <h2>ECE Management</h2>
+          <h2>ECE ERP</h2>
           <span>Student & Activity Portal</span>
         </div>
         <button class="sidebar-mobile-close" id="btn-sidebar-mobile-close" onclick="App.closeMobileMenu()" title="Close Navigation Drawer">
@@ -519,7 +535,7 @@
         Have a question or facing any issue? Reach out directly to <strong>Nikhil</strong> for quick support:
       </p>
       <div style="display: flex; flex-direction: column; gap: 0.85rem; width: 100%;">
-        <a href="https://wa.me/917768075930?text=Hello%20Nikhil,%20I%20need%20help%20with%20ECE%20Campus%20ERP" target="_blank" class="btn" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.98rem; padding: 0.85rem 1.5rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; border: none; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);">
+        <a href="https://wa.me/917768075930?text=Hello%20Nikhil,%20I%20need%20help%20with%20ECE%20ERP" target="_blank" class="btn" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.98rem; padding: 0.85rem 1.5rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; border: none; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);">
           <i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> <span>Chat on WhatsApp (7768075930)</span>
         </a>
         <a href="tel:7768075930" class="btn" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; font-weight: 800; font-size: 0.98rem; padding: 0.85rem 1.5rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; border: none; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
@@ -535,16 +551,16 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- JavaScript Modules with Cache Buster v=100042 -->
-  <script src="./static/js/api.js?v=100042"></script>
-  <script src="./static/js/utils/toast.js?v=100042"></script>
-  <script src="./static/js/utils/exporter.js?v=100042"></script>
-  <script src="./static/js/views/auth.js?v=100042"></script>
-  <script src="./static/js/views/student.js?v=100042"></script>
-  <script src="./static/js/views/teacher.js?v=100042"></script>
-  <script src="./static/js/views/hod.js?v=100042"></script>
-  <script src="./static/js/views/timetable.js?v=100042"></script>
-  <script src="./static/js/views/reports.js?v=100042"></script>
-  <script src="./static/js/app.js?v=100042"></script>
+  <!-- JavaScript Modules with Cache Buster v=100043 -->
+  <script src="./static/js/api.js?v=100043"></script>
+  <script src="./static/js/utils/toast.js?v=100043"></script>
+  <script src="./static/js/utils/exporter.js?v=100043"></script>
+  <script src="./static/js/views/auth.js?v=100043"></script>
+  <script src="./static/js/views/student.js?v=100043"></script>
+  <script src="./static/js/views/teacher.js?v=100043"></script>
+  <script src="./static/js/views/hod.js?v=100043"></script>
+  <script src="./static/js/views/timetable.js?v=100043"></script>
+  <script src="./static/js/views/reports.js?v=100043"></script>
+  <script src="./static/js/app.js?v=100043"></script>
 </body>
 </html>

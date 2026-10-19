@@ -46,12 +46,12 @@ async function verifyHodPin(e) {
   }
 }
 
-/* ECE Management — Main SPA Router & Controller */
+/* ECE ERP — Main SPA Router & Controller */
 const App = {
   currentUser: null,
   currentProfile: null,
 
-  showRouteLoader(title = 'ECE Management', subtitle = 'Synchronizing academic portal...') {
+  showRouteLoader(title = 'ECE ERP', subtitle = 'Synchronizing academic portal...') {
     const loader = document.getElementById('app-route-loader');
     if (!loader) return;
     const msg = document.getElementById('loader-status-msg');
@@ -106,6 +106,17 @@ const App = {
     }
   },
 
+  dismissFirstLoadSplash() {
+    const splash = document.getElementById('app-first-load-splash');
+    if (!splash) return;
+    setTimeout(() => {
+      splash.classList.add('splash-hidden');
+      setTimeout(() => {
+        try { splash.remove(); } catch(e) {}
+      }, 550);
+    }, 450);
+  },
+
   async init() {
     if (typeof initFirebaseRealtimeListeners === 'function') {
       try { initFirebaseRealtimeListeners(); } catch(e) {}
@@ -114,7 +125,11 @@ const App = {
       this.closeMobileMenu();
       this.handleRoute();
     });
-    await this.checkAuthAndRoute();
+    try {
+      await this.checkAuthAndRoute();
+    } finally {
+      this.dismissFirstLoadSplash();
+    }
   },
 
   pollingTimer: null,
@@ -668,7 +683,7 @@ const App = {
 
     let renderedHtml = '';
     const cleanTitle = (pageTitle && pageTitle.innerText) ? pageTitle.innerText : 'View';
-    this.showRouteLoader('ECE Management', 'Loading ' + cleanTitle + '...');
+    this.showRouteLoader('ECE ERP', 'Loading ' + cleanTitle + '...');
 
     try {
       container.classList.remove('erp-fade-in');
