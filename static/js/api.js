@@ -103,6 +103,16 @@ const INITIAL_DB = {
     "must_change_credentials": false
   },
   {
+    "id": 130,
+    "email": "vrushali.gujar@campus.edu",
+    "password_hash": "1234",
+    "role": "TEACHER",
+    "name": "Ms. Vrushali Gujar",
+    "status": "APPROVED",
+    "is_activated": true,
+    "must_change_credentials": false
+  },
+  {
     "id": 8,
     "email": "",
     "username": "U251H001",
@@ -4756,7 +4766,8 @@ const INITIAL_DB = {
     { id: 4, user_id: 4, name: "Ms. Dhanashree Dixit", email: "dhanashree.dixit@campus.edu", teacher_id_code: "T104", department_id: 1, designation: "Assistant Professor" },
     { id: 5, user_id: 5, name: "Ms. Muktai Surnar", email: "muktai.surnar@campus.edu", teacher_id_code: "T105", department_id: 1, designation: "Assistant Professor" },
     { id: 6, user_id: 6, name: "Mr. Vikas T.", email: "vikas.t@campus.edu", teacher_id_code: "T106", department_id: 1, designation: "Assistant Professor" },
-    { id: 7, user_id: 7, name: "Ms. Sujata Gaikwad", email: "sujata.gaikwad@campus.edu", teacher_id_code: "T107", department_id: 1, designation: "Assistant Professor" }
+    { id: 7, user_id: 7, name: "Ms. Sujata Gaikwad", email: "sujata.gaikwad@campus.edu", teacher_id_code: "T107", department_id: 1, designation: "Assistant Professor" },
+    { id: 8, user_id: 130, name: "Ms. Vrushali Gujar", email: "vrushali.gujar@campus.edu", teacher_id_code: "T108", department_id: 1, designation: "Professor" }
   ],
   timetable: [
   {
@@ -6465,7 +6476,7 @@ function setSessionUser(user) {
 }
 
 function findCurrentStudent(db, currentUser) {
-  if (!currentUser) return null;
+  if (!currentUser || currentUser.role === 'HOD' || currentUser.role === 'TEACHER') return null;
   const normEmail = (currentUser.email || '').trim().toLowerCase();
   const normPrn = (currentUser.prn_no || '').trim().toUpperCase();
   const normUsername = (currentUser.username || '').trim().toUpperCase();
@@ -6550,9 +6561,13 @@ const API = {
           const tEmail = (t.email || '').trim().toLowerCase();
           const tCode = (t.teacher_id_code || '').trim().toLowerCase();
           const tName = (t.name || '').trim().toLowerCase();
+          const cleanTName = tName.replace(/^(dr\.|mr\.|ms\.|mrs\.|prof\.)\s*/i, '').trim();
+          const cleanEmail = email.replace(/^(dr\.|mr\.|ms\.|mrs\.|prof\.)\s*/i, '').trim();
           if (tEmail && tEmail === email) return true;
           if (tCode && tCode === email) return true;
           if (tName && tName === email) return true;
+          if (cleanTName && cleanTName === cleanEmail) return true;
+          if (cleanTName && cleanEmail && (cleanTName.includes(cleanEmail) || cleanEmail.includes(cleanTName))) return true;
           if ((email === 'faculty' || email === 'faculty@campus.edu') && tCode === 't102') return true;
           return false;
         });
@@ -6730,9 +6745,11 @@ const API = {
       }
 
       setSessionUser(user);
-      const student = findCurrentStudent(db, user);
-      const redirect = (user.role === 'HOD' || user.role === 'TEACHER') ? '#/hod/dashboard' : '#/student/dashboard';
-      return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: student || user, redirect };
+      const isFaculty = (user.role === 'HOD' || user.role === 'TEACHER');
+      const teacher = isFaculty ? ((db.teachers || []).find(t => (user.id && t.user_id == user.id) || (user.email && t.email && t.email.toLowerCase() === user.email.toLowerCase())) || user) : null;
+      const student = !isFaculty ? findCurrentStudent(db, user) : null;
+      const redirect = isFaculty ? '#/hod/dashboard' : '#/student/dashboard';
+      return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: teacher || student || user, redirect };
     }
 
     // 2b. POST /api/auth/register-student

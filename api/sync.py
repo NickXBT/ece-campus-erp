@@ -200,8 +200,18 @@ INITIAL_DB_STATE = {
             "role": "TEACHER",
             "name": "Ms. Sujata Gaikwad",
             "status": "APPROVED",
-            "is_activated": true,
-            "must_change_credentials": false
+            "is_activated": True,
+            "must_change_credentials": False
+        },
+        {
+            "id": 130,
+            "email": "vrushali.gujar@campus.edu",
+            "password_hash": "1234",
+            "role": "TEACHER",
+            "name": "Ms. Vrushali Gujar",
+            "status": "APPROVED",
+            "is_activated": True,
+            "must_change_credentials": False
         },
         {
             "id": 8,
@@ -4913,6 +4923,15 @@ INITIAL_DB_STATE = {
             "teacher_id_code": "T107",
             "department_id": 1,
             "designation": "Assistant Professor"
+        },
+        {
+            "id": 8,
+            "user_id": 130,
+            "name": "Ms. Vrushali Gujar",
+            "email": "vrushali.gujar@campus.edu",
+            "teacher_id_code": "T108",
+            "department_id": 1,
+            "designation": "Professor"
         }
     ],
     "timetable": [
