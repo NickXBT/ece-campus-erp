@@ -103,7 +103,7 @@ const INITIAL_DB = {
     "must_change_credentials": false
   },
   {
-    "id": 130,
+    "id": 1008,
     "email": "vrushali.gujar@campus.edu",
     "password_hash": "1234",
     "role": "TEACHER",
@@ -4768,7 +4768,7 @@ const INITIAL_DB = {
     { id: 5, user_id: 5, name: "Ms. Muktai Surnar", email: "muktai.surnar@campus.edu", teacher_id_code: "T105", department_id: 1, designation: "Assistant Professor" },
     { id: 6, user_id: 6, name: "Mr. Vikas T.", email: "vikas.t@campus.edu", teacher_id_code: "T106", department_id: 1, designation: "Assistant Professor" },
     { id: 7, user_id: 7, name: "Ms. Sujata Gaikwad", email: "sujata.gaikwad@campus.edu", teacher_id_code: "T107", department_id: 1, designation: "Assistant Professor" },
-    { id: 8, user_id: 130, name: "Ms. Vrushali Gujar", email: "vrushali.gujar@campus.edu", teacher_id_code: "T108", department_id: 1, designation: "Professor" }
+    { id: 8, user_id: 1008, name: "Ms. Vrushali Gujar", email: "vrushali.gujar@campus.edu", teacher_id_code: "T108", department_id: 1, designation: "Professor" }
   ],
   timetable: [
   {
@@ -5723,6 +5723,7 @@ function initFirebaseRealtimeListeners() {
             }
 
             (db.users || []).forEach(u => {
+              if (u.role && u.role !== 'STUDENT') return;
               if (u.id == actSt.user_id || u.id == actSt.id || (actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || (actSt.email && u.email && actSt.email.toLowerCase() === u.email.toLowerCase())) {
                 u.name = actSt.name || u.name;
                 u.email = actSt.email || u.email;
@@ -5835,9 +5836,11 @@ function initFirebaseRealtimeListeners() {
             const tCodeUpper = (t.teacher_id_code || '').toUpperCase();
             const tEmailLower = (t.email || '').toLowerCase();
             let u = (db.users || []).find(user => 
-              (t.user_id && user.id == t.user_id) || 
-              (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
-              (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+              (user.role === 'TEACHER' || user.role === 'HOD') && (
+                (t.user_id && user.id == t.user_id) || 
+                (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
+                (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+              )
             );
             if (u) {
               if (t.name) u.name = t.name;
@@ -5878,8 +5881,9 @@ function initFirebaseRealtimeListeners() {
             const normEmail = (cred.email || '').trim().toLowerCase();
             const normCode = (cred.teacher_id_code || '').trim().toUpperCase();
 
-            // Live update users
+            // Live update users (strictly faculty)
             (db.users || []).forEach(u => {
+              if (u.role && u.role !== 'TEACHER' && u.role !== 'HOD') return;
               if ((normEmail && u.email && u.email.toLowerCase() === normEmail) || 
                   (normCode && u.username && u.username.toUpperCase() === normCode) || 
                   (cred.user_id && u.id == cred.user_id) || 
@@ -5957,6 +5961,21 @@ function getLocalDB() {
     }
     if (g_cloudDB.users) {
       g_cloudDB.users = g_cloudDB.users.filter(u => u && !delSet.has(String(u.id).toUpperCase()) && (!u.prn_no || !delSet.has(String(u.prn_no).toUpperCase())));
+      g_cloudDB.users.forEach(u => {
+        if (u && u.email && u.email.toLowerCase() === 'vrushali.gujar@campus.edu') {
+          u.id = 1008;
+          u.name = 'Ms. Vrushali Gujar';
+          u.role = 'TEACHER';
+        }
+      });
+    }
+    if (g_cloudDB.teachers) {
+      g_cloudDB.teachers.forEach(t => {
+        if (t && (t.teacher_id_code === 'T108' || (t.email && t.email.toLowerCase() === 'vrushali.gujar@campus.edu'))) {
+          t.user_id = 1008;
+          t.name = 'Ms. Vrushali Gujar';
+        }
+      });
     }
     return g_cloudDB;
   }
@@ -6027,6 +6046,21 @@ function getLocalDB() {
         if (!u) return false;
         if ((u.role === 'TEACHER' || u.role === 'HOD') && (delTeacherSet.has(String(u.id).toUpperCase()) || (u.username && delTeacherSet.has(String(u.username).toUpperCase())))) return false;
         return true;
+      });
+      g_cloudDB.users.forEach(u => {
+        if (u && u.email && u.email.toLowerCase() === 'vrushali.gujar@campus.edu') {
+          u.id = 1008;
+          u.name = 'Ms. Vrushali Gujar';
+          u.role = 'TEACHER';
+        }
+      });
+    }
+    if (g_cloudDB.teachers) {
+      g_cloudDB.teachers.forEach(t => {
+        if (t && (t.teacher_id_code === 'T108' || (t.email && t.email.toLowerCase() === 'vrushali.gujar@campus.edu'))) {
+          t.user_id = 1008;
+          t.name = 'Ms. Vrushali Gujar';
+        }
       });
     }
   }
@@ -6267,20 +6301,30 @@ function mergeDBs(localDb, cloudDb) {
     const uprn = u.prn_no ? String(u.prn_no).toUpperCase() : '';
     if (deletedStudentIds.has(uid) || (uprn && deletedStudentIds.has(uprn))) return;
 
-    const key = u.prn_no ? ('prn_' + u.prn_no.toUpperCase()) : (u.id ? ('uid_' + u.id) : (u.email ? ('email_' + u.email.toLowerCase()) : ('rand_' + Math.random())));
+    const key = (u.role === 'TEACHER' || u.role === 'HOD')
+      ? ('faculty_' + (u.email ? u.email.toLowerCase() : u.id))
+      : (u.prn_no ? ('prn_' + u.prn_no.toUpperCase()) : (u.id ? ('uid_' + u.id) : (u.email ? ('email_' + u.email.toLowerCase()) : ('rand_' + Math.random()))));
     if (!userMap.has(key)) {
       userMap.set(key, { ...u });
     } else {
       const ex = userMap.get(key);
-      if (u.name && u.name !== 'Student') ex.name = u.name;
-      if (u.email && u.email.includes('@') && !u.email.endsWith('@campus.edu')) ex.email = u.email;
-      if (u.password_hash && (u.password_hash !== 'Student@123' || ex.password_hash === 'Student@123')) {
-        ex.password_hash = u.password_hash;
+      if (ex.role === 'TEACHER' || ex.role === 'HOD') {
+        if (u.role === 'TEACHER' || u.role === 'HOD') {
+          if (u.name) ex.name = u.name;
+          if (u.email) ex.email = u.email;
+          if (u.password_hash) ex.password_hash = u.password_hash;
+        }
+      } else {
+        if (u.name && u.name !== 'Student') ex.name = u.name;
+        if (u.email && u.email.includes('@') && !u.email.endsWith('@campus.edu')) ex.email = u.email;
+        if (u.password_hash && (u.password_hash !== 'Student@123' || ex.password_hash === 'Student@123')) {
+          ex.password_hash = u.password_hash;
+        }
+        if (u.is_activated) ex.is_activated = true;
+        if (u.must_change_credentials === false) ex.must_change_credentials = false;
+        if (u.prn_no && !u.prn_no.startsWith('PRN-')) ex.prn_no = u.prn_no;
+        if (u.status) ex.status = u.status;
       }
-      if (u.is_activated) ex.is_activated = true;
-      if (u.must_change_credentials === false) ex.must_change_credentials = false;
-      if (u.prn_no && !u.prn_no.startsWith('PRN-')) ex.prn_no = u.prn_no;
-      if (u.status) ex.status = u.status;
     }
   });
   merged.users = Array.from(userMap.values()).filter(u => {
@@ -6389,15 +6433,29 @@ function mergeDBs(localDb, cloudDb) {
   merged.teachers = Array.from(teacherMap.values());
   merged.deleted_teacher_ids = Array.from(deletedTeacherIds);
 
-  // Synchronize teacher emails and names with updated user emails
-  (merged.users || []).forEach(u => {
-    if ((u.role === 'HOD' || u.role === 'TEACHER') && u.email) {
-      (merged.teachers || []).forEach(t => {
-        if (t.user_id == u.id || (u.role === 'HOD' && t.teacher_id_code === 'HOD101') || (u.email && t.email && u.email.toLowerCase() === t.email.toLowerCase())) {
-          t.email = u.email;
-          if (u.name) t.name = u.name;
+  // Synchronize teacher emails and names (teachers have authoritative names)
+  (merged.teachers || []).forEach(t => {
+    if (t && t.name) {
+      (merged.users || []).forEach(u => {
+        if ((u.role === 'HOD' || u.role === 'TEACHER') && ((t.user_id && u.id == t.user_id) || (u.email && t.email && u.email.toLowerCase() === t.email.toLowerCase()))) {
+          u.name = t.name;
         }
       });
+    }
+  });
+
+  // Strict normalization for Ms. Vrushali Gujar
+  (merged.users || []).forEach(u => {
+    if (u && u.email && u.email.toLowerCase() === 'vrushali.gujar@campus.edu') {
+      u.id = 1008;
+      u.name = 'Ms. Vrushali Gujar';
+      u.role = 'TEACHER';
+    }
+  });
+  (merged.teachers || []).forEach(t => {
+    if (t && (t.teacher_id_code === 'T108' || (t.email && t.email.toLowerCase() === 'vrushali.gujar@campus.edu'))) {
+      t.user_id = 1008;
+      t.name = 'Ms. Vrushali Gujar';
     }
   });
 
@@ -6448,6 +6506,20 @@ async function fetchCloudDB(force = false) {
     }
     if (!cloudDb) cloudDb = getLocalDB();
 
+    (cloudDb.users || []).forEach(u => {
+      if (u && u.email && u.email.toLowerCase() === 'vrushali.gujar@campus.edu') {
+        u.id = 1008;
+        u.name = 'Ms. Vrushali Gujar';
+        u.role = 'TEACHER';
+      }
+    });
+    (cloudDb.teachers || []).forEach(t => {
+      if (t && (t.teacher_id_code === 'T108' || (t.email && t.email.toLowerCase() === 'vrushali.gujar@campus.edu'))) {
+        t.user_id = 1008;
+        t.name = 'Ms. Vrushali Gujar';
+      }
+    });
+
     if (fbHodCreds && typeof fbHodCreds === 'object') {
       const hodUser = (cloudDb.users || []).find(u => u && u.role === 'HOD');
       if (hodUser) {
@@ -6495,9 +6567,11 @@ async function fetchCloudDB(force = false) {
           const tCodeUpper = (t.teacher_id_code || '').toUpperCase();
           const tEmailLower = (t.email || '').toLowerCase();
           let u = (cloudDb.users || []).find(user => 
-            (t.user_id && user.id == t.user_id) || 
-            (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
-            (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+            (user.role === 'TEACHER' || user.role === 'HOD') && (
+              (t.user_id && user.id == t.user_id) || 
+              (tEmailLower && user.email && user.email.toLowerCase() === tEmailLower) || 
+              (tCodeUpper && user.username && user.username.toUpperCase() === tCodeUpper)
+            )
           );
           if (u) {
             if (t.name) u.name = t.name;
@@ -6528,6 +6602,7 @@ async function fetchCloudDB(force = false) {
         const normCode = (cred.teacher_id_code || '').trim().toUpperCase();
 
         (cloudDb.users || []).forEach(u => {
+          if (u.role && u.role !== 'TEACHER' && u.role !== 'HOD') return;
           if ((normEmail && u.email && u.email.toLowerCase() === normEmail) || 
               (normCode && u.username && u.username.toUpperCase() === normCode) || 
               (cred.user_id && u.id == cred.user_id) || 
@@ -6575,7 +6650,8 @@ async function fetchCloudDB(force = false) {
 
         let userMatched = false;
         (cloudDb.users || []).forEach(u => {
-          if ((actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || u.id == actSt.user_id || (actSt.email && u.email && actSt.email.toLowerCase() === u.email.toLowerCase()) || (u.roll_no == actSt.roll_no && u.division_name == actSt.division_name)) {
+          if (u.role && u.role !== 'STUDENT') return;
+          if ((actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || u.id == actSt.user_id || (actSt.email && u.email && actSt.email.toLowerCase() === actSt.email.toLowerCase()) || (u.roll_no == actSt.roll_no && u.division_name == actSt.division_name)) {
             userMatched = true;
             u.name = actSt.name || u.name;
             u.email = actSt.email || u.email;
@@ -6588,17 +6664,20 @@ async function fetchCloudDB(force = false) {
           }
         });
         if (!userMatched && (actSt.user_id || actSt.id)) {
-          cloudDb.users.push({
-            id: actSt.user_id || actSt.id,
-            email: actSt.email,
-            password_hash: actSt.password_hash,
-            role: 'STUDENT',
-            name: actSt.name,
-            prn_no: actSt.prn_no,
-            status: 'APPROVED',
-            is_activated: true,
-            must_change_credentials: false
-          });
+          const hasFaculty = (cloudDb.users || []).some(fu => fu && fu.role !== 'STUDENT' && ((actSt.email && fu.email && fu.email.toLowerCase() === actSt.email.toLowerCase()) || (fu.id == (actSt.user_id || actSt.id))));
+          if (!hasFaculty) {
+            cloudDb.users.push({
+              id: actSt.user_id || actSt.id,
+              email: actSt.email,
+              password_hash: actSt.password_hash,
+              role: 'STUDENT',
+              name: actSt.name,
+              prn_no: actSt.prn_no,
+              status: 'APPROVED',
+              is_activated: true,
+              must_change_credentials: false
+            });
+          }
         }
       });
     }
@@ -6628,6 +6707,7 @@ async function fetchCloudDB(force = false) {
 
         let userMatched = false;
         (cloudDb.users || []).forEach(u => {
+          if (u.role && u.role !== 'STUDENT') return;
           if ((normPstPrn && u.prn_no && u.prn_no.toUpperCase() === normPstPrn) || (normPstEmail && u.email && u.email.toLowerCase() === normPstEmail) || (pst.user_id && u.id == pst.user_id)) {
             userMatched = true;
             if (u.status !== 'APPROVED') {
@@ -6640,16 +6720,19 @@ async function fetchCloudDB(force = false) {
           }
         });
         if (!userMatched && (pst.user_id || pst.id)) {
-          cloudDb.users.push({
-            id: pst.user_id || pst.id,
-            email: pst.email,
-            password_hash: pst.password_hash,
-            role: 'STUDENT',
-            name: pst.name,
-            prn_no: pst.prn_no,
-            status: 'PENDING_APPROVAL',
-            is_activated: false
-          });
+          const hasFaculty = (cloudDb.users || []).some(fu => fu && fu.role !== 'STUDENT' && ((pst.email && fu.email && fu.email.toLowerCase() === pst.email.toLowerCase()) || (fu.id == (pst.user_id || pst.id))));
+          if (!hasFaculty) {
+            cloudDb.users.push({
+              id: pst.user_id || pst.id,
+              email: pst.email,
+              password_hash: pst.password_hash,
+              role: 'STUDENT',
+              name: pst.name,
+              prn_no: pst.prn_no,
+              status: 'PENDING_APPROVAL',
+              is_activated: false
+            });
+          }
         }
       });
     }
@@ -6666,6 +6749,7 @@ async function fetchCloudDB(force = false) {
           }
         });
         (cloudDb.users || []).forEach(u => {
+          if (u.role && u.role !== 'STUDENT') return;
           if ((u.email && u.email.toLowerCase() === normKey) || (u.prn_no && u.prn_no.toLowerCase() === normKey)) {
             u.status = 'APPROVED';
             u.is_activated = true;
@@ -6702,6 +6786,7 @@ async function fetchCloudDB(force = false) {
 
         let userMatched = false;
         (cloudDb.users || []).forEach(u => {
+          if (u.role && u.role !== 'STUDENT') return;
           if ((normHstPrn && u.prn_no && u.prn_no.toUpperCase() === normHstPrn) || (normHstEmail && u.email && u.email.toLowerCase() === normHstEmail) || (hst.user_id && u.id == hst.user_id)) {
             userMatched = true;
             u.name = hst.name || u.name;
@@ -6715,21 +6800,24 @@ async function fetchCloudDB(force = false) {
           }
         });
         if (!userMatched && (hst.user_id || hst.id)) {
-          cloudDb.users.push({
-            id: hst.user_id || hst.id,
-            email: hst.email || '',
-            username: hst.username || hst.prn_no,
-            prn_no: hst.prn_no,
-            roll_no: hst.roll_no,
-            password_hash: hst.password_hash || 'Student@123',
-            role: 'STUDENT',
-            name: hst.name,
-            division_name: hst.division_name,
-            division_id: hst.division_id,
-            status: 'APPROVED',
-            is_activated: true,
-            must_change_credentials: false
-          });
+          const hasFaculty = (cloudDb.users || []).some(fu => fu && fu.role !== 'STUDENT' && ((hst.email && fu.email && fu.email.toLowerCase() === hst.email.toLowerCase()) || (fu.id == (hst.user_id || hst.id))));
+          if (!hasFaculty) {
+            cloudDb.users.push({
+              id: hst.user_id || hst.id,
+              email: hst.email || '',
+              username: hst.username || hst.prn_no,
+              prn_no: hst.prn_no,
+              roll_no: hst.roll_no,
+              password_hash: hst.password_hash || 'Student@123',
+              role: 'STUDENT',
+              name: hst.name,
+              division_name: hst.division_name,
+              division_id: hst.division_id,
+              status: 'APPROVED',
+              is_activated: true,
+              must_change_credentials: false
+            });
+          }
         }
       });
     }
@@ -6797,6 +6885,10 @@ function getSessionUser() {
       } else if (email === 'faculty@campus.edu') {
         user.role = 'TEACHER';
         user.id = 2;
+      } else if (email === 'vrushali.gujar@campus.edu') {
+        user.role = 'TEACHER';
+        user.id = 1008;
+        user.name = 'Ms. Vrushali Gujar';
       }
     }
     return user;
@@ -6862,13 +6954,24 @@ const API = {
     if (endpoint === '/api/auth/me' && method === 'GET') {
       if (!currentUser) throw { message: 'Not authenticated' };
 
-      const validUser = (db.users || []).find(u => {
-        if (!u) return false;
-        if (currentUser.id && u.id && String(u.id) === String(currentUser.id)) return true;
-        if (currentUser.prn_no && u.prn_no && u.prn_no.toUpperCase() === currentUser.prn_no.toUpperCase()) return true;
-        if (currentUser.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
-        return false;
-      });
+      let validUser = null;
+      if (currentUser.role === 'HOD' || currentUser.role === 'TEACHER') {
+        validUser = (db.users || []).find(u => {
+          if (!u || (u.role !== 'HOD' && u.role !== 'TEACHER')) return false;
+          if (currentUser.id && u.id && String(u.id) === String(currentUser.id)) return true;
+          if (currentUser.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+          return false;
+        });
+      }
+      if (!validUser) {
+        validUser = (db.users || []).find(u => {
+          if (!u) return false;
+          if (currentUser.id && u.id && String(u.id) === String(currentUser.id)) return true;
+          if (currentUser.prn_no && u.prn_no && u.prn_no.toUpperCase() === currentUser.prn_no.toUpperCase()) return true;
+          if (currentUser.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
+          return false;
+        });
+      }
 
       if (!validUser) {
         setSessionUser(null);
@@ -6877,8 +6980,13 @@ const API = {
 
       const student = findCurrentStudent(db, validUser);
       if (validUser.role === 'HOD' || validUser.role === 'TEACHER') {
-        const teacher = (db.teachers || []).find(t => (validUser.id && t.user_id == validUser.id) || (validUser.email && t.email && t.email.toLowerCase() === validUser.email.toLowerCase()));
-        return { user: validUser, profile: teacher || (db.teachers || [])[0] || { name: 'Dr. Dhanashree Kulkarni' } };
+        const teacher = (db.teachers || []).find(t => (validUser.id && t.user_id == validUser.id) || (validUser.email && t.email && t.email.toLowerCase() === validUser.email.toLowerCase()) || (validUser.username && t.teacher_id_code && t.teacher_id_code.toUpperCase() === validUser.username.toUpperCase()));
+        const profile = teacher || (db.teachers || [])[0] || { name: 'Dr. Dhanashree Kulkarni' };
+        if (teacher && teacher.name) {
+          validUser.name = teacher.name;
+          profile.name = teacher.name;
+        }
+        return { user: validUser, profile: profile };
       }
       return { user: validUser, profile: student || validUser };
     }
@@ -6913,7 +7021,7 @@ const API = {
         });
 
         if (matchedTeacher) {
-          user = (db.users || []).find(u => u && (u.id === matchedTeacher.user_id || (u.email && u.email.toLowerCase() === matchedTeacher.email.toLowerCase()))) || {
+          user = (db.users || []).find(u => u && (u.role === 'TEACHER' || u.role === 'HOD') && (u.id === matchedTeacher.user_id || (u.email && u.email.toLowerCase() === matchedTeacher.email.toLowerCase()))) || {
             id: matchedTeacher.user_id || matchedTeacher.id,
             name: matchedTeacher.name,
             email: matchedTeacher.email,
@@ -6923,6 +7031,7 @@ const API = {
             is_activated: true,
             must_change_credentials: false
           };
+          if (matchedTeacher.name && user) user.name = matchedTeacher.name;
         }
       }
 
@@ -7086,7 +7195,11 @@ const API = {
 
       setSessionUser(user);
       const isFaculty = (user.role === 'HOD' || user.role === 'TEACHER');
-      const teacher = isFaculty ? ((db.teachers || []).find(t => (user.id && t.user_id == user.id) || (user.email && t.email && t.email.toLowerCase() === user.email.toLowerCase())) || user) : null;
+      const teacher = isFaculty ? ((db.teachers || []).find(t => (user.id && t.user_id == user.id) || (user.email && t.email && t.email.toLowerCase() === user.email.toLowerCase()) || (user.username && t.teacher_id_code && t.teacher_id_code.toUpperCase() === user.username.toUpperCase())) || user) : null;
+      if (isFaculty && teacher && teacher.name) {
+        user.name = teacher.name;
+        if (typeof teacher === 'object') teacher.name = teacher.name;
+      }
       const student = !isFaculty ? findCurrentStudent(db, user) : null;
       const redirect = isFaculty ? '#/hod/dashboard' : '#/student/dashboard';
       return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: teacher || student || user, redirect };

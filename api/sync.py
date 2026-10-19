@@ -204,7 +204,7 @@ INITIAL_DB_STATE = {
             "must_change_credentials": False
         },
         {
-            "id": 130,
+            "id": 1008,
             "email": "vrushali.gujar@campus.edu",
             "password_hash": "1234",
             "role": "TEACHER",
@@ -4927,7 +4927,7 @@ INITIAL_DB_STATE = {
         },
         {
             "id": 8,
-            "user_id": 130,
+            "user_id": 1008,
             "name": "Ms. Vrushali Gujar",
             "email": "vrushali.gujar@campus.edu",
             "teacher_id_code": "T108",
