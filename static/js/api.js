@@ -7623,6 +7623,17 @@ const API = {
 
     if (endpoint === '/api/student/certificates' && method === 'POST') {
       if (!currentUser || currentUser.role !== 'STUDENT') throw { message: 'Unauthorized access' };
+
+      // Enforce strict 1 MB file upload limit
+      const MAX_UPLOAD_BYTES = 1024 * 1024; // 1 MB
+      if (body.file_size && body.file_size > MAX_UPLOAD_BYTES) {
+        const sizeMb = (body.file_size / (1024 * 1024)).toFixed(2);
+        throw { message: `File size exceeds 1 MB limit (${sizeMb} MB). Maximum allowed upload size is 1 MB.` };
+      }
+      if (body.file_url && body.file_url.startsWith('data:') && body.file_url.length > 1400000) {
+        throw { message: 'Certificate file data exceeds 1 MB limit. Please upload a smaller document.' };
+      }
+
       const student = findCurrentStudent(db, currentUser);
       const studentPrn = (student && student.prn_no) || (currentUser && currentUser.prn_no) || '';
       const studentId = student ? student.id : (currentUser.id || 1);
@@ -7648,6 +7659,7 @@ const API = {
         certificate_date: body.certificate_date || new Date().toISOString().split('T')[0],
         file_url: body.file_url || '',
         file_name: body.file_name || 'certificate.pdf',
+        file_size: parseInt(body.file_size) || 0,
         description: body.description || '',
         num_days: parseInt(body.num_days) || 1,
         status: 'PENDING',
@@ -7679,6 +7691,17 @@ const API = {
     // 6b. Student Edit / Update Certificate Details (Modify reason, description, event info, or file)
     if ((endpoint.startsWith('/api/student/certificates/') && (endpoint.endsWith('/update') || method === 'PUT' || method === 'POST')) || (endpoint === '/api/student/certificates/update' && method === 'POST')) {
       if (!currentUser) throw { message: 'Unauthorized access' };
+
+      // Enforce strict 1 MB file upload limit on replacement files
+      const MAX_UPLOAD_BYTES = 1024 * 1024; // 1 MB
+      if (body.file_size && body.file_size > MAX_UPLOAD_BYTES) {
+        const sizeMb = (body.file_size / (1024 * 1024)).toFixed(2);
+        throw { message: `Replacement file size exceeds 1 MB limit (${sizeMb} MB). Maximum allowed upload size is 1 MB.` };
+      }
+      if (body.file_url && body.file_url.startsWith('data:') && body.file_url.length > 1400000) {
+        throw { message: 'Replacement certificate file data exceeds 1 MB limit. Please upload a smaller document.' };
+      }
+
       const parts = endpoint.split('/');
       let certId = body && body.id;
       if (!certId) {
@@ -7706,6 +7729,7 @@ const API = {
       if (body && body.num_days !== undefined) cert.num_days = parseInt(body.num_days) || 1;
       if (body && body.file_url) cert.file_url = body.file_url;
       if (body && body.file_name) cert.file_name = body.file_name;
+      if (body && body.file_size !== undefined) cert.file_size = parseInt(body.file_size) || 0;
       cert.updated_at = new Date().toLocaleString();
 
       // If certificate was previously rejected, re-submitting with updated reason sets it back to PENDING for review

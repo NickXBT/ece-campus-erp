@@ -507,10 +507,13 @@ const StudentView = {
             </div>
 
             <div class="form-group">
-              <label>Upload Document File (PDF / PNG / JPG) <span style="color: var(--accent-rose);">*</span></label>
+              <label style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span>Upload Document File (PDF / PNG / JPG) <span style="color: var(--accent-rose);">*</span></span>
+                <span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.72rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 4px;"><i class="fa-solid fa-hard-drive"></i> MAX 1 MB</span>
+              </label>
               <input type="file" id="page-cert-file" class="form-control" accept="image/*,application/pdf,.pdf,.png,.jpg,.jpeg,.doc,.docx" style="padding: 0.65rem; border: 2px dashed #2563eb; background: #eff6ff; cursor: pointer; border-radius: var(--radius-md);"
                 onchange="StudentView.onFileSelected(this)">
-              <small id="file-status-msg" style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.3rem;">Tap above to pick a photo from your gallery, camera, or PDF document.</small>
+              <small id="file-status-msg" style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.35rem;"><i class="fa-solid fa-circle-info" style="color: #2563eb;"></i> Tap above to select your certificate document (Strict size limit: <strong>Maximum 1 MB</strong>).</small>
             </div>
 
             <!-- Dedicated Upload Progress Box (Displays when processing large files) -->
@@ -520,7 +523,7 @@ const StudentView = {
                 <strong id="upload-progress-title" style="font-size: 1rem; color: #166534;">Processing Certificate Document...</strong>
               </div>
               <p id="upload-progress-desc" style="font-size: 0.85rem; color: #15803d; margin: 0 0 0.75rem 0;">
-                Please remain on this screen. Optimizing high-resolution document and syncing directly to HOD desk...
+                Please remain on this screen. Optimizing document and syncing directly to HOD desk...
               </p>
               <div style="background: #e2e8f0; border-radius: var(--radius-full); height: 8px; width: 100%; overflow: hidden;">
                 <div id="upload-progress-bar" style="background: linear-gradient(90deg, #22c55e, #16a34a); height: 100%; width: 60%; transition: width 0.3s ease;"></div>
@@ -544,9 +547,36 @@ const StudentView = {
     if (!statusMsg) return;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
+      const maxBytes = 1024 * 1024; // 1 MB strict limit
       const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      if (file.size > maxBytes) {
+        input.value = '';
+        statusMsg.style.color = '#ef4444';
+        statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>File Too Large (${sizeMb} MB):</strong> Maximum allowed upload size is <strong>1 MB</strong>. Please select a smaller file or compress your document.`;
+        Toast.error(`File size (${sizeMb} MB) exceeds the 1 MB limit. Maximum upload size is 1 MB.`);
+        return;
+      }
       statusMsg.style.color = '#15803d';
       statusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Selected: <strong>${file.name}</strong> (${sizeMb} MB) — Ready for submission.`;
+    }
+  },
+
+  onEditFileSelected(input) {
+    const statusMsg = document.getElementById('edit-file-status-msg');
+    if (!statusMsg) return;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const maxBytes = 1024 * 1024; // 1 MB strict limit
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      if (file.size > maxBytes) {
+        input.value = '';
+        statusMsg.style.color = '#ef4444';
+        statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>File Too Large (${sizeMb} MB):</strong> Maximum allowed size is <strong>1 MB</strong>. Please select a file under 1 MB.`;
+        Toast.error(`File size (${sizeMb} MB) exceeds the 1 MB limit. Maximum upload size is 1 MB.`);
+        return;
+      }
+      statusMsg.style.color = '#15803d';
+      statusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Replacement Document: <strong>${file.name}</strong> (${sizeMb} MB) — Ready.`;
     }
   },
 
@@ -812,6 +842,20 @@ const StudentView = {
       return;
     }
 
+    // Strict 1 MB maximum upload size limit
+    const maxBytes = 1024 * 1024;
+    if (selectedFile.size > maxBytes) {
+      const sizeMb = (selectedFile.size / (1024 * 1024)).toFixed(2);
+      Toast.error(`Upload Blocked: File size (${sizeMb} MB) exceeds the 1 MB limit. Maximum upload size allowed is 1 MB.`);
+      const statusMsg = document.getElementById('file-status-msg');
+      if (statusMsg) {
+        statusMsg.style.color = '#ef4444';
+        statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>File Too Large (${sizeMb} MB):</strong> Maximum allowed upload size is <strong>1 MB</strong>. Please choose a smaller file.`;
+      }
+      if (fileInput) fileInput.value = '';
+      return;
+    }
+
     // Lock UI and show live progress indicator on upload window
     btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading... Please Wait';
     btnSubmit.disabled = true;
@@ -863,7 +907,8 @@ const StudentView = {
         num_days,
         description,
         file_url: fileUrl || '',
-        file_name: selectedFile ? (selectedFile.name || 'uploaded_certificate') : 'certificate_document.jpg'
+        file_name: selectedFile ? (selectedFile.name || 'uploaded_certificate') : 'certificate_document.jpg',
+        file_size: selectedFile ? selectedFile.size : 0
       };
 
       API.post('/api/student/certificates', payload).then(res => {
@@ -1112,6 +1157,25 @@ const StudentView = {
     const fileInput = document.getElementById('edit-cert-file');
     const selectedFile = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0] : null;
 
+    if (selectedFile) {
+      const maxBytes = 1024 * 1024; // 1 MB strict limit
+      if (selectedFile.size > maxBytes) {
+        const sizeMb = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        Toast.error(`Upload Blocked: Replacement file (${sizeMb} MB) exceeds the 1 MB limit. Maximum allowed size is 1 MB.`);
+        const statusMsg = document.getElementById('edit-file-status-msg');
+        if (statusMsg) {
+          statusMsg.style.color = '#ef4444';
+          statusMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <strong>File Too Large (${sizeMb} MB):</strong> Maximum allowed size is <strong>1 MB</strong>. Please select a file under 1 MB.`;
+        }
+        if (fileInput) fileInput.value = '';
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save & Update Certificate';
+        }
+        return;
+      }
+    }
+
     const finalizeUpdate = (fileUrl, fileName) => {
       const payload = {
         id: certId,
@@ -1127,6 +1191,7 @@ const StudentView = {
       if (fileUrl) {
         payload.file_url = fileUrl;
         payload.file_name = fileName || 'certificate_document.jpg';
+        payload.file_size = selectedFile ? selectedFile.size : 0;
       }
 
       API.post(`/api/student/certificates/${certId}/update`, payload).then(async (res) => {

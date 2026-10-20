@@ -597,6 +597,14 @@ def student_certificates():
             conn.close()
             return jsonify({'error': 'Invalid file type. Allowed: PDF, PNG, JPG, JPEG.'}), 400
 
+        # Check strict 1 MB file size limit
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 1 * 1024 * 1024:
+            conn.close()
+            return jsonify({'error': f'File size exceeds 1 MB limit ({(file_size / (1024 * 1024)):.2f} MB). Maximum allowed upload size is 1 MB.'}), 400
+
         clean_name = secure_filename(file.filename) or "certificate.pdf"
         filename = f"{student_id}_{int(datetime.now().timestamp())}_{clean_name}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -656,6 +664,13 @@ def student_update_certificate(cert_id):
     if 'file' in request.files:
         file = request.files['file']
         if file and file.filename and allowed_file(file.filename):
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
+            if file_size > 1 * 1024 * 1024:
+                conn.close()
+                return jsonify({'error': f'Replacement file size exceeds 1 MB limit ({(file_size / (1024 * 1024)):.2f} MB). Maximum allowed upload size is 1 MB.'}), 400
+
             clean_name = secure_filename(file.filename) or "certificate.pdf"
             file_name = f"{student['id']}_{int(datetime.now().timestamp())}_{clean_name}"
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
