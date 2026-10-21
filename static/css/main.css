@@ -1315,85 +1315,159 @@ body.login-page-active .main-content,
 
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm;
+    size: A4 landscape;
+    margin: 7mm 6mm;
   }
 
-  body {
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11px !important;
+    font-size: 9.5px !important;
+    width: 100% !important;
   }
   
-  .sidebar, .top-navbar, .no-print, .btn, .modal-overlay {
+  .sidebar, .top-navbar, .no-print, .btn, .modal-overlay,
+  #btn-report-div-a, #btn-report-div-b, #btn-report-div-all {
     display: none !important;
   }
 
   .main-content {
-    margin-left: 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .dashboard-container {
     padding: 0 !important;
     gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .print-only-header {
     display: block !important;
-    margin-bottom: 8px !important;
-    padding-bottom: 4px !important;
-    border-bottom: 1.5px solid #000 !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 2px solid #000000 !important;
+    text-align: center !important;
   }
 
   .print-only-header h3 {
-    font-size: 14px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
   }
 
   .print-only-header h4 {
     font-size: 12px !important;
+    font-weight: 700 !important;
+    margin: 3px 0 0 !important;
+  }
+
+  .print-only-header p {
+    font-size: 10px !important;
+    color: #333333 !important;
+    margin: 2px 0 0 !important;
   }
 
   .glass-panel {
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 0 1.5rem 0 !important;
     background: #ffffff !important;
   }
 
+  /* CRITICAL: Unset scroll container so ALL student rows from Roll 1 to 81 print without clipping */
+  .attendance-matrix-scroll-container,
+  .table-responsive {
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .attendance-matrix-scroll-container table,
+  .custom-table,
   .print-clean-table {
     width: 100% !important;
+    min-width: 100% !important;
     border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    font-size: 8.5px !important;
   }
 
-  .print-clean-table th, 
-  .print-clean-table td {
-    border: 1px solid #000000 !important;
-    color: #000000 !important;
-    padding: 4px 6px !important;
-    font-size: 10px !important;
-    line-height: 1.2 !important;
+  .attendance-matrix-scroll-container thead {
+    display: table-header-group !important;
+    position: static !important;
   }
 
-  .print-clean-table th {
+  .attendance-matrix-scroll-container thead tr,
+  .attendance-matrix-scroll-container thead th,
+  .custom-table th {
+    position: static !important;
+    box-shadow: none !important;
+    top: auto !important;
     background: #f1f5f9 !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    font-size: 9.5px !important;
-  }
-
-  .subject-print-pill {
-    background: #f8fafc !important;
+    color: #000000 !important;
     border: 1px solid #64748b !important;
-    color: #000000 !important;
-    padding: 1px 4px !important;
-    font-size: 9px !important;
-    border-radius: 3px !important;
+    padding: 4px 3px !important;
+    font-weight: 800 !important;
   }
 
-  .subject-print-pill strong {
+  .attendance-matrix-scroll-container tbody tr,
+  .custom-table tbody tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  .attendance-matrix-scroll-container tbody td,
+  .custom-table td {
+    border: 1px solid #94a3b8 !important;
     color: #000000 !important;
+    padding: 3px 2px !important;
+    font-size: 8.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .attendance-matrix-scroll-container tfoot {
+    display: table-footer-group !important;
+    position: static !important;
+  }
+
+  .attendance-matrix-scroll-container tfoot tr,
+  .attendance-matrix-scroll-container tfoot td {
+    position: static !important;
+    box-shadow: none !important;
+    bottom: auto !important;
+    border: 1.5px solid #000000 !important;
+    font-weight: 800 !important;
+    font-size: 9px !important;
+    background: #e2e8f0 !important;
+    color: #000000 !important;
+  }
+
+  /* Clean section breaks in print */
+  #section-report-div-a {
+    display: block !important;
+    page-break-after: always !important;
+  }
+
+  #section-report-div-b {
+    display: block !important;
+    page-break-after: always !important;
+  }
+
+  #section-report-cert-logs {
+    display: block !important;
+    page-break-before: always !important;
   }
 }
 

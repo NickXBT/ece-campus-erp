@@ -248,8 +248,8 @@ const ReportsView = {
               <button class="btn btn-success btn-sm" onclick="ReportsView.exportExcelMasterSheet()" style="background: #16a34a; border-color: #16a34a; font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 1rem;">
                 <i class="fa-solid fa-file-excel"></i> Export Excel Master Sheet
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="window.print()" style="font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 1rem;">
-                <i class="fa-solid fa-print"></i> Print Report
+              <button class="btn btn-secondary btn-sm" onclick="ReportsView.printFullReport()" style="font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 1rem;">
+                <i class="fa-solid fa-print"></i> Print Full Official Report
               </button>
             </div>
           </div>
@@ -517,10 +517,56 @@ const ReportsView = {
       const divBSheetRows = addTotalRow(divBRows, 'DIVISION B OVERALL TOTAL');
       const allSheetRows = addTotalRow(allRows, 'ALL DIVISIONS OVERALL TOTAL');
 
+      // Format Certificate Approval Logs Sheet
+      const certExportRows = (data.reports || []).map((r, idx) => {
+        const ss_th = r.SS_TH !== undefined ? r.SS_TH : (r.SS || 0);
+        const dsa_th = r.DSA_TH !== undefined ? r.DSA_TH : (r.DSA || 0);
+        const sdc_th = r.SDC_TH !== undefined ? r.SDC_TH : (r.SDC || 0);
+        const fds_th = r.FDS_TH !== undefined ? r.FDS_TH : (r.FDS || 0);
+        const pme_th = r.PME_TH !== undefined ? r.PME_TH : (r.PME || 0);
+        const oec_th = r.OEC_TH !== undefined ? r.OEC_TH : (r.OEC || 0);
+        const vec_th = r.VEC_TH !== undefined ? r.VEC_TH : (r.VEC || 0);
+        const total_th = r.total_theory !== undefined ? r.total_theory : (ss_th + dsa_th + sdc_th + fds_th + pme_th + oec_th + vec_th);
+
+        const sdc_lab = r.SDC_LAB !== undefined ? r.SDC_LAB : 0;
+        const dsa_lab = r.DSA_LAB !== undefined ? r.DSA_LAB : 0;
+        const vsec_lab = r.VSEC_LAB !== undefined ? r.VSEC_LAB : (r.VSEC || 0);
+        const total_lab = r.total_lab !== undefined ? r.total_lab : (sdc_lab + dsa_lab + vsec_lab);
+
+        const total_act = r.total_activities !== undefined ? r.total_activities : (total_th + total_lab);
+
+        return {
+          'Sr No': r.sr_no || (idx + 1),
+          'Student Name': r.student_name || '',
+          'Roll No': r.roll_no || '',
+          'PRN Number': r.prn_no || '',
+          'Division': r.division_name || '',
+          'Batch': r.batch_name || '',
+          'Event Title': r.event_name || r.title || '',
+          'Category': r.category || '',
+          'Certificate Date': r.certificate_date || '',
+          'Approval Status': r.status || '',
+          'SS (Theory)': ss_th,
+          'DSA (Theory)': dsa_th,
+          'SDC (Theory)': sdc_th,
+          'FDS (Theory)': fds_th,
+          'PME (Theory)': pme_th,
+          'OEC (Theory)': oec_th,
+          'VEC (Theory)': vec_th,
+          'Total Theory': total_th,
+          'SDC Lab': sdc_lab,
+          'DSA Lab': dsa_lab,
+          'VSEC Lab': vsec_lab,
+          'Total Lab': total_lab,
+          'Total Compensated Attendance': total_act
+        };
+      });
+
       const sheetsMap = {
         'SE(ECE)-A Attendance Matrix': divASheetRows,
         'SE(ECE)-B Attendance Matrix': divBSheetRows,
-        'All Divisions Combined Master': allSheetRows
+        'All Divisions Combined Master': allSheetRows,
+        'Certificate Approval Logs': certExportRows.length > 0 ? certExportRows : [{ 'Notice': 'No certificate records found.' }]
       };
 
       const exportedXLSX = Exporter.exportMultiSheetXLSX(`ECE_Student_Attendance_Master_${new Date().toISOString().split('T')[0]}`, sheetsMap);
