@@ -1200,8 +1200,43 @@ const HodView = {
       return;
     }
 
+    // Disable all zip download buttons on the screen and show animated spinner
+    const zipButtons = document.querySelectorAll('button[onclick*="downloadAllCertificatesZip"]');
+    const originalButtonContents = [];
+    zipButtons.forEach((btn, idx) => {
+      originalButtonContents[idx] = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Preparing ZIP...';
+    });
+
+    // Create a persistent popup that stays on screen until downloading starts
+    let progressToast = null;
+    if (typeof Toast !== 'undefined' && Toast.persistent) {
+      progressToast = Toast.persistent(
+        '📦 Fetching cloud database and compiling certificates ZIP...',
+        'Connecting to cloud database, please wait...',
+        'loading'
+      );
+    } else if (typeof Toast !== 'undefined') {
+      progressToast = Toast.show(
+        '📦 Fetching cloud database and compiling certificates ZIP...',
+        'Connecting to cloud database, please wait...',
+        'loading',
+        0
+      );
+    }
+
+    const updateStatus = (title, desc) => {
+      if (progressToast && progressToast.update) {
+        progressToast.update(title, desc);
+      }
+      zipButtons.forEach(btn => {
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${desc ? desc.slice(0, 32) : 'Compiling ZIP...'}`;
+      });
+    };
+
     try {
-      Toast.info('📦 Fetching cloud database and compiling certificates ZIP...');
+      updateStatus('📦 Fetching cloud database and compiling certificates ZIP...', 'Syncing database records...');
 
       // 1. Force cloud database sync to fetch all certificates from Firebase
       if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
@@ -1362,7 +1397,7 @@ const HodView = {
         }
       }
 
-      Toast.info(`⏳ Generating ZIP archive containing ${totalCertFilesAdded} certificate files...`);
+      updateStatus('⏳ Generating ZIP archive...', `Compressing ${totalCertFilesAdded} certificate files... Downloading will start shortly.`);
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const downloadLink = document.createElement('a');
@@ -1372,10 +1407,39 @@ const HodView = {
       downloadLink.click();
       document.body.removeChild(downloadLink);
 
-      Toast.success(`🎉 Downloaded ZIP archive with ${totalCertFilesAdded} certificates across Division A & Division B!`);
+      // Now downloading has started! Update popup to success and dismiss smoothly
+      if (progressToast) {
+        progressToast.update(
+          '🎉 Download Started!',
+          `ZIP archive with ${totalCertFilesAdded} certificates across Division A & B is downloading now.`,
+          'success'
+        );
+        setTimeout(() => {
+          if (progressToast.dismiss) progressToast.dismiss();
+        }, 4000);
+      } else {
+        Toast.success(`🎉 Downloaded ZIP archive with ${totalCertFilesAdded} certificates across Division A & Division B!`);
+      }
     } catch (err) {
       console.error('Error generating certificate ZIP:', err);
-      Toast.error('Failed to generate certificates ZIP archive: ' + (err.message || err));
+      if (progressToast) {
+        progressToast.update(
+          '❌ Failed to generate certificates ZIP',
+          (err && err.message) || String(err),
+          'error'
+        );
+        setTimeout(() => {
+          if (progressToast.dismiss) progressToast.dismiss();
+        }, 5000);
+      } else {
+        Toast.error('Failed to generate certificates ZIP archive: ' + (err.message || err));
+      }
+    } finally {
+      // Restore all buttons
+      zipButtons.forEach((btn, idx) => {
+        btn.disabled = false;
+        btn.innerHTML = originalButtonContents[idx] || '<i class="fa-solid fa-file-zipper"></i> Download Certificates (ZIP)';
+      });
     }
   }
 };

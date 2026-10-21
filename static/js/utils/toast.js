@@ -27,7 +27,7 @@ const Toast = {
     'Processing...': { title: 'Processing...', desc: 'Completing operation...', type: 'loading' }
   },
 
-  show(titleOrMsg, descOrType = '', type = 'info') {
+  show(titleOrMsg, descOrType = '', type = 'info', customDuration = null) {
     const container = document.getElementById('toast-container');
     if (!container) return null;
 
@@ -71,14 +71,52 @@ const Toast = {
 
     container.appendChild(toast);
 
-    const duration = finalType === 'loading' ? 8000 : 4000;
-    setTimeout(() => {
+    toast.dismiss = () => {
       if (toast.parentElement) {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(40px) scale(0.95)';
         setTimeout(() => toast.remove(), 250);
       }
-    }, duration);
+    };
+
+    toast.update = (newTitle, newDesc = '', newType = null) => {
+      const titleEl = toast.querySelector('.toast-title');
+      let descEl = toast.querySelector('.toast-desc');
+      const iconEl = toast.querySelector('.toast-icon-wrap i');
+      
+      if (titleEl && newTitle) titleEl.innerText = newTitle;
+      
+      if (descEl) {
+        if (newDesc) descEl.innerText = newDesc;
+        else if (newDesc === '') descEl.remove();
+      } else if (newDesc) {
+        const bodyEl = toast.querySelector('.toast-body');
+        if (bodyEl) {
+          descEl = document.createElement('div');
+          descEl.className = 'toast-desc';
+          descEl.innerText = newDesc;
+          bodyEl.appendChild(descEl);
+        }
+      }
+
+      if (newType) {
+        toast.className = `toast toast-${newType}`;
+        let newIcon = 'fa-circle-info';
+        if (newType === 'success') newIcon = 'fa-circle-check';
+        if (newType === 'error') newIcon = 'fa-circle-xmark';
+        if (newType === 'warning') newIcon = 'fa-triangle-exclamation';
+        if (newType === 'loading') newIcon = 'fa-circle-notch fa-spin';
+        if (iconEl) iconEl.className = `fa-solid ${newIcon}`;
+      }
+    };
+
+    // Duration: 0 means persistent (never auto-closes until explicitly dismissed)
+    const duration = (customDuration !== null) ? customDuration : (finalType === 'loading' ? 8000 : 4000);
+    if (duration > 0) {
+      setTimeout(() => {
+        toast.dismiss();
+      }, duration);
+    }
 
     return toast;
   },
@@ -87,7 +125,8 @@ const Toast = {
   error(title, desc = '') { return this.show(title, desc, 'error'); },
   info(title, desc = '') { return this.show(title, desc, 'info'); },
   warning(title, desc = '') { return this.show(title, desc, 'warning'); },
-  loading(title, desc = '') { return this.show(title, desc, 'loading'); }
+  loading(title, desc = '') { return this.show(title, desc, 'loading'); },
+  persistent(title, desc = '', type = 'loading') { return this.show(title, desc, type, 0); }
 };
 
 window.Toast = Toast;
