@@ -44,31 +44,34 @@ const Exporter = {
           const wsData = (rows && rows.length > 0) ? rows : [{ 'Notice': 'No student records registered for this section.' }];
           const ws = XLSX.utils.json_to_sheet(wsData);
 
-          // Freeze top header row so it stays locked during scrolling in Excel
-          ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 1, activeCell: 'A2' }];
-          ws['!freeze'] = { xSplit: 'A', ySplit: 1 };
+          // Freeze top header row so it stays locked during scrolling in Excel (guarded)
+          try {
+            ws['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 1, activeCell: 'A2' }];
+          } catch(e) {}
 
-          // Format clean column widths for standard readability
-          ws['!cols'] = [
-            { wch: 10 }, // Roll No
-            { wch: 30 }, // Student Name
-            { wch: 18 }, // PRN Number
-            { wch: 14 }, // Division
-            { wch: 10 }, // Batch
-            { wch: 12 }, // SS (Theory)
-            { wch: 13 }, // DSA (Theory)
-            { wch: 13 }, // SDC (Theory)
-            { wch: 13 }, // FDS (Theory)
-            { wch: 13 }, // PME (Theory)
-            { wch: 13 }, // OEC (Theory)
-            { wch: 13 }, // VEC (Theory)
-            { wch: 22 }, // Total Theory Lectures
-            { wch: 12 }, // SDC Lab
-            { wch: 12 }, // DSA Lab
-            { wch: 12 }, // VSEC Lab
-            { wch: 20 }, // Total Lab Sessions
-            { wch: 36 }  // Total Combined Compensated Attendance
-          ];
+          // Format clean column widths for standard readability (guarded)
+          try {
+            ws['!cols'] = [
+              { wch: 10 }, // Roll No
+              { wch: 30 }, // Student Name
+              { wch: 18 }, // PRN Number
+              { wch: 14 }, // Division
+              { wch: 10 }, // Batch
+              { wch: 12 }, // SS (Theory)
+              { wch: 13 }, // DSA (Theory)
+              { wch: 13 }, // SDC (Theory)
+              { wch: 13 }, // FDS (Theory)
+              { wch: 13 }, // PME (Theory)
+              { wch: 13 }, // OEC (Theory)
+              { wch: 13 }, // VEC (Theory)
+              { wch: 22 }, // Total Theory Lectures
+              { wch: 12 }, // SDC Lab
+              { wch: 12 }, // DSA Lab
+              { wch: 12 }, // VSEC Lab
+              { wch: 20 }, // Total Lab Sessions
+              { wch: 36 }  // Total Combined Compensated Attendance
+            ];
+          } catch(e) {}
 
           XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
         });

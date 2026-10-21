@@ -410,6 +410,7 @@ const ReportsView = {
 
   async exportExcelMasterSheet() {
     try {
+      Toast.info('Generating Attendance Master Excel sheet...');
       const data = await API.get('/api/reports');
       const students = data.cumulative_student_summary || [];
       if (!students.length) {
@@ -488,7 +489,7 @@ const ReportsView = {
         return {
           'Roll No': 'TOTAL',
           'Student Name': label,
-          'PRN Number': ( Students),
+          'PRN Number': '(' + rows.length + ' Students)',
           'Division': '-',
           'Batch': '-',
           'SS (Theory)': sumSS,
