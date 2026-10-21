@@ -263,10 +263,13 @@ const TeacherView = {
       });
 
       const pendingCerts = filteredList.filter(c => c.status === 'PENDING');
-      const approvedCerts = filteredList.filter(c => c.status === 'APPROVED' || c.status === 'REJECTED');
+      const approvedCerts = filteredList.filter(c => c.status === 'APPROVED');
+      const rejectedCerts = filteredList.filter(c => c.status === 'REJECTED');
 
       const totalPendingCount = allCerts.filter(c => c.status === 'PENDING').length;
       const totalApprovedCount = allCerts.filter(c => c.status === 'APPROVED').length;
+      const totalRejectedCount = allCerts.filter(c => c.status === 'REJECTED').length;
+      const totalAllCount = allCerts.length;
 
       // Pending Rows Generator
       const pendingRowsHtml = pendingCerts.map(c => {
@@ -398,6 +401,59 @@ const TeacherView = {
         `;
       }).join('') || `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No approved certificates history logged yet.</td></tr>`;
 
+      // Rejected Certificates Rows Generator
+      const rejectedRowsHtml = rejectedCerts.map(c => {
+        const numDays = parseInt(c.num_days) || 1;
+        return `
+          <tr data-div="${c.division_name}">
+            <td>
+              <strong>${c.student_name}</strong><br>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Roll: ${c.roll_no} | PRN: ${c.prn_no}</span>
+            </td>
+            <td><span class="badge-role role-STUDENT" style="background: #eff6ff; color: var(--primary); font-weight: 800;">${c.division_name} (${c.batch_name})</span></td>
+            <td>
+              <strong>${c.title}</strong><br>
+              <span style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">${c.event_name} (${c.category})</span>
+              ${c.description ? `
+                <div style="margin-top: 0.4rem; font-size: 0.8rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.35rem 0.6rem; border-radius: 6px; line-height: 1.4;">
+                  <strong style="color: #475569;"><i class="fa-solid fa-file-lines"></i> Student Detail:</strong> ${c.description}
+                </div>
+              ` : ''}
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-main);">${c.certificate_date || 'N/A'}</div>
+              <div style="font-size: 0.74rem; font-weight: 800; color: #b45309; margin-top: 0.25rem;">
+                <i class="fa-solid fa-calendar-days"></i> ${numDays} Day${numDays > 1 ? 's' : ''} Duration
+              </div>
+            </td>
+            <td>
+              <span class="badge-status status-REJECTED" style="font-weight: 800; background: #fee2e2; color: #b91c1c; padding: 0.35rem 0.6rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <i class="fa-solid fa-circle-xmark"></i> Rejected
+              </span>
+              <div style="font-size: 0.74rem; color: #991b1b; font-weight: 700; margin-top: 0.25rem;">
+                By: <strong>${c.rejected_by || c.verified_by || 'Faculty Reviewer'}</strong>
+              </div>
+              <div style="font-size: 0.75rem; color: #b91c1c; background: #fef2f2; border: 1.5px solid #fecaca; padding: 0.3rem 0.55rem; border-radius: 6px; margin-top: 0.3rem; font-weight: 700;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Reason: ${c.rejection_reason || 'Incomplete / Invalid Document'}
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
+                <button class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${c.id}')" title="View Certificate Document">
+                  <i class="fa-solid fa-eye"></i> View
+                </button>
+                <button class="btn btn-success btn-sm" onclick="TeacherView.openApproveModal('${c.id}')" style="background: #16a34a; border-color: #16a34a; font-weight: 800;" title="Re-Approve this certificate and award attendance credits">
+                  <i class="fa-solid fa-rotate-left"></i> Re-Approve
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="TeacherView.deleteCertificate('${c.id}', '${(c.title || '').replace(/'/g, "\\'")}')" style="background: #b91c1c; border-color: #b91c1c;" title="Permanently Delete Certificate">
+                  <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;"><i class="fa-solid fa-circle-info" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem; color: #94a3b8;"></i> No rejected certificates recorded.</td></tr>`;
+
       return `
         <div class="dashboard-container">
           ${pendingStudentsSectionHtml}
@@ -432,10 +488,18 @@ const TeacherView = {
                 <span style="background: rgba(0,0,0,0.08); padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-size: 0.78rem;">${totalApprovedCount}</span>
               </button>
 
+              <button type="button" class="btn ${this.currentCertApprovalTab === 'REJECTED' ? 'btn-danger' : 'btn-secondary'}"
+                onclick="TeacherView.switchCertApprovalTab('REJECTED')"
+                style="border-radius: var(--radius-md); font-weight: 800; display: flex; align-items: center; gap: 0.5rem; ${this.currentCertApprovalTab === 'REJECTED' ? 'background: #dc2626; border-color: #dc2626; color: #fff;' : ''}">
+                <i class="fa-solid fa-circle-xmark" style="color: ${this.currentCertApprovalTab === 'REJECTED' ? '#fff' : '#ef4444'};"></i> 3. Rejected Certificates Archive ("Rejected")
+                <span style="background: ${this.currentCertApprovalTab === 'REJECTED' ? 'rgba(255,255,255,0.25)' : 'rgba(239,68,68,0.15)'}; color: ${this.currentCertApprovalTab === 'REJECTED' ? '#fff' : '#b91c1c'}; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-size: 0.78rem; font-weight: 900;">${totalRejectedCount}</span>
+              </button>
+
               <button type="button" class="btn ${this.currentCertApprovalTab === 'ALL' ? 'btn-primary' : 'btn-secondary'}"
                 onclick="TeacherView.switchCertApprovalTab('ALL')"
                 style="border-radius: var(--radius-md); font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-layer-group"></i> 3. All Combined Records
+                <i class="fa-solid fa-layer-group"></i> 4. All Combined Records
+                <span style="background: rgba(0,0,0,0.08); padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-size: 0.78rem;">${totalAllCount}</span>
               </button>
             </div>
 
@@ -505,6 +569,35 @@ const TeacherView = {
                     </thead>
                     <tbody>
                       ${approvedRowsHtml}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- SECTION 3: REJECTED CERTIFICATES ARCHIVE TABLE -->
+            ${(this.currentCertApprovalTab === 'REJECTED' || this.currentCertApprovalTab === 'ALL') ? `
+              <div style="${this.currentCertApprovalTab === 'ALL' ? 'margin-top: 2rem;' : ''}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                  <h4 style="font-size: 1.05rem; font-weight: 800; color: #b91c1c; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> 
+                    Rejected Certificates Archive (${rejectedCerts.length} certificates)
+                  </h4>
+                </div>
+                <div class="table-responsive">
+                  <table class="custom-table">
+                    <thead style="background: #fef2f2;">
+                      <tr>
+                        <th>Student Details</th>
+                        <th>Division & Batch</th>
+                        <th>Certificate, Event & Details</th>
+                        <th>Date & Days</th>
+                        <th>Status & Reason</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${rejectedRowsHtml}
                     </tbody>
                   </table>
                 </div>
