@@ -382,47 +382,7 @@ const ReportsView = {
             </div>
           </div>
 
-          <!-- Individual Certificate History Log -->
-          <div class="glass-panel">
-            <div class="panel-header">
-              <h3><i class="fa-solid fa-chart-pie"></i> Certificate Submissions & Logs</h3>
-              <button class="btn btn-success btn-sm" onclick="ReportsView.exportCSV()" style="background: #16a34a; border-color: #16a34a; font-weight: 700;">
-                <i class="fa-solid fa-file-csv"></i> Export Certificate Logs CSV
-              </button>
-            </div>
 
-            <div class="table-responsive" style="margin-top: 1rem; overflow-x: auto; width: 100%;">
-              <table class="custom-table" id="table-reports" style="font-size: 0.81rem; min-width: 900px;">
-                <thead>
-                  <tr style="background: #f1f5f9;">
-                    <th style="width: 35px; text-align: center;">#</th>
-                    <th>Student Details</th>
-                    <th>Division</th>
-                    <th>Event & Category</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    
-                    <th style="text-align: center; width: 30px;">SS</th>
-                    <th style="text-align: center; width: 30px;">DSA</th>
-                    <th style="text-align: center; width: 30px;">SDC</th>
-                    <th style="text-align: center; width: 30px;">FDS</th>
-                    <th style="text-align: center; width: 30px;">PME</th>
-                    <th style="text-align: center; width: 30px;">OEC</th>
-                    <th style="text-align: center; width: 30px; border-right: 1.5px solid #cbd5e1;">VEC</th>
-
-                    <th style="text-align: center; width: 45px;">SDC Lab</th>
-                    <th style="text-align: center; width: 45px;">DSA Lab</th>
-                    <th style="text-align: center; width: 45px; border-right: 1.5px solid #cbd5e1;">VSEC Lab</th>
-
-                    <th style="text-align: center; width: 50px;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${certRows}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       `;
     } catch(err) {
@@ -539,56 +499,10 @@ const ReportsView = {
       const divBSheetRows = addTotalRow(divBRows, 'DIVISION B OVERALL TOTAL');
       const allSheetRows = addTotalRow(allRows, 'ALL DIVISIONS OVERALL TOTAL');
 
-      // Format Certificate Approval Logs Sheet
-      const certExportRows = (data.reports || []).map((r, idx) => {
-        const ss_th = r.SS_TH !== undefined ? r.SS_TH : (r.SS || 0);
-        const dsa_th = r.DSA_TH !== undefined ? r.DSA_TH : (r.DSA || 0);
-        const sdc_th = r.SDC_TH !== undefined ? r.SDC_TH : (r.SDC || 0);
-        const fds_th = r.FDS_TH !== undefined ? r.FDS_TH : (r.FDS || 0);
-        const pme_th = r.PME_TH !== undefined ? r.PME_TH : (r.PME || 0);
-        const oec_th = r.OEC_TH !== undefined ? r.OEC_TH : (r.OEC || 0);
-        const vec_th = r.VEC_TH !== undefined ? r.VEC_TH : (r.VEC || 0);
-        const total_th = r.total_theory !== undefined ? r.total_theory : (ss_th + dsa_th + sdc_th + fds_th + pme_th + oec_th + vec_th);
-
-        const sdc_lab = r.SDC_LAB !== undefined ? r.SDC_LAB : 0;
-        const dsa_lab = r.DSA_LAB !== undefined ? r.DSA_LAB : 0;
-        const vsec_lab = r.VSEC_LAB !== undefined ? r.VSEC_LAB : (r.VSEC || 0);
-        const total_lab = r.total_lab !== undefined ? r.total_lab : (sdc_lab + dsa_lab + vsec_lab);
-
-        const total_act = r.total_activities !== undefined ? r.total_activities : (total_th + total_lab);
-
-        return {
-          'Sr No': r.sr_no || (idx + 1),
-          'Student Name': r.student_name || '',
-          'Roll No': r.roll_no || '',
-          'PRN Number': r.prn_no || '',
-          'Division': r.division_name || '',
-          'Batch': r.batch_name || '',
-          'Event Title': r.event_name || r.title || '',
-          'Category': r.category || '',
-          'Certificate Date': r.certificate_date || '',
-          'Approval Status': r.status || '',
-          'SS (Theory)': ss_th,
-          'DSA (Theory)': dsa_th,
-          'SDC (Theory)': sdc_th,
-          'FDS (Theory)': fds_th,
-          'PME (Theory)': pme_th,
-          'OEC (Theory)': oec_th,
-          'VEC (Theory)': vec_th,
-          'Total Theory': total_th,
-          'SDC Lab': sdc_lab,
-          'DSA Lab': dsa_lab,
-          'VSEC Lab': vsec_lab,
-          'Total Lab': total_lab,
-          'Total Compensated Attendance': total_act
-        };
-      });
-
       const sheetsMap = {
         'SE(ECE)-A Attendance Matrix': divASheetRows,
         'SE(ECE)-B Attendance Matrix': divBSheetRows,
-        'All Divisions Combined Master': allSheetRows,
-        'Certificate Approval Logs': certExportRows.length > 0 ? certExportRows : [{ 'Notice': 'No certificate records found.' }]
+        'All Divisions Combined Master': allSheetRows
       };
 
       const exportedXLSX = Exporter.exportMultiSheetXLSX(`ECE_Student_Attendance_Master_${new Date().toISOString().split('T')[0]}`, sheetsMap);
@@ -787,21 +701,17 @@ const ReportsView = {
     const isDivA = divCode === 'SE(ECE)-A' || divCode === 'A';
     const divA = document.getElementById('section-report-div-a');
     const divB = document.getElementById('section-report-div-b');
-    const certLogs = document.getElementById('section-report-cert-logs');
     const prevA = divA ? divA.style.display : '';
     const prevB = divB ? divB.style.display : '';
-    const prevCert = certLogs ? certLogs.style.display : '';
 
     if (divA) divA.style.display = isDivA ? 'block' : 'none';
     if (divB) divB.style.display = !isDivA ? 'block' : 'none';
-    if (certLogs) certLogs.style.display = 'none';
 
     window.print();
 
     setTimeout(() => {
       if (divA) divA.style.display = prevA;
       if (divB) divB.style.display = prevB;
-      if (certLogs) certLogs.style.display = prevCert;
     }, 800);
   },
 

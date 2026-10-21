@@ -1465,10 +1465,7 @@ body.login-page-active .main-content,
     page-break-after: always !important;
   }
 
-  #section-report-cert-logs {
-    display: block !important;
-    page-break-before: always !important;
-  }
+
 }
 
 /* ==========================================================================
