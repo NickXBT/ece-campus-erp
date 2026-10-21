@@ -273,6 +273,9 @@ const ReportsView = {
                 <button type="button" class="btn btn-secondary btn-sm" onclick="ReportsView.printDivision('SE(ECE)-A')" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                   <i class="fa-solid fa-print"></i> Print Div A
                 </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="ReportsView.toggleMatrixExpand('section-report-div-a')" title="Toggle Locked Header / Expanded Rows" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.7rem; font-size: 0.8rem; background: #ffffff; border: 1.5px solid #94a3b8;">
+                  <i class="fa-solid fa-up-down"></i> Expand / Lock
+                </button>
               </div>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
@@ -333,6 +336,9 @@ const ReportsView = {
                 </button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="ReportsView.printDivision('SE(ECE)-B')" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                   <i class="fa-solid fa-print"></i> Print Div B
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="ReportsView.toggleMatrixExpand('section-report-div-b')" title="Toggle Locked Header / Expanded Rows" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.7rem; font-size: 0.8rem; background: #ffffff; border: 1.5px solid #94a3b8;">
+                  <i class="fa-solid fa-up-down"></i> Expand / Lock
                 </button>
               </div>
             </div>
@@ -577,6 +583,16 @@ const ReportsView = {
     } catch(e) {
       Toast.error('Failed to export CSV file.');
     }
+  },
+
+    toggleMatrixExpand(containerId) {
+    const section = document.getElementById(containerId);
+    if (!section) return;
+    const container = section.querySelector('.attendance-matrix-scroll-container');
+    if (!container) return;
+    container.classList.toggle('expanded-view');
+    const isExpanded = container.classList.contains('expanded-view');
+    Toast.info(isExpanded ? 'Full page view: all rows expanded' : 'Locked header view: scroll box with locked headers');
   },
 
   async exportDivisionExcel(divCode) {
