@@ -962,7 +962,32 @@ const TeacherView = {
       const nextIdx = s.days.length;
       const prevDayName = s.days[nextIdx - 1].day_of_week;
       const prevDayIndexInWeek = daysOfWeek.indexOf(prevDayName);
-      const nextDayName = daysOfWeek[(prevDayIndexInWeek + 1) % daysOfWeek.length] || 'Tuesday';
+      
+      let nextDayName;
+      if (prevDayName === 'Friday') {
+        // Multi-day events occurring on or ending on Friday must NEVER roll over to next Monday!
+        // The second day for attendance compensation must be Thursday (the preceding instructional day)
+        nextDayName = 'Thursday';
+      } else if (prevDayName === 'Thursday' && s.days.some(d => d.day_of_week === 'Friday')) {
+        nextDayName = 'Wednesday';
+      } else if (prevDayName === 'Wednesday' && s.days.some(d => d.day_of_week === 'Friday')) {
+        nextDayName = 'Tuesday';
+      } else {
+        nextDayName = daysOfWeek[(prevDayIndexInWeek + 1) % daysOfWeek.length] || 'Tuesday';
+        // Absolute safeguard: if prev was Friday, never let next be Monday
+        if (nextDayName === 'Monday' && prevDayName === 'Friday') {
+          nextDayName = 'Thursday';
+        }
+      }
+
+      // Avoid duplicating an already present day
+      if (s.days.some(d => d.day_of_week === nextDayName)) {
+        const remaining = daysOfWeek.filter(dw => !s.days.some(d => d.day_of_week === dw));
+        if (remaining.length > 0) {
+          nextDayName = remaining[remaining.length - 1];
+        }
+      }
+
       const lecs = getLecturesForDay(nextDayName);
       s.days.push({
         day_of_week: nextDayName,

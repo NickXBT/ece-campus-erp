@@ -584,7 +584,21 @@ const StudentView = {
     const hint = document.getElementById('page-cert-days-hint');
     if (hint) {
       const d = parseInt(days) || 1;
-      hint.innerHTML = `<i class="fa-solid fa-circle-info"></i> Attendance compensation will be requested for <strong>${d} consecutive instructional day${d > 1 ? 's' : ''}</strong>.`;
+      const dateVal = document.getElementById('page-cert-date')?.value;
+      let dayName = '';
+      if (dateVal) {
+        const parts = dateVal.split('-').map(Number);
+        if (parts.length === 3) {
+          const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          dayName = dayNames[dt.getDay()];
+        }
+      }
+      if (dayName === 'Friday' && d === 2) {
+        hint.innerHTML = `<i class="fa-solid fa-circle-info" style="color: #d97706;"></i> Friday 2-Day Event: Attendance compensation will be credited for <strong>Thursday & Friday (2 Days)</strong>.`;
+      } else {
+        hint.innerHTML = `<i class="fa-solid fa-circle-info"></i> Attendance compensation will be requested for <strong>${d} consecutive instructional day${d > 1 ? 's' : ''}</strong>.`;
+      }
     }
   },
 
@@ -598,6 +612,11 @@ const StudentView = {
         input.value = '';
         Toast.warning('Saturdays and Sundays cannot be selected. College academic schedule runs Monday through Friday. Please choose a weekday.');
         return false;
+      }
+      // Refresh event days hint based on selected weekday
+      const daysSel = document.getElementById('page-cert-days');
+      if (daysSel) {
+        StudentView.onEventDaysChange(daysSel.value);
       }
     }
     return true;
