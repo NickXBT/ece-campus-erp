@@ -244,22 +244,36 @@ const ReportsView = {
               <i class="fa-solid fa-layer-group"></i> View Both Divisions (${cumulativeStudents.length})
             </button>
 
-            <div style="margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn btn-success btn-sm" onclick="ReportsView.exportExcelMasterSheet()" style="background: #16a34a; border-color: #16a34a; font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 1rem;">
-                <i class="fa-solid fa-file-excel"></i> Export Excel Master Sheet
+            <div style="margin-left: auto; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+              <button class="btn btn-sm" onclick="ReportsView.exportDivisionExcel('SE(ECE)-A')" style="background: #2563eb; color: #ffffff; font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                <i class="fa-solid fa-file-excel"></i> Download Div A
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="ReportsView.printFullReport()" style="font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 1rem;">
-                <i class="fa-solid fa-print"></i> Print Full Official Report
+              <button class="btn btn-sm" onclick="ReportsView.exportDivisionExcel('SE(ECE)-B')" style="background: #d97706; color: #ffffff; font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                <i class="fa-solid fa-file-excel"></i> Download Div B
+              </button>
+              <button class="btn btn-success btn-sm" onclick="ReportsView.exportExcelMasterSheet()" style="background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                <i class="fa-solid fa-layer-group"></i> Download All (Both)
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="ReportsView.printFullReport()" style="font-weight: 800; border-radius: var(--radius-full); padding: 0.45rem 0.85rem; font-size: 0.8rem;">
+                <i class="fa-solid fa-print"></i> Print Full Report
               </button>
             </div>
           </div>
 
           <!-- PART 1: DIVISION SE(ECE)-A SUMMARY TABLE -->
           <div class="glass-panel" id="section-report-div-a" style="margin-bottom: 2rem; ${(this.currentDivFilter === 'SE(ECE)-B') ? 'display: none;' : ''}">
-            <div class="panel-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-              <h3>
+            <div class="panel-header" style="border-bottom: 2px solid var(--primary); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <h3 style="margin: 0;">
                 <i class="fa-solid fa-users-rectangle" style="color: var(--primary);"></i> Division SE(ECE)-A Official Attendance Matrix (${divAStudents.length} Students)
               </h3>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm" onclick="ReportsView.exportDivisionExcel('SE(ECE)-A')" style="background: #2563eb; color: #ffffff; font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-download"></i> Download Div A Excel
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ReportsView.printDivision('SE(ECE)-A')" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-print"></i> Print Div A
+                </button>
+              </div>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Separated <strong>Theory Lectures</strong> & <strong>Practical Lab Sessions</strong> matrix for Division A (Roll 01 to Roll 62):
@@ -309,10 +323,18 @@ const ReportsView = {
 
           <!-- PART 2: DIVISION SE(ECE)-B SUMMARY TABLE -->
           <div class="glass-panel" id="section-report-div-b" style="margin-bottom: 2rem; ${(this.currentDivFilter === 'SE(ECE)-A') ? 'display: none;' : ''}">
-            <div class="panel-header" style="border-bottom: 2px solid #d97706; padding-bottom: 0.75rem; margin-bottom: 1rem;">
-              <h3>
+            <div class="panel-header" style="border-bottom: 2px solid #d97706; padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <h3 style="margin: 0;">
                 <i class="fa-solid fa-users-rectangle" style="color: #d97706;"></i> Division SE(ECE)-B Official Attendance Matrix (${divBStudents.length} Students)
               </h3>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm" onclick="ReportsView.exportDivisionExcel('SE(ECE)-B')" style="background: #d97706; color: #ffffff; font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-download"></i> Download Div B Excel
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="ReportsView.printDivision('SE(ECE)-B')" style="font-weight: 800; border-radius: var(--radius-md); padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-print"></i> Print Div B
+                </button>
+              </div>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Separated <strong>Theory Lectures</strong> & <strong>Practical Lab Sessions</strong> matrix for Division B (Roll 01 to Roll 61):
