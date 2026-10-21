@@ -1156,15 +1156,23 @@ const TeacherView = {
   },
 
   async renderStudentSearch() {
+    setTimeout(() => {
+      if (typeof TeacherView !== 'undefined' && TeacherView.executeStudentSearch) {
+        TeacherView.executeStudentSearch();
+      }
+    }, 50);
+
     return `
       <div class="dashboard-container">
         <div class="glass-panel">
           <div class="panel-header">
             <h3><i class="fa-solid fa-magnifying-glass"></i> Student Activity Search & Lookup</h3>
           </div>
-          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-            <input type="text" id="search-student-query" class="form-control" placeholder="Search by Student Name, Roll Number, or PRN..." onkeyup="if(event.key==='Enter') TeacherView.executeStudentSearch()">
-            <select id="search-student-div" class="form-control" style="width: 180px;">
+          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px; position: relative;">
+              <input type="text" id="search-student-query" class="form-control" placeholder="Search by Student Name, Roll Number, or PRN (e.g. U251H)..." oninput="TeacherView.executeStudentSearch()" onkeyup="if(event.key==='Enter') TeacherView.executeStudentSearch()">
+            </div>
+            <select id="search-student-div" class="form-control" style="width: 180px;" onchange="TeacherView.executeStudentSearch()">
               <option value="">All Divisions</option>
               <option value="1">SE(ECE)-A</option>
               <option value="2">SE(ECE)-B</option>
@@ -1172,7 +1180,7 @@ const TeacherView = {
             <button class="btn btn-primary" onclick="TeacherView.executeStudentSearch()"><i class="fa-solid fa-search"></i> Search</button>
           </div>
           <div id="student-search-results">
-            <p style="color: var(--text-muted);">Enter query or select division to search students.</p>
+            <p style="color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Loading students...</p>
           </div>
         </div>
       </div>
@@ -1180,27 +1188,46 @@ const TeacherView = {
   },
 
   async executeStudentSearch() {
-    const q = document.getElementById('search-student-query').value.trim();
-    const divId = document.getElementById('search-student-div').value;
+    const qEl = document.getElementById('search-student-query');
+    const divEl = document.getElementById('search-student-div');
+    const resultsContainer = document.getElementById('student-search-results');
+    if (!resultsContainer) return;
+
+    const q = qEl ? qEl.value.trim() : '';
+    const divId = divEl ? divEl.value : '';
+
     try {
       const res = await API.get(`/api/teacher/students?q=${encodeURIComponent(q)}&division_id=${divId}`);
       const students = res.students || [];
 
+      if (students.length === 0) {
+        resultsContainer.innerHTML = `<p style="color: var(--text-muted); padding: 1rem 0;"><i class="fa-solid fa-circle-info"></i> No matching students found${q ? ` for "${q}"` : ''}.</p>`;
+        return;
+      }
+
       const cards = students.map(s => `
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.75rem;">
           <div>
-            <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-main);">${s.name}</h4>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem;">Roll No: ${s.roll_no} | PRN: ${s.prn_no} | Division: <strong>${s.division_name}</strong> (Batch ${s.batch_name})</p>
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0 0 0.25rem 0;">${s.name}</h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+              Roll No: <strong>${s.roll_no}</strong> | PRN: <strong style="color: var(--primary);">${s.prn_no || '-'}</strong> | Division: <strong>${s.division_name || (s.division_id == 2 ? 'SE(ECE)-B' : 'SE(ECE)-A')}</strong> (Batch ${s.batch_name || 'A1'})
+            </p>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="TeacherView.viewStudentDetail(${s.id})">
+          <button class="btn btn-secondary btn-sm" onclick="TeacherView.viewStudentDetail('${s.id}')">
             <i class="fa-solid fa-user"></i> View Profile & Activities
           </button>
         </div>
-      `).join('') || `<p style="color: var(--text-muted);">No matching students found.</p>`;
+      `).join('');
 
-      document.getElementById('student-search-results').innerHTML = cards;
+      resultsContainer.innerHTML = `
+        <div style="margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.85rem;">
+          Showing <strong>${students.length}</strong> student${students.length === 1 ? '' : 's'}
+        </div>
+        ${cards}
+      `;
     } catch (err) {
-      Toast.error('Failed to search students.');
+      console.error('Search students error:', err);
+      resultsContainer.innerHTML = `<p style="color: var(--danger, #ef4444);"><i class="fa-solid fa-triangle-exclamation"></i> Failed to search students.</p>`;
     }
   },
 
@@ -1208,22 +1235,68 @@ const TeacherView = {
     try {
       const data = await API.get(`/api/teacher/students/${studentId}`);
       const s = data.student || {};
-      const summaryRows = (data.summary || []).map(sum => `<li><strong>${sum.subject_name} (${sum.subject_code}):</strong> ${sum.total_count} activities</li>`).join('') || '<li>No activities calculated.</li>';
+      const summaryRows = (data.summary || []).filter(sum => sum.total_count > 0).map(sum => 
+        `<li style="margin-bottom: 0.35rem;"><strong>${sum.subject_name} (${sum.subject_code}):</strong> <span class="badge badge-primary" style="margin-left: 0.5rem;">${sum.total_count} activities</span></li>`
+      ).join('') || '<li style="color: var(--text-muted);">No approved activities recorded yet.</li>';
+
+      const certs = data.certificates || [];
+      const certRows = certs.map((c, i) => `
+        <tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 0.6rem 0.75rem;">${i + 1}</td>
+          <td style="padding: 0.6rem 0.75rem;"><strong>${c.title || c.event_name || 'Certificate'}</strong></td>
+          <td style="padding: 0.6rem 0.75rem;"><span class="badge ${c.status === 'APPROVED' ? 'badge-success' : (c.status === 'REJECTED' ? 'badge-danger' : 'badge-warning')}">${c.status}</span></td>
+          <td style="padding: 0.6rem 0.75rem; text-align: center; font-weight: 600;">${c.credited_lectures_count || 0}</td>
+          <td style="padding: 0.6rem 0.75rem; color: var(--text-muted);">${c.certificate_date || c.event_date || '-'}</td>
+        </tr>
+      `).join('') || `<tr><td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">No certificates submitted yet.</td></tr>`;
 
       const html = `
-        <div style="padding: 1rem;">
-          <h3>${s.name} - Activity Profile</h3>
-          <p style="color: var(--text-muted); margin-bottom: 1rem;">Roll No: ${s.roll_no} | PRN: ${s.prn_no} | Division: <strong>${s.division_name}</strong> (Batch ${s.batch_name})</p>
-          <h4>Subject Activity Breakdown:</h4>
-          <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
-            ${summaryRows}
-          </ul>
+        <div style="padding: 0.5rem;">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+            <h3 style="margin: 0 0 0.35rem 0; color: var(--text-main);">${s.name}</h3>
+            <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
+              Roll No: <strong>${s.roll_no}</strong> | PRN: <strong style="color: var(--primary);">${s.prn_no || '-'}</strong> | Division: <strong>${s.division_name || (s.division_id == 2 ? 'SE(ECE)-B' : 'SE(ECE)-A')}</strong> (Batch ${s.batch_name || 'A1'})
+            </p>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+            <h4 style="margin: 0 0 0.75rem 0; color: var(--text-main); font-size: 0.95rem;">
+              <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Subject Activity Breakdown:
+            </h4>
+            <ul style="margin: 0 0 0 1.25rem; padding: 0; font-size: 0.9rem; line-height: 1.6;">
+              ${summaryRows}
+            </ul>
+          </div>
+
+          <div>
+            <h4 style="margin: 0 0 0.75rem 0; color: var(--text-main); font-size: 0.95rem;">
+              <i class="fa-solid fa-award" style="color: var(--warning, #f59e0b);"></i> Certificates & Submissions (${certs.length}):
+            </h4>
+            <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead>
+                  <tr style="background: #f1f5f9; border-bottom: 1px solid var(--border-color);">
+                    <th style="padding: 0.6rem 0.75rem;">#</th>
+                    <th style="padding: 0.6rem 0.75rem;">Event / Title</th>
+                    <th style="padding: 0.6rem 0.75rem;">Status</th>
+                    <th style="padding: 0.6rem 0.75rem; text-align: center;">Credited</th>
+                    <th style="padding: 0.6rem 0.75rem;">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${certRows}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       `;
+
       document.getElementById('preview-modal-title').innerText = `Student Activity Profile`;
       document.getElementById('preview-modal-body').innerHTML = html;
       openModal('modal-file-preview');
     } catch (err) {
+      console.error('viewStudentDetail error:', err);
       Toast.error('Failed to load student details.');
     }
   }

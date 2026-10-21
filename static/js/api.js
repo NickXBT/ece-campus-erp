@@ -8343,6 +8343,148 @@ const API = {
       throw { message: 'Student not found' };
     }
 
+    // 13.5. Teacher / HOD Student Search & Profile Details API
+    if (endpoint.startsWith('/api/teacher/students') && method === 'GET') {
+      const urlObj = new URL('http://dummy' + endpoint);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+
+      // Detail route: /api/teacher/students/:id
+      if (pathParts.length >= 4) {
+        const studentId = pathParts[3];
+        const student = (db.students || []).find(s => 
+          String(s.id) === String(studentId) || 
+          String(s.user_id) === String(studentId) ||
+          (s.prn_no && String(s.prn_no).toUpperCase() === String(studentId).toUpperCase())
+        );
+
+        if (!student) {
+          throw { message: 'Student not found' };
+        }
+
+        const div = (db.divisions || []).find(d => String(d.id) === String(student.division_id));
+        const divisionName = student.division_name || (div ? div.name : (student.division_id == 2 ? 'SE(ECE)-B' : 'SE(ECE)-A'));
+        const batch = (db.batches || []).find(b => String(b.id) === String(student.batch_id));
+        const batchName = student.batch_name || (batch ? batch.name : (student.division_id == 2 ? 'B1' : 'A1'));
+
+        const enrichedStudent = {
+          ...student,
+          division_name: divisionName,
+          batch_name: batchName,
+          department_name: 'Electronics & Computer Engineering'
+        };
+
+        const certs = (db.certificates || []).filter(c => 
+          String(c.student_id) === String(student.id) || 
+          (student.user_id && String(c.student_id) === String(student.user_id)) ||
+          (student.prn_no && c.prn_no && c.prn_no.toUpperCase() === student.prn_no.toUpperCase())
+        );
+
+        const activities = certs.map(c => ({
+          id: c.id,
+          activity_date: c.certificate_date || c.created_at || '',
+          certificate_title: c.title || c.event_name || 'Activity Certificate',
+          event_name: c.event_name || c.title || 'Event',
+          status: c.status,
+          credited_lectures_count: c.credited_lectures_count || 0,
+          subject_credits: c.subject_credits || {}
+        }));
+
+        const subjectMap = {
+          SS_TH: { name: 'Signals and Systems (Theory)', code: 'SS', count: 0 },
+          DSA_TH: { name: 'Data Structures and Algorithms (Theory)', code: 'DSA', count: 0 },
+          SDC_TH: { name: 'Semiconductor Devices and Circuits (Theory)', code: 'SDC', count: 0 },
+          FDS_TH: { name: 'Fundamental of Data Science (Theory)', code: 'FDS', count: 0 },
+          PME_TH: { name: 'Principles of Management and Entrepreneurship (Theory)', code: 'PME', count: 0 },
+          OEC_TH: { name: 'Open Elective Course (Theory)', code: 'OEC', count: 0 },
+          VEC_TH: { name: 'Value Education Course (Theory)', code: 'VEC', count: 0 },
+          SDC_LAB: { name: 'SDC Lab (Practical)', code: 'SDC-P', count: 0 },
+          DSA_LAB: { name: 'DSA Lab (Practical)', code: 'DSA-P', count: 0 },
+          VSEC_LAB: { name: 'VSEC Lab (Practical)', code: 'VSEC-P', count: 0 }
+        };
+
+        certs.filter(c => c.status === 'APPROVED').forEach(c => {
+          if (c.subject_credits) {
+            Object.keys(subjectMap).forEach(k => {
+              subjectMap[k].count += (c.subject_credits[k] || 0);
+            });
+          } else {
+            const creds = parseInt(c.credited_lectures_count) || 5;
+            const th = Math.ceil(creds * 0.6);
+            const lab = creds - th;
+            subjectMap.SS_TH.count += Math.ceil(th * 0.4);
+            subjectMap.DSA_TH.count += Math.floor(th * 0.6);
+            subjectMap.SDC_LAB.count += Math.ceil(lab * 0.5);
+            subjectMap.DSA_LAB.count += Math.floor(lab * 0.5);
+          }
+        });
+
+        const activeSummary = Object.values(subjectMap)
+          .filter(s => s.count > 0)
+          .map(s => ({
+            subject_name: s.name,
+            subject_code: s.code,
+            total_count: s.count
+          }));
+
+        return {
+          student: enrichedStudent,
+          certificates: certs,
+          activities: activities,
+          summary: activeSummary.length > 0 ? activeSummary : Object.values(subjectMap).map(s => ({ subject_name: s.name, subject_code: s.code, total_count: 0 }))
+        };
+      }
+
+      // Search route: /api/teacher/students?q=...&division_id=...
+      const q = (urlObj.searchParams.get('q') || '').trim().toLowerCase();
+      const divId = (urlObj.searchParams.get('division_id') || '').trim();
+      const batchId = (urlObj.searchParams.get('batch_id') || '').trim();
+
+      const deletedIds = new Set((db.deleted_student_ids || []).map(x => String(x).toUpperCase()));
+
+      let results = (db.students || []).filter(s => {
+        if (!s) return false;
+        if (s.id && deletedIds.has(String(s.id).toUpperCase())) return false;
+        if (s.prn_no && deletedIds.has(String(s.prn_no).toUpperCase())) return false;
+        if (s.user_id && deletedIds.has(String(s.user_id).toUpperCase())) return false;
+
+        if (divId && String(s.division_id) !== String(divId)) {
+          return false;
+        }
+        if (batchId && String(s.batch_id) !== String(batchId)) {
+          return false;
+        }
+
+        if (q) {
+          const nameMatch = (s.name || '').toLowerCase().includes(q);
+          const rollMatch = String(s.roll_no || '').toLowerCase().includes(q);
+          const prnMatch = (s.prn_no || '').toLowerCase().includes(q);
+          const emailMatch = (s.email || '').toLowerCase().includes(q);
+          const userMatch = (s.username || '').toLowerCase().includes(q);
+          if (!nameMatch && !rollMatch && !prnMatch && !emailMatch && !userMatch) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      results = results.map(s => {
+        const div = (db.divisions || []).find(d => String(d.id) === String(s.division_id));
+        const divisionName = s.division_name || (div ? div.name : (s.division_id == 2 ? 'SE(ECE)-B' : 'SE(ECE)-A'));
+        const batch = (db.batches || []).find(b => String(b.id) === String(s.batch_id));
+        const batchName = s.batch_name || (batch ? batch.name : (s.division_id == 2 ? 'B1' : 'A1'));
+
+        return {
+          ...s,
+          division_name: divisionName,
+          batch_name: batchName,
+          department_name: 'Electronics & Computer Engineering'
+        };
+      });
+
+      return { students: results };
+    }
+
     // 14. HOD Security PIN & Password Endpoints
     if (endpoint === '/api/hod/verify-pin' && method === 'POST') {
       const pin = (body.pin || '').trim();
