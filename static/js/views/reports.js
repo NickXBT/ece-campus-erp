@@ -281,36 +281,36 @@ const ReportsView = {
             <div class="table-responsive attendance-matrix-scroll-container">
               <table class="custom-table" style="font-size: 0.83rem; border-collapse: separate; border-spacing: 0; min-width: 950px; width: 100%;">
                 <thead>
-                  <tr style="position: sticky; top: 0; z-index: 30; background: #e0f2fe; text-align: center; font-size: 0.8rem; font-weight: 800;">
-                    <th colspan="4" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #e2e8f0; color: #1e293b; white-space: nowrap; height: 36px; padding: 0.4rem;">STUDENT INFORMATION</th>
-                    <th colspan="7" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #dbeafe; color: #1e40af; white-space: nowrap; height: 36px; padding: 0.4rem;">THEORY LECTURES CREDITED</th>
-                    <th colspan="3" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #fef3c7; color: #92400e; white-space: nowrap; height: 36px; padding: 0.4rem;">PRACTICAL / LAB SESSIONS</th>
-                    <th colspan="3" style="position: sticky; top: 0; z-index: 30; background: #dcfce7; color: #166534; white-space: nowrap; min-width: 185px; height: 36px; padding: 0.4rem;">TOTAL ATTENDANCE SUMMARY</th>
+                  <tr style="background: #e0f2fe; text-align: center; font-size: 0.8rem; font-weight: 800;">
+                    <th colspan="4" style="border-right: 2px solid #94a3b8; background: #e2e8f0; color: #1e293b; white-space: nowrap; height: 36px; padding: 0.4rem;">STUDENT INFORMATION</th>
+                    <th colspan="7" style="border-right: 2px solid #94a3b8; background: #dbeafe; color: #1e40af; white-space: nowrap; height: 36px; padding: 0.4rem;">THEORY LECTURES CREDITED</th>
+                    <th colspan="3" style="border-right: 2px solid #94a3b8; background: #fef3c7; color: #92400e; white-space: nowrap; height: 36px; padding: 0.4rem;">PRACTICAL / LAB SESSIONS</th>
+                    <th colspan="3" style="background: #dcfce7; color: #166534; white-space: nowrap; min-width: 185px; height: 36px; padding: 0.4rem;">TOTAL ATTENDANCE SUMMARY</th>
                   </tr>
-                  <tr style="position: sticky; top: 36px; z-index: 29; background: #f1f5f9;">
-                    <th style="position: sticky; top: 36px; z-index: 29; width: 45px; text-align: center; background: #f1f5f9;">Roll</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; min-width: 170px; background: #f1f5f9;">Student Name</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; background: #f1f5f9;">PRN Number</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; border-right: 2px solid #94a3b8; background: #f1f5f9;">Div & Batch</th>
+                  <tr style="background: #f1f5f9;">
+                    <th style="width: 45px; text-align: center; background: #f1f5f9;">Roll</th>
+                    <th style="min-width: 170px; background: #f1f5f9;">Student Name</th>
+                    <th style="background: #f1f5f9;">PRN Number</th>
+                    <th style="border-right: 2px solid #94a3b8; background: #f1f5f9;">Div & Batch</th>
                     
                     <!-- Theory Subjects -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">SS</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">DSA</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">SDC</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">FDS</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">PME</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">OEC</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff; border-right: 2px solid #94a3b8;">VEC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">SS</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">DSA</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">SDC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">FDS</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">PME</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">OEC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff; border-right: 2px solid #94a3b8;">VEC</th>
                     
                     <!-- Lab Subjects -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb;">SDC Lab</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb;">DSA Lab</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb; border-right: 2px solid #94a3b8;">VSEC Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb;">SDC Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb;">DSA Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb; border-right: 2px solid #94a3b8;">VSEC Lab</th>
 
                     <!-- Totals -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 55px; background: #f8fafc;">Theory</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 55px; background: #f8fafc; border-right: 2px solid #94a3b8;">Labs</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 75px; background: #dcfce7; color: #166534;">Combined</th>
+                    <th style="text-align: center; min-width: 55px; background: #f8fafc;">Theory</th>
+                    <th style="text-align: center; min-width: 55px; background: #f8fafc; border-right: 2px solid #94a3b8;">Labs</th>
+                    <th style="text-align: center; min-width: 75px; background: #dcfce7; color: #166534;">Combined</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -342,36 +342,36 @@ const ReportsView = {
             <div class="table-responsive attendance-matrix-scroll-container">
               <table class="custom-table" style="font-size: 0.83rem; border-collapse: separate; border-spacing: 0; min-width: 950px; width: 100%;">
                 <thead>
-                  <tr style="position: sticky; top: 0; z-index: 30; background: #e0f2fe; text-align: center; font-size: 0.8rem; font-weight: 800;">
-                    <th colspan="4" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #e2e8f0; color: #1e293b; white-space: nowrap; height: 36px; padding: 0.4rem;">STUDENT INFORMATION</th>
-                    <th colspan="7" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #dbeafe; color: #1e40af; white-space: nowrap; height: 36px; padding: 0.4rem;">THEORY LECTURES CREDITED</th>
-                    <th colspan="3" style="position: sticky; top: 0; z-index: 30; border-right: 2px solid #94a3b8; background: #fef3c7; color: #92400e; white-space: nowrap; height: 36px; padding: 0.4rem;">PRACTICAL / LAB SESSIONS</th>
-                    <th colspan="3" style="position: sticky; top: 0; z-index: 30; background: #dcfce7; color: #166534; white-space: nowrap; min-width: 185px; height: 36px; padding: 0.4rem;">TOTAL ATTENDANCE SUMMARY</th>
+                  <tr style="background: #e0f2fe; text-align: center; font-size: 0.8rem; font-weight: 800;">
+                    <th colspan="4" style="border-right: 2px solid #94a3b8; background: #e2e8f0; color: #1e293b; white-space: nowrap; height: 36px; padding: 0.4rem;">STUDENT INFORMATION</th>
+                    <th colspan="7" style="border-right: 2px solid #94a3b8; background: #dbeafe; color: #1e40af; white-space: nowrap; height: 36px; padding: 0.4rem;">THEORY LECTURES CREDITED</th>
+                    <th colspan="3" style="border-right: 2px solid #94a3b8; background: #fef3c7; color: #92400e; white-space: nowrap; height: 36px; padding: 0.4rem;">PRACTICAL / LAB SESSIONS</th>
+                    <th colspan="3" style="background: #dcfce7; color: #166534; white-space: nowrap; min-width: 185px; height: 36px; padding: 0.4rem;">TOTAL ATTENDANCE SUMMARY</th>
                   </tr>
-                  <tr style="position: sticky; top: 36px; z-index: 29; background: #fffbeb;">
-                    <th style="position: sticky; top: 36px; z-index: 29; width: 45px; text-align: center; background: #fffbeb;">Roll</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; min-width: 170px; background: #fffbeb;">Student Name</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; background: #fffbeb;">PRN Number</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; border-right: 2px solid #94a3b8; background: #fffbeb;">Div & Batch</th>
+                  <tr style="background: #fffbeb;">
+                    <th style="width: 45px; text-align: center; background: #fffbeb;">Roll</th>
+                    <th style="min-width: 170px; background: #fffbeb;">Student Name</th>
+                    <th style="background: #fffbeb;">PRN Number</th>
+                    <th style="border-right: 2px solid #94a3b8; background: #fffbeb;">Div & Batch</th>
                     
                     <!-- Theory Subjects -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">SS</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">DSA</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">SDC</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">FDS</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">PME</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff;">OEC</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 38px; background: #eff6ff; border-right: 2px solid #94a3b8;">VEC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">SS</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">DSA</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">SDC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">FDS</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">PME</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff;">OEC</th>
+                    <th style="text-align: center; width: 38px; background: #eff6ff; border-right: 2px solid #94a3b8;">VEC</th>
                     
                     <!-- Lab Subjects -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb;">SDC Lab</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb;">DSA Lab</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; width: 50px; background: #fffbeb; border-right: 2px solid #94a3b8;">VSEC Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb;">SDC Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb;">DSA Lab</th>
+                    <th style="text-align: center; width: 50px; background: #fffbeb; border-right: 2px solid #94a3b8;">VSEC Lab</th>
 
                     <!-- Totals -->
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 55px; background: #f8fafc;">Theory</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 55px; background: #f8fafc; border-right: 2px solid #94a3b8;">Labs</th>
-                    <th style="position: sticky; top: 36px; z-index: 29; text-align: center; min-width: 75px; background: #dcfce7; color: #166534;">Combined</th>
+                    <th style="text-align: center; min-width: 55px; background: #f8fafc;">Theory</th>
+                    <th style="text-align: center; min-width: 55px; background: #f8fafc; border-right: 2px solid #94a3b8;">Labs</th>
+                    <th style="text-align: center; min-width: 75px; background: #dcfce7; color: #166534;">Combined</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -663,5 +663,163 @@ const ReportsView = {
     } catch(e) {
       Toast.error('Failed to export CSV file.');
     }
-  }
+  },
+
+  async exportDivisionExcel(divCode) {
+    try {
+      const isDivA = divCode === 'SE(ECE)-A' || divCode === 'A';
+      const divLabel = isDivA ? 'SE(ECE) Division A' : 'SE(ECE) Division B';
+      Toast.info(`Preparing ${divLabel} Attendance Sheet download...`);
+      const data = await API.get('/api/reports');
+      const students = data.cumulative_student_summary || [];
+      if (!students.length) {
+        Toast.error('No report data available to export.');
+        return;
+      }
+
+      const formatStudentRow = (s) => {
+        const ss_th = s.SS_TH !== undefined ? s.SS_TH : (s.SS || 0);
+        const dsa_th = s.DSA_TH !== undefined ? s.DSA_TH : (s.DSA || 0);
+        const sdc_th = s.SDC_TH !== undefined ? s.SDC_TH : (s.SDC || 0);
+        const fds_th = s.FDS_TH !== undefined ? s.FDS_TH : (s.FDS || 0);
+        const pme_th = s.PME_TH !== undefined ? s.PME_TH : (s.PME || 0);
+        const oec_th = s.OEC_TH !== undefined ? s.OEC_TH : (s.OEC || 0);
+        const vec_th = s.VEC_TH !== undefined ? s.VEC_TH : (s.VEC || 0);
+        const total_th = s.total_theory !== undefined ? s.total_theory : (ss_th + dsa_th + sdc_th + fds_th + pme_th + oec_th + vec_th);
+
+        const sdc_lab = s.SDC_LAB !== undefined ? s.SDC_LAB : 0;
+        const dsa_lab = s.DSA_LAB !== undefined ? s.DSA_LAB : 0;
+        const vsec_lab = s.VSEC_LAB !== undefined ? s.VSEC_LAB : (s.VSEC || 0);
+        const total_lab = s.total_lab !== undefined ? s.total_lab : (sdc_lab + dsa_lab + vsec_lab);
+
+        const combined = s.total_accumulated_activities !== undefined ? s.total_accumulated_activities : (total_th + total_lab);
+
+        return {
+          'Roll No': s.roll_no || '',
+          'Student Name': s.student_name || '',
+          'PRN Number': s.prn_no || '',
+          'Division': s.division_name || '',
+          'Batch': s.batch_name || '',
+          'SS (Theory)': ss_th,
+          'DSA (Theory)': dsa_th,
+          'SDC (Theory)': sdc_th,
+          'FDS (Theory)': fds_th,
+          'PME (Theory)': pme_th,
+          'OEC (Theory)': oec_th,
+          'VEC (Theory)': vec_th,
+          'Total Theory Lectures': total_th,
+          'SDC Lab': sdc_lab,
+          'DSA Lab': dsa_lab,
+          'VSEC Lab': vsec_lab,
+          'Total Lab Sessions': total_lab,
+          'Total Combined Compensated Attendance': combined
+        };
+      };
+
+      const filtered = students
+        .filter(s => isDivA ? (s.division_name === 'SE(ECE)-A' || (s.division_id && s.division_id == 1)) : (s.division_name === 'SE(ECE)-B' || (s.division_id && s.division_id == 2)))
+        .sort((a, b) => (parseInt(a.roll_no) || 0) - (parseInt(b.roll_no) || 0));
+
+      const rows = filtered.map(formatStudentRow);
+
+      let sumSS = 0, sumDSA = 0, sumSDC = 0, sumFDS = 0, sumPME = 0, sumOEC = 0, sumVEC = 0, sumTotalTh = 0;
+      let sumSDCLab = 0, sumDSALab = 0, sumVSECLab = 0, sumTotalLab = 0;
+      let sumCombined = 0;
+
+      rows.forEach(r => {
+        sumSS += Number(r['SS (Theory)']) || 0;
+        sumDSA += Number(r['DSA (Theory)']) || 0;
+        sumSDC += Number(r['SDC (Theory)']) || 0;
+        sumFDS += Number(r['FDS (Theory)']) || 0;
+        sumPME += Number(r['PME (Theory)']) || 0;
+        sumOEC += Number(r['OEC (Theory)']) || 0;
+        sumVEC += Number(r['VEC (Theory)']) || 0;
+        sumTotalTh += Number(r['Total Theory Lectures']) || 0;
+
+        sumSDCLab += Number(r['SDC Lab']) || 0;
+        sumDSALab += Number(r['DSA Lab']) || 0;
+        sumVSECLab += Number(r['VSEC Lab']) || 0;
+        sumTotalLab += Number(r['Total Lab Sessions']) || 0;
+
+        sumCombined += Number(r['Total Combined Compensated Attendance']) || 0;
+      });
+
+      const totalRow = {
+        'Roll No': 'TOTAL',
+        'Student Name': `${divLabel.toUpperCase()} OVERALL TOTAL`,
+        'PRN Number': `(${rows.length} Students)`,
+        'Division': isDivA ? 'SE(ECE)-A' : 'SE(ECE)-B',
+        'Batch': 'ALL',
+        'SS (Theory)': sumSS,
+        'DSA (Theory)': sumDSA,
+        'SDC (Theory)': sumSDC,
+        'FDS (Theory)': sumFDS,
+        'PME (Theory)': sumPME,
+        'OEC (Theory)': sumOEC,
+        'VEC (Theory)': sumVEC,
+        'Total Theory Lectures': sumTotalTh,
+        'SDC Lab': sumSDCLab,
+        'DSA Lab': sumDSALab,
+        'VSEC Lab': sumVSECLab,
+        'Total Lab Sessions': sumTotalLab,
+        'Total Combined Compensated Attendance': sumCombined
+      };
+
+      const finalRows = [...rows, totalRow];
+      const sheetName = isDivA ? 'SE(ECE)-A Attendance Matrix' : 'SE(ECE)-B Attendance Matrix';
+      const filename = `ECE_${isDivA ? 'Division_A' : 'Division_B'}_Attendance_${new Date().toISOString().split('T')[0]}`;
+
+      const sheetsMap = {};
+      sheetsMap[sheetName] = finalRows;
+
+      const ok = Exporter.exportMultiSheetXLSX(filename, sheetsMap);
+      if (!ok) {
+        Exporter.exportToCSV(filename, finalRows);
+      }
+      Toast.success(`🎉 ${divLabel} attendance sheet downloaded successfully!`);
+    } catch(err) {
+      console.error('Division Excel export error:', err);
+      Toast.error('Failed to download division attendance sheet.');
+    }
+  },
+
+  printDivision(divCode) {
+    const isDivA = divCode === 'SE(ECE)-A' || divCode === 'A';
+    const divA = document.getElementById('section-report-div-a');
+    const divB = document.getElementById('section-report-div-b');
+    const certLogs = document.getElementById('section-report-cert-logs');
+    const prevA = divA ? divA.style.display : '';
+    const prevB = divB ? divB.style.display : '';
+    const prevCert = certLogs ? certLogs.style.display : '';
+
+    if (divA) divA.style.display = isDivA ? 'block' : 'none';
+    if (divB) divB.style.display = !isDivA ? 'block' : 'none';
+    if (certLogs) certLogs.style.display = 'none';
+
+    window.print();
+
+    setTimeout(() => {
+      if (divA) divA.style.display = prevA;
+      if (divB) divB.style.display = prevB;
+      if (certLogs) certLogs.style.display = prevCert;
+    }, 800);
+  },
+
+  printFullReport() {
+    const divA = document.getElementById('section-report-div-a');
+    const divB = document.getElementById('section-report-div-b');
+    const prevA = divA ? divA.style.display : '';
+    const prevB = divB ? divB.style.display : '';
+
+    if (divA) divA.style.display = 'block';
+    if (divB) divB.style.display = 'block';
+
+    window.print();
+
+    setTimeout(() => {
+      if (divA) divA.style.display = prevA;
+      if (divB) divB.style.display = prevB;
+    }, 800);
+  },
+
 };
