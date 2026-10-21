@@ -406,6 +406,11 @@ const TeacherView = {
           <div class="glass-panel">
             <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <h3><i class="fa-solid fa-file-signature" style="color: var(--primary);"></i> HOD Certificate Review & Approvals Desk</h3>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <button type="button" class="btn btn-sm" onclick="TeacherView.openAcademicCalendarModal()" style="font-weight: 800; background: #fff7ed; color: #c2410c; border: 1.5px solid #fdba74; border-radius: var(--radius-full); padding: 0.45rem 1rem; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.15);" title="Open Monthly Academic Calendar showing all Saturdays & Sundays">
+                  <i class="fa-solid fa-calendar-days"></i> Academic Calendar (Sat & Sun)
+                </button>
+              </div>
               <button class="btn btn-primary btn-sm" onclick="HodView.downloadAllCertificatesZip()" style="font-weight: 800; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: var(--radius-full); padding: 0.45rem 1rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);" title="Download ZIP archive containing all certificates organized Division & Roll Number wise">
                 <i class="fa-solid fa-file-zipper"></i> Download All Certificates (ZIP)
               </button>
@@ -628,6 +633,7 @@ const TeacherView = {
   },
 
   approveModalState: null,
+  approveModalCalendarState: null,
 
   async openApproveModal(certId) {
     try {
@@ -651,7 +657,7 @@ const TeacherView = {
       }
       if (initialDay === 'Sunday' || initialDay === 'Saturday') initialDay = 'Monday';
 
-      const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+      const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
       // Helper to get timetable lectures for a specific day
       const getLecturesForDay = (dayName) => {
@@ -680,6 +686,36 @@ const TeacherView = {
       };
 
       const initialLectures = getLecturesForDay(initialDay);
+      // Parse certificate date for monthly academic calendar
+      let certYear = new Date().getFullYear();
+      let certMonth = new Date().getMonth();
+      let certDay = null;
+      if (cert.certificate_date) {
+        const parts = cert.certificate_date.split('-').map(Number);
+        if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          certYear = parts[0];
+          certMonth = parts[1] - 1;
+          certDay = parts[2];
+        } else {
+          const d = new Date(cert.certificate_date);
+          if (!isNaN(d.getTime())) {
+            certYear = d.getFullYear();
+            certMonth = d.getMonth();
+            certDay = d.getDate();
+          }
+        }
+      }
+
+      this.approveModalCalendarState = {
+        isOpen: (cert.description && (cert.description.toLowerCase().includes('saturday') || cert.description.toLowerCase().includes('sunday'))) ? true : false,
+        year: certYear,
+        month: certMonth,
+        certYear: certYear,
+        certMonth: certMonth,
+        certDay: certDay,
+        certDate: cert.certificate_date || ''
+      };
+
       const requestedDays = parseInt(cert.num_days) || 1;
 
       this.approveModalState = {
@@ -715,7 +751,7 @@ const TeacherView = {
     const s = this.approveModalState;
     if (!s) return;
 
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const activeDay = s.days[s.activeDayIndex] || s.days[0];
 
     // 1. Calculate total selected lectures across all configured days
@@ -839,15 +875,25 @@ const TeacherView = {
             <div style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.82rem; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px;">
               <i class="fa-solid fa-align-left" style="color: #2563eb;"></i> Student's Submitted Description / Activity Details:
             </div>
-            ${(s.cert.file_url || s.cert.has_file || s.cert.id) ? `
-              <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${s.cert.id}')" style="font-size: 0.76rem; padding: 0.25rem 0.55rem; font-weight: 700;">
-                <i class="fa-solid fa-file-image"></i> View Uploaded File
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm" id="btn-toggle-approval-cal" onclick="TeacherView.toggleApprovalCalendar()" style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: var(--radius-full); background: ${this.approveModalCalendarState && this.approveModalCalendarState.isOpen ? '#ea580c' : '#fff7ed'}; color: ${this.approveModalCalendarState && this.approveModalCalendarState.isOpen ? '#ffffff' : '#c2410c'}; border: 1.5px solid #fdba74; cursor: pointer; transition: all 0.2s ease;">
+                <i class="fa-solid fa-calendar-days"></i> ${this.approveModalCalendarState && this.approveModalCalendarState.isOpen ? 'Hide Month Calendar' : 'View Month Calendar (Saturdays & Sundays)'}
               </button>
-            ` : ''}
+              ${(s.cert.file_url || s.cert.has_file || s.cert.id) ? `
+                <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.openCertificatePreview('${s.cert.id}')" style="font-size: 0.76rem; padding: 0.25rem 0.55rem; font-weight: 700;">
+                  <i class="fa-solid fa-file-image"></i> View Uploaded File
+                </button>
+              ` : ''}
+            </div>
           </div>
           <div style="font-size: 0.92rem; color: #0f172a; background: #f8fafc; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; line-height: 1.55; white-space: pre-wrap; font-weight: 600;">
             ${s.cert.description ? s.cert.description : '<span style="color: #94a3b8; font-weight: 400; font-style: italic;">No additional description was provided by the student for this submission.</span>'}
           </div>
+        </div>
+
+        <!-- Monthly Calendar Container (Saturdays & Sundays Breakdown) -->
+        <div id="approval-calendar-container" style="${this.approveModalCalendarState && this.approveModalCalendarState.isOpen ? 'display: block;' : 'display: none;'}">
+          ${this.renderApprovalCalendarHtml()}
         </div>
 
         <!-- Event Duration / Number of Days Selector -->
@@ -1299,5 +1345,293 @@ const TeacherView = {
       console.error('viewStudentDetail error:', err);
       Toast.error('Failed to load student details.');
     }
-  }
+  },
+
+  toggleApprovalCalendar() {
+    if (!this.approveModalCalendarState) {
+      this.approveModalCalendarState = {
+        isOpen: true,
+        year: new Date().getFullYear(),
+        month: new Date().getMonth(),
+        certYear: new Date().getFullYear(),
+        certMonth: new Date().getMonth(),
+        certDay: null,
+        certDate: ''
+      };
+    } else {
+      this.approveModalCalendarState.isOpen = !this.approveModalCalendarState.isOpen;
+    }
+    const cont = document.getElementById('approval-calendar-container');
+    const btn = document.getElementById('btn-toggle-approval-cal');
+    if (cont) {
+      cont.style.display = this.approveModalCalendarState.isOpen ? 'block' : 'none';
+      if (this.approveModalCalendarState.isOpen) {
+        cont.innerHTML = this.renderApprovalCalendarHtml();
+      }
+    }
+    if (btn) {
+      btn.innerHTML = `<i class="fa-solid fa-calendar-days"></i> ${this.approveModalCalendarState.isOpen ? 'Hide Month Calendar' : 'View Month Calendar (Saturdays & Sundays)'}`;
+      btn.style.background = this.approveModalCalendarState.isOpen ? '#ea580c' : '#fff7ed';
+      btn.style.color = this.approveModalCalendarState.isOpen ? '#ffffff' : '#c2410c';
+    }
+  },
+
+  changeApprovalCalendarMonth(delta) {
+    if (!this.approveModalCalendarState) return;
+    let m = this.approveModalCalendarState.month + delta;
+    let y = this.approveModalCalendarState.year;
+    if (m < 0) { m = 11; y--; }
+    else if (m > 11) { m = 0; y++; }
+    this.approveModalCalendarState.month = m;
+    this.approveModalCalendarState.year = y;
+    const cont = document.getElementById('approval-calendar-container');
+    if (cont) cont.innerHTML = this.renderApprovalCalendarHtml();
+    const modalBody = document.getElementById('preview-academic-calendar-body');
+    if (modalBody) modalBody.innerHTML = this.renderApprovalCalendarHtml();
+  },
+
+  setApprovalCalendarMonth(m) {
+    if (!this.approveModalCalendarState) return;
+    this.approveModalCalendarState.month = parseInt(m);
+    const cont = document.getElementById('approval-calendar-container');
+    if (cont) cont.innerHTML = this.renderApprovalCalendarHtml();
+    const modalBody = document.getElementById('preview-academic-calendar-body');
+    if (modalBody) modalBody.innerHTML = this.renderApprovalCalendarHtml();
+  },
+
+  setApprovalCalendarYear(y) {
+    if (!this.approveModalCalendarState) return;
+    this.approveModalCalendarState.year = parseInt(y);
+    const cont = document.getElementById('approval-calendar-container');
+    if (cont) cont.innerHTML = this.renderApprovalCalendarHtml();
+    const modalBody = document.getElementById('preview-academic-calendar-body');
+    if (modalBody) modalBody.innerHTML = this.renderApprovalCalendarHtml();
+  },
+
+  resetApprovalCalendarToCertDate() {
+    if (!this.approveModalCalendarState) return;
+    this.approveModalCalendarState.year = this.approveModalCalendarState.certYear;
+    this.approveModalCalendarState.month = this.approveModalCalendarState.certMonth;
+    const cont = document.getElementById('approval-calendar-container');
+    if (cont) cont.innerHTML = this.renderApprovalCalendarHtml();
+    const modalBody = document.getElementById('preview-academic-calendar-body');
+    if (modalBody) modalBody.innerHTML = this.renderApprovalCalendarHtml();
+  },
+
+  renderApprovalCalendarHtml() {
+    const cs = this.approveModalCalendarState || {
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      certYear: new Date().getFullYear(),
+      certMonth: new Date().getMonth(),
+      certDay: null,
+      certDate: ''
+    };
+
+    const y = cs.year;
+    const m = cs.month;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const curMonthName = monthNames[m];
+    const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th'];
+
+    const totalDays = new Date(y, m + 1, 0).getDate();
+    const firstDow = new Date(y, m, 1).getDay();
+    const startCol = (firstDow + 6) % 7; // Mon=0, Tue=1, ..., Sat=5, Sun=6
+
+    const saturdaysList = [];
+    const sundaysList = [];
+
+    for (let d = 1; d <= totalDays; d++) {
+      const dow = new Date(y, m, d).getDay();
+      if (dow === 6) {
+        const satIdx = Math.ceil(d / 7);
+        const isWorking = (satIdx === 1 || satIdx === 3 || satIdx === 5);
+        saturdaysList.push({ date: d, rank: ordinals[satIdx], isWorking });
+      } else if (dow === 0) {
+        sundaysList.push({ date: d });
+      }
+    }
+
+    const dayCells = [];
+    for (let i = 0; i < startCol; i++) {
+      dayCells.push(`<div style="background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 6px; min-height: 52px; opacity: 0.35;"></div>`);
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+      const dt = new Date(y, m, d);
+      const dow = dt.getDay();
+      const isSat = (dow === 6);
+      const isSun = (dow === 0);
+
+      const isCertDate = (cs.certDay === d && cs.certMonth === m && cs.certYear === y);
+
+      if (isSat) {
+        const satIdx = Math.ceil(d / 7);
+        const isWorking = (satIdx === 1 || satIdx === 3 || satIdx === 5);
+        dayCells.push(`
+          <div style="background: ${isCertDate ? '#eff6ff' : '#fffbeb'}; border: 1.5px solid ${isCertDate ? '#2563eb' : (isWorking ? '#86efac' : '#fcd34d')}; border-radius: 8px; padding: 0.4rem; min-height: 52px; display: flex; flex-direction: column; justify-content: space-between; position: relative; ${isCertDate ? 'box-shadow: 0 0 0 2px #3b82f6;' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 900; font-size: 0.95rem; color: #b45309;">${d}</span>
+              <span style="font-size: 0.68rem; font-weight: 800; padding: 0.1rem 0.35rem; border-radius: 4px; background: ${isWorking ? '#dcfce7' : '#fef3c7'}; color: ${isWorking ? '#15803d' : '#b45309'}; border: 1px solid ${isWorking ? '#bbf7d0' : '#fde68a'};">
+                ${ordinals[satIdx]} Sat
+              </span>
+            </div>
+            <div style="font-size: 0.66rem; font-weight: 800; color: ${isWorking ? '#16a34a' : '#d97706'}; margin-top: 0.2rem;">
+              <i class="fa-solid ${isWorking ? 'fa-building-columns' : 'fa-bed'}"></i> ${isWorking ? 'Working Day' : 'College Off'}
+            </div>
+            ${isCertDate ? `<div style="font-size: 0.62rem; font-weight: 900; background: #2563eb; color: #fff; padding: 0.15rem 0.3rem; border-radius: 4px; text-align: center; margin-top: 0.2rem;"><i class="fa-solid fa-star"></i> EVENT DATE</div>` : ''}
+          </div>
+        `);
+      } else if (isSun) {
+        dayCells.push(`
+          <div style="background: ${isCertDate ? '#eff6ff' : '#fff1f2'}; border: 1.5px solid ${isCertDate ? '#2563eb' : '#fda4af'}; border-radius: 8px; padding: 0.4rem; min-height: 52px; display: flex; flex-direction: column; justify-content: space-between; ${isCertDate ? 'box-shadow: 0 0 0 2px #3b82f6;' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 900; font-size: 0.95rem; color: #be123c;">${d}</span>
+              <span style="font-size: 0.68rem; font-weight: 800; padding: 0.1rem 0.35rem; border-radius: 4px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;">
+                Sunday
+              </span>
+            </div>
+            <div style="font-size: 0.66rem; font-weight: 800; color: #e11d48; margin-top: 0.2rem;">
+              <i class="fa-solid fa-umbrella-beach"></i> Weekend Off
+            </div>
+            ${isCertDate ? `<div style="font-size: 0.62rem; font-weight: 900; background: #2563eb; color: #fff; padding: 0.15rem 0.3rem; border-radius: 4px; text-align: center; margin-top: 0.2rem;"><i class="fa-solid fa-star"></i> EVENT DATE</div>` : ''}
+          </div>
+        `);
+      } else {
+        dayCells.push(`
+          <div style="background: ${isCertDate ? '#eff6ff' : '#ffffff'}; border: 1.5px solid ${isCertDate ? '#2563eb' : '#e2e8f0'}; border-radius: 8px; padding: 0.4rem; min-height: 52px; display: flex; flex-direction: column; justify-content: space-between; ${isCertDate ? 'box-shadow: 0 0 0 2px #3b82f6;' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${d}</span>
+            </div>
+            <div style="font-size: 0.65rem; color: var(--text-muted);">
+              Instructional
+            </div>
+            ${isCertDate ? `<div style="font-size: 0.62rem; font-weight: 900; background: #2563eb; color: #fff; padding: 0.15rem 0.3rem; border-radius: 4px; text-align: center; margin-top: 0.2rem;"><i class="fa-solid fa-star"></i> EVENT DATE</div>` : ''}
+          </div>
+        `);
+      }
+    }
+
+    const monthOptions = monthNames.map((mn, idx) => 
+      `<option value="${idx}" ${idx === m ? 'selected' : ''}>${mn}</option>`
+    ).join('');
+
+    const yearOptions = [2023, 2024, 2025, 2026, 2027, 2028].map(yr =>
+      `<option value="${yr}" ${yr === y ? 'selected' : ''}>${yr}</option>`
+    ).join('');
+
+    return `
+      <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border: 2px solid #fdba74; border-radius: var(--radius-md); padding: 1rem 1.15rem; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.1); margin-bottom: 1rem;">
+        <!-- Calendar Header Navigation -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem; border-bottom: 1.5px solid #fed7aa; padding-bottom: 0.75rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div style="background: #ea580c; color: #fff; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+              <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #9a3412;">
+                Academic Month Calendar: <span style="color: #ea580c;">${curMonthName} ${y}</span>
+              </h4>
+              <p style="margin: 0; font-size: 0.76rem; color: #7c2d12;">
+                Showing all <strong>Saturdays (1st, 2nd, 3rd, 4th, 5th)</strong> and <strong>Sundays</strong> of the month
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="TeacherView.changeApprovalCalendarMonth(-1)" style="padding: 0.3rem 0.65rem; font-weight: 700;">
+              <i class="fa-solid fa-chevron-left"></i> Prev
+            </button>
+            <select class="form-control form-control-sm" style="width: 120px; font-weight: 800; border: 1.5px solid #f97316;" onchange="TeacherView.setApprovalCalendarMonth(this.value)">
+              ${monthOptions}
+            </select>
+            <select class="form-control form-control-sm" style="width: 90px; font-weight: 800; border: 1.5px solid #f97316;" onchange="TeacherView.setApprovalCalendarYear(this.value)">
+              ${yearOptions}
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="TeacherView.changeApprovalCalendarMonth(1)" style="padding: 0.3rem 0.65rem; font-weight: 700;">
+              Next <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            ${cs.certDate ? `
+              <button type="button" class="btn btn-sm" onclick="TeacherView.resetApprovalCalendarToCertDate()" style="background: #2563eb; color: #fff; font-weight: 800; padding: 0.3rem 0.65rem; border-radius: 6px;" title="Jump back to certificate submitted date">
+                <i class="fa-solid fa-bullseye"></i> Event Month
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- 7-Column Day Header -->
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.4rem; text-align: center; margin-bottom: 0.4rem; font-weight: 800; font-size: 0.8rem;">
+          <div style="padding: 0.4rem 0.2rem; background: #f1f5f9; border-radius: 6px; color: var(--text-main);">Mon</div>
+          <div style="padding: 0.4rem 0.2rem; background: #f1f5f9; border-radius: 6px; color: var(--text-main);">Tue</div>
+          <div style="padding: 0.4rem 0.2rem; background: #f1f5f9; border-radius: 6px; color: var(--text-main);">Wed</div>
+          <div style="padding: 0.4rem 0.2rem; background: #f1f5f9; border-radius: 6px; color: var(--text-main);">Thu</div>
+          <div style="padding: 0.4rem 0.2rem; background: #f1f5f9; border-radius: 6px; color: var(--text-main);">Fri</div>
+          <div style="padding: 0.4rem 0.2rem; background: #ffedd5; border: 1.5px solid #fdba74; border-radius: 6px; color: #c2410c;">
+            <i class="fa-solid fa-calendar-day"></i> SAT
+          </div>
+          <div style="padding: 0.4rem 0.2rem; background: #ffe4e6; border: 1.5px solid #fecdd3; border-radius: 6px; color: #be123c;">
+            <i class="fa-solid fa-umbrella-beach"></i> SUN
+          </div>
+        </div>
+
+        <!-- Days Grid -->
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.4rem;">
+          ${dayCells.join('')}
+        </div>
+
+        <!-- Month Weekend Summary Bar -->
+        <div style="background: #ffffff; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.85rem; display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.82rem;">
+          <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+            <strong style="color: #c2410c; display: flex; align-items: center; gap: 0.35rem; font-size: 0.84rem;">
+              <i class="fa-solid fa-calendar-day"></i> Saturdays in ${curMonthName} (${saturdaysList.length}):
+            </strong>
+            ${saturdaysList.map(s => `
+              <span style="background: ${s.isWorking ? '#dcfce7' : '#fef3c7'}; color: ${s.isWorking ? '#15803d' : '#b45309'}; border: 1px solid ${s.isWorking ? '#86efac' : '#fde68a'}; padding: 0.2rem 0.55rem; border-radius: 5px; font-weight: 800; font-size: 0.76rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <strong>${s.rank} Sat:</strong> ${curMonthName.slice(0, 3)} ${s.date} <span style="font-size: 0.7rem; opacity: 0.9;">(${s.isWorking ? '✓ Working Day' : '✗ College Off'})</span>
+              </span>
+            `).join('')}
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+            <strong style="color: #be123c; display: flex; align-items: center; gap: 0.35rem; font-size: 0.84rem;">
+              <i class="fa-solid fa-umbrella-beach"></i> Sundays in ${curMonthName} (${sundaysList.length}):
+            </strong>
+            ${sundaysList.map(s => `
+              <span style="background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; padding: 0.2rem 0.55rem; border-radius: 5px; font-weight: 800; font-size: 0.76rem;">
+                ${curMonthName.slice(0, 3)} ${s.date} (Weekend Off)
+              </span>
+            `).join('')}
+          </div>
+
+          <div style="color: #475569; font-size: 0.75rem; border-top: 1px dashed #fdba74; padding-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+            <i class="fa-solid fa-circle-info" style="color: #2563eb;"></i>
+            <span><strong>College Academic Calendar Rule:</strong> 1st, 3rd, and 5th Saturdays are instructional working days; 2nd and 4th Saturdays are non-instructional holidays. Attendance compensation for weekend events is awarded against college instructional days.</span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  openAcademicCalendarModal() {
+    if (!this.approveModalCalendarState) {
+      this.approveModalCalendarState = {
+        isOpen: true,
+        year: new Date().getFullYear(),
+        month: new Date().getMonth(),
+        certYear: new Date().getFullYear(),
+        certMonth: new Date().getMonth(),
+        certDay: null,
+        certDate: ''
+      };
+    }
+    const html = `
+      <div id="preview-academic-calendar-body" style="padding: 0.5rem;">
+        ${this.renderApprovalCalendarHtml()}
+      </div>
+    `;
+    document.getElementById('preview-modal-title').innerText = `Academic Monthly Calendar (Saturdays & Sundays Breakdown)`;
+    document.getElementById('preview-modal-body').innerHTML = html;
+    openModal('modal-file-preview');
+  },
+
 };

@@ -479,9 +479,9 @@ const StudentView = {
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="form-group">
-                <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> <small style="color: var(--text-muted); font-size: 0.78rem;">(Monday – Friday only)</small></label>
+                <label>Certificate Event Date <span style="color: var(--accent-rose);">*</span> </label>
                 <input type="date" id="page-cert-date" class="form-control" max="${todayStr}" onchange="StudentView.validateWeekday(this)" oninput="StudentView.validateWeekday(this)" required>
-                <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-xmark" style="color: #d97706;"></i> Saturdays & Sundays cannot be selected.</small>
+                <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 0.25rem;"><i class="fa-solid fa-calendar-check" style="color: #2563eb;"></i> Weekday or weekend events (Saturdays & Sundays) are fully supported and compensated by HOD.</small>
               </div>
 
               <div class="form-group">
@@ -608,10 +608,10 @@ const StudentView = {
     if (parts.length === 3) {
       const d = new Date(parts[0], parts[1] - 1, parts[2]);
       const day = d.getDay();
-      if (day === 0 || day === 6) {
-        input.value = '';
-        Toast.warning('Saturdays and Sundays cannot be selected. College academic schedule runs Monday through Friday. Please choose a weekday.');
-        return false;
+      if (day === 6) {
+        Toast.info('Saturday event selected. Attendance will be compensated against instructional working days during HOD approval.');
+      } else if (day === 0) {
+        Toast.info('Sunday weekend event selected. Attendance will be compensated against instructional working days during HOD approval.');
       }
       // Refresh event days hint based on selected weekday
       const daysSel = document.getElementById('page-cert-days');
