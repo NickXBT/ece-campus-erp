@@ -184,14 +184,25 @@ const App = {
 
       const isHod = role === 'HOD' || (designation && designation.includes('Head'));
       const isTeacher = role === 'TEACHER' || (designation && (designation.includes('Professor') || designation.includes('Faculty')));
+      const isStudent = !isHod && !isTeacher;
 
-      if (nameEl) nameEl.innerText = name || 'Academic User';
+      // Authoritative student name from profile or current user
+      const actualName = name || (App.currentProfile && App.currentProfile.name) || (App.currentUser && App.currentUser.name) || 'Student';
+
+      if (nameEl) nameEl.innerText = actualName;
       if (eyebrowEl) {
-        eyebrowEl.innerText = isHod ? 'HOD Administration Access' : (isTeacher ? 'Faculty Portal Access' : 'Academic Access Granted');
+        eyebrowEl.innerText = isHod ? 'HOD Administration Access' : (isTeacher ? 'Faculty Portal Access' : 'Student Portal Access Granted');
       }
       if (subtitleEl) {
-        const title = designation || (isHod ? 'Head of Department (ECE)' : (isTeacher ? 'Faculty Member (ECE)' : 'Student • Electronics & Computer Eng.'));
-        subtitleEl.innerText = `${title} • Your student and activity portal is ready. Let’s make this a great semester.`;
+        if (isHod) {
+          subtitleEl.innerText = 'Head of Department (ECE) • Department Administration Portal';
+        } else if (isTeacher) {
+          subtitleEl.innerText = (designation || 'Faculty Member (ECE)') + ' • Academic Portal';
+        } else {
+          const divInfo = (App.currentProfile && App.currentProfile.division_name) || (designation && designation.includes('SE(') ? designation : 'SE(ECE)');
+          const rollInfo = (App.currentProfile && App.currentProfile.roll_no) ? ' | Roll: ' + App.currentProfile.roll_no : '';
+          subtitleEl.innerText = 'Student [' + divInfo + rollInfo + '] • Department of Electronics & Communication Engineering';
+        }
       }
 
       overlay.style.display = 'grid';

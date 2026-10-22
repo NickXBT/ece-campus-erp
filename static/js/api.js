@@ -1,3 +1,57 @@
+
+function healStudentRecords(db) {
+  if (!db) return;
+  const canonicalUserMap = new Map();
+  (INITIAL_DB.users || []).forEach(iu => {
+    if (iu && iu.role === 'STUDENT') {
+      canonicalUserMap.set(iu.id, iu);
+      if (iu.prn_no) canonicalUserMap.set(iu.prn_no.trim().toUpperCase(), iu);
+    }
+  });
+
+  const canonicalStudentMap = new Map();
+  (INITIAL_DB.students || []).forEach(is => {
+    if (is) {
+      canonicalStudentMap.set(is.id, is);
+      if (is.prn_no) canonicalStudentMap.set(is.prn_no.trim().toUpperCase(), is);
+    }
+  });
+
+  if (db.users) {
+    db.users.forEach(u => {
+      if (!u || u.role !== 'STUDENT') return;
+      const canon = canonicalUserMap.get(u.id) || (u.prn_no ? canonicalUserMap.get(u.prn_no.trim().toUpperCase()) : null);
+      if (canon) {
+        u.name = canon.name;
+        u.prn_no = canon.prn_no;
+        u.roll_no = canon.roll_no;
+        u.division_id = canon.division_id;
+        u.division_name = canon.division_name;
+        u.batch_id = canon.batch_id;
+        u.batch_name = canon.batch_name;
+        u.username = canon.username || canon.prn_no;
+      }
+    });
+  }
+
+  if (db.students) {
+    db.students.forEach(s => {
+      if (!s) return;
+      const canon = canonicalStudentMap.get(s.id) || (s.prn_no ? canonicalStudentMap.get(s.prn_no.trim().toUpperCase()) : null);
+      if (canon) {
+        s.user_id = canon.user_id;
+        s.name = canon.name;
+        s.prn_no = canon.prn_no;
+        s.roll_no = canon.roll_no;
+        s.division_id = canon.division_id;
+        s.division_name = canon.division_name;
+        s.batch_id = canon.batch_id;
+        s.batch_name = canon.batch_name;
+      }
+    });
+  }
+}
+
 /**
  * Frontend API Layer for Campus ERP
  * 100% Offline-First with Google Firebase Realtime Multi-Device Synchronization
@@ -6005,6 +6059,7 @@ function getLocalDB() {
         }
       });
     }
+    healStudentRecords(g_cloudDB);
     return g_cloudDB;
   }
   try {
@@ -7110,6 +7165,13 @@ const API = {
       }
 
       const student = findCurrentStudent(db, validUser);
+      if (student && student.name && validUser.role === 'STUDENT') {
+        validUser.name = student.name;
+        validUser.roll_no = student.roll_no;
+        validUser.prn_no = student.prn_no;
+        validUser.division_name = student.division_name;
+        validUser.batch_name = student.batch_name;
+      }
       if (validUser.role === 'HOD' || validUser.role === 'TEACHER') {
         const teacher = (db.teachers || []).find(t => (validUser.id && t.user_id == validUser.id) || (validUser.email && t.email && t.email.toLowerCase() === validUser.email.toLowerCase()) || (validUser.username && t.teacher_id_code && t.teacher_id_code.toUpperCase() === validUser.username.toUpperCase()));
         const profile = teacher || (db.teachers || [])[0] || { name: 'Dr. Dhanashree Kulkarni' };
@@ -7332,6 +7394,14 @@ const API = {
         if (typeof teacher === 'object') teacher.name = teacher.name;
       }
       const student = !isFaculty ? findCurrentStudent(db, user) : null;
+      if (!isFaculty && student && student.name) {
+        user.name = student.name;
+        user.roll_no = student.roll_no;
+        user.prn_no = student.prn_no;
+        user.division_name = student.division_name;
+        user.batch_name = student.batch_name;
+        setSessionUser(user);
+      }
       const redirect = isFaculty ? '#/hod/dashboard' : '#/student/dashboard';
       return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: teacher || student || user, redirect };
     }
