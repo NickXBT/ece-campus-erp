@@ -536,7 +536,7 @@ const AuthView = {
       const meData = await API.get('/api/auth/me').catch(() => ({ profile: null }));
       App.currentProfile = meData.profile;
 
-      const personName = (meData.profile && meData.profile.name) || (res.user && res.user.name) || (res.profile && res.profile.name) || 'User';
+      const personName = (res.user && res.user.name) || (res.profile && res.profile.name) || (meData.profile && meData.profile.name) || 'User';
       const personRole = (res.user && res.user.role) || '';
       const personDesignation = (meData.profile && (meData.profile.designation || meData.profile.division_name)) || '';
 

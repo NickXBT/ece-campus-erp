@@ -3,23 +3,37 @@ function healStudentRecords(db) {
   if (!db) return;
   const canonicalStudentByPrn = new Map();
   const canonicalUserByPrn = new Map();
+  const canonicalStudentByRollDiv = new Map();
+  const canonicalUserByRollDiv = new Map();
 
   (INITIAL_DB.students || []).forEach(is => {
-    if (is && is.prn_no) canonicalStudentByPrn.set(is.prn_no.trim().toUpperCase(), is);
-  });
-  (INITIAL_DB.users || []).forEach(iu => {
-    if (iu && iu.role === 'STUDENT' && iu.prn_no) canonicalUserByPrn.set(iu.prn_no.trim().toUpperCase(), iu);
+    if (!is) return;
+    if (is.prn_no) canonicalStudentByPrn.set(is.prn_no.trim().toUpperCase(), is);
+    const divKey = (is.division_name && is.division_name.includes('B')) ? 'B' : 'A';
+    if (is.roll_no) canonicalStudentByRollDiv.set(divKey + '_' + String(parseInt(is.roll_no)), is);
   });
 
-  // Heal students strictly by PRN
+  (INITIAL_DB.users || []).forEach(iu => {
+    if (!iu || iu.role !== 'STUDENT') return;
+    if (iu.prn_no) canonicalUserByPrn.set(iu.prn_no.trim().toUpperCase(), iu);
+    const divKey = (iu.division_name && iu.division_name.includes('B')) ? 'B' : 'A';
+    if (iu.roll_no) canonicalUserByRollDiv.set(divKey + '_' + String(parseInt(iu.roll_no)), iu);
+  });
+
+  // Heal students strictly by PRN, then by Division + Roll
   if (db.students) {
     db.students.forEach(s => {
-      if (!s || !s.prn_no) return;
-      const canon = canonicalStudentByPrn.get(s.prn_no.trim().toUpperCase());
+      if (!s) return;
+      const sPrn = (s.prn_no || '').trim().toUpperCase();
+      const divKey = (s.division_name && s.division_name.includes('B')) ? 'B' : 'A';
+      const rollKey = s.roll_no ? (divKey + '_' + String(parseInt(s.roll_no))) : null;
+
+      const canon = (sPrn && canonicalStudentByPrn.get(sPrn)) || (rollKey && canonicalStudentByRollDiv.get(rollKey));
       if (canon) {
         s.id = canon.id;
         s.user_id = canon.user_id;
         s.name = canon.name;
+        s.prn_no = canon.prn_no;
         s.roll_no = canon.roll_no;
         s.division_name = canon.division_name;
         s.division_id = canon.division_id;
@@ -29,14 +43,19 @@ function healStudentRecords(db) {
     });
   }
 
-  // Heal users strictly by PRN
+  // Heal users strictly by PRN, then by Division + Roll
   if (db.users) {
     db.users.forEach(u => {
-      if (!u || u.role !== 'STUDENT' || !u.prn_no) return;
-      const canon = canonicalUserByPrn.get(u.prn_no.trim().toUpperCase());
+      if (!u || u.role !== 'STUDENT') return;
+      const uPrn = (u.prn_no || '').trim().toUpperCase();
+      const divKey = (u.division_name && u.division_name.includes('B')) ? 'B' : 'A';
+      const rollKey = u.roll_no ? (divKey + '_' + String(parseInt(u.roll_no))) : null;
+
+      const canon = (uPrn && canonicalUserByPrn.get(uPrn)) || (rollKey && canonicalUserByRollDiv.get(rollKey));
       if (canon) {
         u.id = canon.id;
         u.name = canon.name;
+        u.prn_no = canon.prn_no;
         u.roll_no = canon.roll_no;
         u.division_name = canon.division_name;
         u.division_id = canon.division_id;
@@ -5691,7 +5710,12 @@ const INITIAL_DB = {
   } catch(e) {}
 })();
 
-const LOCAL_STORAGE_KEY = "ece_campus_db_v900001_cloud_firebase_certs_only";
+const LOCAL_STORAGE_KEY = "ece_campus_db_v900004_canonical_fixed";
+try {
+  ['ece_campus_db_v900001_cloud_firebase_certs_only', 'ece_campus_db_v900002_prn_first_fixed', 'campus_erp_db'].forEach(k => {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(k);
+  });
+} catch(e) {}
 
 // Google Firebase Realtime Database Configuration & Client
 const FIREBASE_CONFIG = {
@@ -6113,55 +6137,7 @@ function getLocalDB() {
     );
     g_cloudDB.deleted_teacher_ids = Array.from(delTeacherSet);
 
-    // Auto-heal student records in g_cloudDB.users and g_cloudDB.students to prevent cross-student ID collisions
-    if (g_cloudDB.users) {
-      const canonicalUserMap = new Map();
-      (INITIAL_DB.users || []).forEach(iu => {
-        if (iu && iu.role === 'STUDENT') canonicalUserMap.set(iu.id, iu);
-      });
-      g_cloudDB.users.forEach(u => {
-        if (!u || u.role !== 'STUDENT') return;
-        const canon = canonicalUserMap.get(u.id);
-        if (canon) {
-          // If the user record was corrupted by another student's name or PRN
-          if (!u.prn_no || (canon.prn_no && u.prn_no.toUpperCase() !== canon.prn_no.toUpperCase())) {
-            u.name = canon.name;
-            u.prn_no = canon.prn_no;
-            u.roll_no = canon.roll_no;
-            u.division_id = canon.division_id;
-            u.division_name = canon.division_name;
-            u.batch_id = canon.batch_id;
-            u.batch_name = canon.batch_name;
-            u.username = canon.username || canon.prn_no;
-          }
-        }
-      });
-    }
-
-    if (g_cloudDB.students) {
-      const canonicalStudentMap = new Map();
-      (INITIAL_DB.students || []).forEach(is => {
-        if (is) canonicalStudentMap.set(is.id, is);
-      });
-      g_cloudDB.students.forEach(s => {
-        if (!s) return;
-        const canon = canonicalStudentMap.get(s.id);
-        if (canon) {
-          if (!s.user_id || s.user_id !== canon.user_id) {
-            s.user_id = canon.user_id;
-          }
-          if (!s.prn_no || (canon.prn_no && s.prn_no.toUpperCase() !== canon.prn_no.toUpperCase())) {
-            s.name = canon.name;
-            s.prn_no = canon.prn_no;
-            s.roll_no = canon.roll_no;
-            s.division_id = canon.division_id;
-            s.division_name = canon.division_name;
-            s.batch_id = canon.batch_id;
-            s.batch_name = canon.batch_name;
-          }
-        }
-      });
-    }
+    healStudentRecords(g_cloudDB);
     if (g_cloudDB.teachers) {
       g_cloudDB.teachers = g_cloudDB.teachers.filter(t => {
         if (!t) return false;
@@ -7046,33 +7022,46 @@ function getSessionUser() {
       const email = user.email.trim().toLowerCase();
       if (email === 'teacher@campus.edu') {
         user.role = 'HOD';
-        user.id = 1;
-      } else if (email === 'faculty@campus.edu') {
+        user.name = 'Dr. Dhanashree Kulkarni';
+      }
+      if (email === 'hod@campus.edu') {
+        user.role = 'HOD';
+        user.name = 'Dr. Dhanashree Kulkarni';
+      }
+      if (email === 'vrushali.gujar@campus.edu') {
         user.role = 'TEACHER';
-        user.id = 2;
-      } else if (email === 'vrushali.gujar@campus.edu') {
-        user.role = 'TEACHER';
-        user.id = 1008;
         user.name = 'Ms. Vrushali Gujar';
       }
     }
 
-    // Student canonical resolution: STRICTLY BY PRN FIRST!
+    // Student canonical resolution: STRICTLY BY PRN OR ROLL+DIV
     if (user.role === 'STUDENT') {
       const normPrn = (user.prn_no || '').trim().toUpperCase();
-      if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-')) {
-        const canonStudent = (INITIAL_DB.students || []).find(is => is && is.prn_no && is.prn_no.trim().toUpperCase() === normPrn);
-        const canonUser = (INITIAL_DB.users || []).find(iu => iu && iu.prn_no && iu.prn_no.trim().toUpperCase() === normPrn);
-        if (canonStudent && canonUser) {
-          user.name = canonStudent.name;
-          user.prn_no = canonStudent.prn_no;
-          user.roll_no = canonStudent.roll_no;
-          user.division_name = canonStudent.division_name;
-          user.batch_name = canonStudent.batch_name;
-          user.id = canonUser.id;
-          user.user_id = canonUser.id;
-          user.student_id = canonStudent.id;
+      let canonStudent = null;
+      let canonUser = null;
+
+      if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-') && normPrn.startsWith('U251')) {
+        canonStudent = (INITIAL_DB.students || []).find(is => is && is.prn_no && is.prn_no.trim().toUpperCase() === normPrn);
+        canonUser = (INITIAL_DB.users || []).find(iu => iu && iu.prn_no && iu.prn_no.trim().toUpperCase() === normPrn);
+      }
+
+      if (!canonStudent && user.roll_no && user.division_name) {
+        const isB = user.division_name.includes('B');
+        canonStudent = (INITIAL_DB.students || []).find(is => is && is.roll_no == user.roll_no && ((isB && is.division_name.includes('B')) || (!isB && is.division_name.includes('A'))));
+        if (canonStudent && canonStudent.prn_no) {
+          canonUser = (INITIAL_DB.users || []).find(iu => iu && iu.prn_no && iu.prn_no.trim().toUpperCase() === canonStudent.prn_no.trim().toUpperCase());
         }
+      }
+
+      if (canonStudent && canonUser) {
+        user.name = canonStudent.name;
+        user.prn_no = canonStudent.prn_no;
+        user.roll_no = canonStudent.roll_no;
+        user.division_name = canonStudent.division_name;
+        user.batch_name = canonStudent.batch_name;
+        user.id = canonUser.id;
+        user.user_id = canonUser.id;
+        user.student_id = canonStudent.id;
       }
     }
     return user;
@@ -7096,7 +7085,7 @@ function findCurrentStudent(db, currentUser) {
   const normEmail = (currentUser.email || '').trim().toLowerCase();
   const normPrn = (currentUser.prn_no || '').trim().toUpperCase();
   const normUsername = (currentUser.username || '').trim().toUpperCase();
-  const curUserId = currentUser.user_id || currentUser.id;
+  const curUserId = currentUser.user_id;
   const curStudentId = currentUser.student_id;
 
   // 1. Authoritative PRN match (100% unique per student)
@@ -7107,12 +7096,12 @@ function findCurrentStudent(db, currentUser) {
   // 2. Authoritative student_id match (if explicitly set)
   if (curStudentId) {
     const idMatch = (db.students || []).find(s => s && String(s.id) === String(curStudentId));
-    if (idMatch) return idMatch;
+    if (idMatch && (!normPrn || !idMatch.prn_no || idMatch.prn_no.toUpperCase() === normPrn)) return idMatch;
   }
   // 3. Authoritative user_id match
   if (curUserId) {
     const uMatch = (db.students || []).find(s => s && s.user_id && String(s.user_id) === String(curUserId));
-    if (uMatch) return uMatch;
+    if (uMatch && (!normPrn || !uMatch.prn_no || uMatch.prn_no.toUpperCase() === normPrn)) return uMatch;
   }
   // 4. Personal Email match
   if (normEmail && normEmail.length > 4 && normEmail.includes('@') && !normEmail.endsWith('@campus.edu')) {
@@ -7167,13 +7156,30 @@ const API = {
         });
       }
       if (!validUser) {
-        validUser = (db.users || []).find(u => {
-          if (!u) return false;
-          if (currentUser.id && u.id && String(u.id) === String(currentUser.id)) return true;
-          if (currentUser.prn_no && u.prn_no && u.prn_no.toUpperCase() === currentUser.prn_no.toUpperCase()) return true;
-          if (currentUser.email && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()) return true;
-          return false;
-        });
+        const normPrn = (currentUser.prn_no || '').trim().toUpperCase();
+        // Priority 1: Match by PRN
+        if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-')) {
+          validUser = (db.users || []).find(u => u && u.prn_no && u.prn_no.trim().toUpperCase() === normPrn);
+        }
+        // Priority 2: Match by user_id
+        if (!validUser && currentUser.user_id) {
+          validUser = (db.users || []).find(u => u && String(u.id) === String(currentUser.user_id));
+        }
+        // Priority 3: Match by personal email
+        if (!validUser && currentUser.email && !currentUser.email.endsWith('@campus.edu')) {
+          validUser = (db.users || []).find(u => u && u.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
+        }
+        // Priority 4: Match by id ONLY if PRN is not set or matches
+        if (!validUser && currentUser.id) {
+          validUser = (db.users || []).find(u => {
+            if (!u) return false;
+            if (String(u.id) === String(currentUser.id)) {
+              if (currentUser.prn_no && u.prn_no && u.prn_no.toUpperCase() !== currentUser.prn_no.toUpperCase()) return false;
+              return true;
+            }
+            return false;
+          });
+        }
       }
 
       if (!validUser) {
@@ -7260,6 +7266,13 @@ const API = {
           if (uPrn && uPrn.length > 2 && uPrn !== 'n/a' && uPrn === email) return true;
           if (uUsername && uUsername.length > 2 && uUsername === email) return true;
           if (uName && uName.length > 3 && uName === email) return true;
+          if (email.length >= 4 && !email.includes('@')) {
+            const emailWords = email.split(/\s+/).filter(w => w.length > 2);
+            if (emailWords.length >= 2 && emailWords.every(w => uName.includes(w))) {
+              if (portal === 'DIV_B' && u.division_name && u.division_name.includes('B')) return true;
+              if (portal === 'DIV_A' && (!u.division_name || u.division_name.includes('A'))) return true;
+            }
+          }
           if (email === uRollRaw || email === uRollPad || email === uRollInt) {
             if (portal === 'DIV_B' && u.division_name && u.division_name.includes('B')) return true;
             if (portal === 'DIV_A' && (!u.division_name || u.division_name.includes('A'))) return true;
