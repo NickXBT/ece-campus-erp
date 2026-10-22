@@ -5701,18 +5701,32 @@ function initFirebaseRealtimeListeners() {
       const val = snapshot.val();
       if (val && typeof val === 'object') {
         const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(s => s && s.id);
+        const valid = list.filter(s => s && (s.id || s.prn_no));
         if (valid.length > 0) {
           const db = getLocalDB();
           valid.forEach(actSt => {
+            const normActPrn = (actSt.prn_no || '').trim().toUpperCase();
+            const normActEmail = (actSt.email || '').trim().toLowerCase();
+            const actUserId = actSt.user_id;
+
             let matched = false;
             (db.students || []).forEach(s => {
-              if (s.id == actSt.id || (actSt.prn_no && s.prn_no && actSt.prn_no.toUpperCase() === s.prn_no.toUpperCase()) || (actSt.email && s.email && actSt.email.toLowerCase() === s.email.toLowerCase())) {
+              const sPrn = (s.prn_no || '').trim().toUpperCase();
+              let isMatch = false;
+              if (normActPrn && sPrn && normActPrn === sPrn) {
+                isMatch = true;
+              } else if (actSt.id && s.id && String(s.id) === String(actSt.id)) {
+                isMatch = true;
+              } else if (actUserId && s.user_id && String(s.user_id) === String(actUserId)) {
+                isMatch = true;
+              }
+              if (isMatch) {
                 matched = true;
                 s.name = actSt.name || s.name;
-                s.email = actSt.email || s.email;
-                s.prn_no = actSt.prn_no || s.prn_no;
-                s.password_hash = actSt.password_hash || s.password_hash;
+                if (actSt.email) s.email = actSt.email;
+                if (actSt.prn_no) s.prn_no = actSt.prn_no;
+                if (actSt.roll_no) s.roll_no = actSt.roll_no;
+                if (actSt.password_hash) s.password_hash = actSt.password_hash;
                 s.status = 'APPROVED';
                 s.is_activated = true;
                 s.is_logged_in = true;
@@ -5724,11 +5738,25 @@ function initFirebaseRealtimeListeners() {
 
             (db.users || []).forEach(u => {
               if (u.role && u.role !== 'STUDENT') return;
-              if (u.id == actSt.user_id || u.id == actSt.id || (actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || (actSt.email && u.email && actSt.email.toLowerCase() === u.email.toLowerCase())) {
+              const uPrn = (u.prn_no || '').trim().toUpperCase();
+              const uEmail = (u.email || '').trim().toLowerCase();
+
+              // Strict match: PRN first, or user_id === u.id (NEVER match u.id == actSt.id)
+              let userMatch = false;
+              if (normActPrn && uPrn && normActPrn === uPrn) {
+                userMatch = true;
+              } else if (actUserId && u.id && String(u.id) === String(actUserId)) {
+                userMatch = true;
+              } else if (normActEmail && !normActEmail.endsWith('@campus.edu') && uEmail && normActEmail === uEmail) {
+                userMatch = true;
+              }
+
+              if (userMatch) {
                 u.name = actSt.name || u.name;
-                u.email = actSt.email || u.email;
-                u.prn_no = actSt.prn_no || u.prn_no;
-                u.password_hash = actSt.password_hash || u.password_hash;
+                if (actSt.email) u.email = actSt.email;
+                if (actSt.prn_no) u.prn_no = actSt.prn_no;
+                if (actSt.roll_no) u.roll_no = actSt.roll_no;
+                if (actSt.password_hash) u.password_hash = actSt.password_hash;
                 u.status = 'APPROVED';
                 u.is_activated = true;
                 u.is_logged_in = true;
@@ -6033,6 +6061,56 @@ function getLocalDB() {
         .map(x => String(x).toUpperCase())
     );
     g_cloudDB.deleted_teacher_ids = Array.from(delTeacherSet);
+
+    // Auto-heal student records in g_cloudDB.users and g_cloudDB.students to prevent cross-student ID collisions
+    if (g_cloudDB.users) {
+      const canonicalUserMap = new Map();
+      (INITIAL_DB.users || []).forEach(iu => {
+        if (iu && iu.role === 'STUDENT') canonicalUserMap.set(iu.id, iu);
+      });
+      g_cloudDB.users.forEach(u => {
+        if (!u || u.role !== 'STUDENT') return;
+        const canon = canonicalUserMap.get(u.id);
+        if (canon) {
+          // If the user record was corrupted by another student's name or PRN
+          if (!u.prn_no || (canon.prn_no && u.prn_no.toUpperCase() !== canon.prn_no.toUpperCase())) {
+            u.name = canon.name;
+            u.prn_no = canon.prn_no;
+            u.roll_no = canon.roll_no;
+            u.division_id = canon.division_id;
+            u.division_name = canon.division_name;
+            u.batch_id = canon.batch_id;
+            u.batch_name = canon.batch_name;
+            u.username = canon.username || canon.prn_no;
+          }
+        }
+      });
+    }
+
+    if (g_cloudDB.students) {
+      const canonicalStudentMap = new Map();
+      (INITIAL_DB.students || []).forEach(is => {
+        if (is) canonicalStudentMap.set(is.id, is);
+      });
+      g_cloudDB.students.forEach(s => {
+        if (!s) return;
+        const canon = canonicalStudentMap.get(s.id);
+        if (canon) {
+          if (!s.user_id || s.user_id !== canon.user_id) {
+            s.user_id = canon.user_id;
+          }
+          if (!s.prn_no || (canon.prn_no && s.prn_no.toUpperCase() !== canon.prn_no.toUpperCase())) {
+            s.name = canon.name;
+            s.prn_no = canon.prn_no;
+            s.roll_no = canon.roll_no;
+            s.division_id = canon.division_id;
+            s.division_name = canon.division_name;
+            s.batch_id = canon.batch_id;
+            s.batch_name = canon.batch_name;
+          }
+        }
+      });
+    }
     if (g_cloudDB.teachers) {
       g_cloudDB.teachers = g_cloudDB.teachers.filter(t => {
         if (!t) return false;
@@ -6630,14 +6708,30 @@ async function fetchCloudDB(force = false) {
       const actList = Array.isArray(fbData) ? fbData : Object.values(fbData);
       actList.forEach(actSt => {
         if (!actSt || typeof actSt !== 'object') return;
+        const normActPrn = (actSt.prn_no || '').trim().toUpperCase();
+        const normActEmail = (actSt.email || '').trim().toLowerCase();
+        const actUserId = actSt.user_id;
+
         let matched = false;
         (cloudDb.students || []).forEach(s => {
-          if ((actSt.prn_no && s.prn_no && actSt.prn_no.toUpperCase() === s.prn_no.toUpperCase()) || s.id == actSt.id || (actSt.email && s.email && actSt.email.toLowerCase() === s.email.toLowerCase()) || (s.roll_no == actSt.roll_no && s.division_name == actSt.division_name)) {
+          const sPrn = (s.prn_no || '').trim().toUpperCase();
+          let isMatch = false;
+          if (normActPrn && sPrn && normActPrn === sPrn) {
+            isMatch = true;
+          } else if (actSt.id && s.id && String(s.id) === String(actSt.id)) {
+            isMatch = true;
+          } else if (actUserId && s.user_id && String(s.user_id) === String(actUserId)) {
+            isMatch = true;
+          } else if (normActEmail && !normActEmail.endsWith('@campus.edu') && s.email && s.email.toLowerCase() === normActEmail) {
+            isMatch = true;
+          }
+          if (isMatch) {
             matched = true;
             s.name = actSt.name || s.name;
-            s.email = actSt.email || s.email;
-            s.prn_no = actSt.prn_no || s.prn_no;
-            s.password_hash = actSt.password_hash || s.password_hash;
+            if (actSt.email) s.email = actSt.email;
+            if (actSt.prn_no) s.prn_no = actSt.prn_no;
+            if (actSt.roll_no) s.roll_no = actSt.roll_no;
+            if (actSt.password_hash) s.password_hash = actSt.password_hash;
             s.is_activated = true;
             s.must_change_credentials = false;
             s.is_logged_in = true;
@@ -6651,12 +6745,26 @@ async function fetchCloudDB(force = false) {
         let userMatched = false;
         (cloudDb.users || []).forEach(u => {
           if (u.role && u.role !== 'STUDENT') return;
-          if ((actSt.prn_no && u.prn_no && actSt.prn_no.toUpperCase() === u.prn_no.toUpperCase()) || u.id == actSt.user_id || (actSt.email && u.email && actSt.email.toLowerCase() === actSt.email.toLowerCase()) || (u.roll_no == actSt.roll_no && u.division_name == actSt.division_name)) {
+          const uPrn = (u.prn_no || '').trim().toUpperCase();
+          const uEmail = (u.email || '').trim().toLowerCase();
+
+          // Strict user match: PRN first, or user_id === u.id (NEVER match u.id == actSt.id)
+          let userMatch = false;
+          if (normActPrn && uPrn && normActPrn === uPrn) {
+            userMatch = true;
+          } else if (actUserId && u.id && String(u.id) === String(actUserId)) {
+            userMatch = true;
+          } else if (normActEmail && !normActEmail.endsWith('@campus.edu') && uEmail && normActEmail === uEmail) {
+            userMatch = true;
+          }
+
+          if (userMatch) {
             userMatched = true;
             u.name = actSt.name || u.name;
-            u.email = actSt.email || u.email;
-            u.prn_no = actSt.prn_no || u.prn_no;
-            u.password_hash = actSt.password_hash || u.password_hash;
+            if (actSt.email) u.email = actSt.email;
+            if (actSt.prn_no) u.prn_no = actSt.prn_no;
+            if (actSt.roll_no) u.roll_no = actSt.roll_no;
+            if (actSt.password_hash) u.password_hash = actSt.password_hash;
             u.is_activated = true;
             u.must_change_credentials = false;
             u.is_logged_in = true;
@@ -6664,15 +6772,19 @@ async function fetchCloudDB(force = false) {
           }
         });
         if (!userMatched && (actSt.user_id || actSt.id)) {
-          const hasFaculty = (cloudDb.users || []).some(fu => fu && fu.role !== 'STUDENT' && ((actSt.email && fu.email && fu.email.toLowerCase() === actSt.email.toLowerCase()) || (fu.id == (actSt.user_id || actSt.id))));
-          if (!hasFaculty) {
+          const targetUserId = actSt.user_id || (actSt.id > 120 ? actSt.id : null);
+          const hasFaculty = (cloudDb.users || []).some(fu => fu && fu.role !== 'STUDENT' && ((actSt.email && fu.email && fu.email.toLowerCase() === actSt.email.toLowerCase()) || (targetUserId && fu.id == targetUserId)));
+          if (!hasFaculty && targetUserId) {
             cloudDb.users.push({
-              id: actSt.user_id || actSt.id,
+              id: targetUserId,
               email: actSt.email,
               password_hash: actSt.password_hash,
               role: 'STUDENT',
               name: actSt.name,
               prn_no: actSt.prn_no,
+              roll_no: actSt.roll_no,
+              division_name: actSt.division_name,
+              batch_name: actSt.batch_name,
               status: 'APPROVED',
               is_activated: true,
               must_change_credentials: false
@@ -6912,16 +7024,35 @@ function findCurrentStudent(db, currentUser) {
   const normEmail = (currentUser.email || '').trim().toLowerCase();
   const normPrn = (currentUser.prn_no || '').trim().toUpperCase();
   const normUsername = (currentUser.username || '').trim().toUpperCase();
-  
-  return (db.students || []).find(s => {
-    if (!s) return false;
-    if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-') && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn) return true;
-    if (normUsername && s.username && s.username.trim().toUpperCase() === normUsername) return true;
-    if (currentUser.id && s.user_id && String(s.user_id) === String(currentUser.id)) return true;
-    if (currentUser.id && s.id && String(s.id) === String(currentUser.id)) return true;
-    if (normEmail && normEmail.length > 4 && normEmail.includes('@') && !normEmail.endsWith('@campus.edu') && s.email && s.email.trim().toLowerCase() === normEmail) return true;
-    return false;
-  });
+  const curUserId = currentUser.user_id || currentUser.id;
+  const curStudentId = currentUser.student_id;
+
+  // 1. Authoritative PRN match (100% unique per student)
+  if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-')) {
+    const pMatch = (db.students || []).find(s => s && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn);
+    if (pMatch) return pMatch;
+  }
+  // 2. Authoritative student_id match (if explicitly set)
+  if (curStudentId) {
+    const idMatch = (db.students || []).find(s => s && String(s.id) === String(curStudentId));
+    if (idMatch) return idMatch;
+  }
+  // 3. Authoritative user_id match
+  if (curUserId) {
+    const uMatch = (db.students || []).find(s => s && s.user_id && String(s.user_id) === String(curUserId));
+    if (uMatch) return uMatch;
+  }
+  // 4. Personal Email match
+  if (normEmail && normEmail.length > 4 && normEmail.includes('@') && !normEmail.endsWith('@campus.edu')) {
+    const eMatch = (db.students || []).find(s => s && s.email && s.email.trim().toLowerCase() === normEmail);
+    if (eMatch) return eMatch;
+  }
+  // 5. Username match
+  if (normUsername && normUsername.length > 2 && !normUsername.startsWith('PRN-')) {
+    const unMatch = (db.students || []).find(s => s && s.username && s.username.trim().toUpperCase() === normUsername);
+    if (unMatch) return unMatch;
+  }
+  return null;
 }
 
 // Helper: Resolve exact subject column code for attendance increments

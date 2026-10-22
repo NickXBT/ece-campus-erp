@@ -778,8 +778,8 @@ const AuthView = {
       const currentId = App.currentUser ? App.currentUser.id : null;
 
       const student = (db.students || []).find(s =>
+        (App.currentUser && App.currentUser.prn_no && s.prn_no && s.prn_no.toUpperCase() === App.currentUser.prn_no.toUpperCase()) ||
         (s.user_id && currentId && s.user_id == currentId) ||
-        (s.id && currentId && s.id == currentId) ||
         (s.email && currentEmail && s.email.toLowerCase().trim() === currentEmail)
       );
 
@@ -857,7 +857,7 @@ const AuthView = {
         const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [] };
         const cEmail = (App.currentUser.email || '').toLowerCase().trim();
         const cId = App.currentUser.id;
-        const st = (db.students || []).find(s => (s.user_id && s.user_id == cId) || (s.id && s.id == cId) || (s.email && s.email.toLowerCase().trim() === cEmail));
+        const st = (typeof findCurrentStudent === "function") ? findCurrentStudent(db, App.currentUser) : (db.students || []).find(s => (App.currentUser && App.currentUser.prn_no && s.prn_no && s.prn_no.toUpperCase() === App.currentUser.prn_no.toUpperCase()) || (s.user_id && s.user_id == cId) || (s.email && s.email.toLowerCase().trim() === cEmail));
         const us = (db.users || []).find(u => (u.id && u.id == cId) || (u.email && u.email.toLowerCase().trim() === cEmail));
 
         let isApproved = (st && st.status === 'APPROVED') || (us && us.status === 'APPROVED');

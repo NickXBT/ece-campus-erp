@@ -54,11 +54,11 @@ const StudentView = {
       return null;
     }
 
-    const student = (db.students || []).find(s => 
-      (currentUser.id && (s.user_id == currentUser.id || s.id == currentUser.id)) ||
+    const student = (typeof findCurrentStudent === 'function') ? findCurrentStudent(db, currentUser) : (db.students || []).find(s => 
       (normPrn && s.prn_no && s.prn_no.trim().toUpperCase() === normPrn) ||
+      (currentUser.id && s.user_id && String(s.user_id) === String(currentUser.id)) ||
+      (normEmail && !normEmail.endsWith('@campus.edu') && s.email && s.email.trim().toLowerCase() === normEmail) ||
       (normUsername && s.username && s.username.trim().toUpperCase() === normUsername) ||
-      (normEmail && s.email && s.email.trim().toLowerCase() === normEmail) ||
       (normName && s.name && s.name.trim().toLowerCase() === normName)
     );
 

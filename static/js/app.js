@@ -95,7 +95,7 @@ const App = {
       } else if (type === 'students') {
         const db = typeof getLocalDB === 'function' ? getLocalDB() : null;
         if (db && this.currentUser.status !== 'APPROVED') {
-          const s = (db.students || []).find(st => st && (st.id == this.currentUser.id || (st.prn_no && this.currentUser.prn_no && st.prn_no.toUpperCase() === this.currentUser.prn_no.toUpperCase())));
+          const s = typeof findCurrentStudent === 'function' ? findCurrentStudent(db, this.currentUser) : (db.students || []).find(st => st && ((st.prn_no && this.currentUser.prn_no && st.prn_no.toUpperCase() === this.currentUser.prn_no.toUpperCase()) || (st.user_id && st.user_id == this.currentUser.id)));
           if (s && s.status === 'APPROVED') {
             this.currentUser.status = 'APPROVED';
             if (typeof setSessionUser === 'function') setSessionUser(this.currentUser);
@@ -328,7 +328,8 @@ const App = {
         // 4a. Check Registration Status (Pending -> Approved)
         if (this.currentUser.status !== 'APPROVED') {
           const student = (db.students || []).find(s =>
-            (s.user_id && s.user_id == cId) || (s.id && s.id == cId) ||
+            (cPrn && s.prn_no && s.prn_no.toUpperCase().trim() === cPrn) ||
+            (s.user_id && s.user_id == cId) ||
             (cPrn && s.prn_no && s.prn_no.toUpperCase().trim() === cPrn) ||
             (cUser && s.username && s.username.toUpperCase().trim() === cUser) ||
             (cEmail && s.email && s.email.toLowerCase().trim() === cEmail)
@@ -360,7 +361,8 @@ const App = {
           (cEmail && u.email && u.email.toLowerCase().trim() === cEmail)
         );
         const existsInStudents = (db.students || []).some(s =>
-          (s.user_id && s.user_id == cId) || (s.id && s.id == cId) ||
+          (cPrn && s.prn_no && s.prn_no.toUpperCase().trim() === cPrn) ||
+          (s.user_id && s.user_id == cId) ||
           (cPrn && s.prn_no && s.prn_no.toUpperCase().trim() === cPrn) ||
           (cUser && s.username && s.username.toUpperCase().trim() === cUser) ||
           (cEmail && s.email && s.email.toLowerCase().trim() === cEmail)
@@ -722,7 +724,7 @@ const App = {
       const normPrn = (this.currentUser.prn_no || '').trim();
 
       const student = (db.students || []).find(s =>
-        (s.user_id && (s.user_id == this.currentUser.id || s.id == this.currentUser.id)) ||
+        (normPrn && s.prn_no && s.prn_no.trim() === normPrn) || (s.user_id && s.user_id == this.currentUser.id) ||
         (normEmail && s.email && s.email.trim().toLowerCase() === normEmail) ||
         (normPrn && s.prn_no && s.prn_no.trim() === normPrn) ||
         (normName && s.name && s.name.trim().toLowerCase() === normName)
@@ -835,7 +837,7 @@ const App = {
       } else if (hash === '#/pending-approval') {
         pageTitle.innerText = 'Pending HOD Approval';
         const db = typeof getLocalDB === 'function' ? getLocalDB() : { students: [], users: [] };
-        const student = (db.students || []).find(s => (s.user_id == this.currentUser.id || s.id == this.currentUser.id) || (s.email && this.currentUser.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()));
+        const student = typeof findCurrentStudent === "function" ? findCurrentStudent(db, this.currentUser) : (db.students || []).find(s => (this.currentUser.prn_no && s.prn_no && s.prn_no.toUpperCase() === this.currentUser.prn_no.toUpperCase()) || (s.user_id == this.currentUser.id) || (s.email && this.currentUser.email && s.email.toLowerCase() === this.currentUser.email.toLowerCase()));
         const userInDb = (db.users || []).find(u => u.id == this.currentUser.id || (u.email && this.currentUser.email && u.email.toLowerCase() === this.currentUser.email.toLowerCase()));
         renderedHtml = AuthView.renderPendingApprovalView(this.currentUser, student || userInDb);
       } else {
