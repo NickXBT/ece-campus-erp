@@ -1,52 +1,48 @@
 
 function healStudentRecords(db) {
   if (!db) return;
-  const canonicalUserMap = new Map();
-  (INITIAL_DB.users || []).forEach(iu => {
-    if (iu && iu.role === 'STUDENT') {
-      canonicalUserMap.set(iu.id, iu);
-      if (iu.prn_no) canonicalUserMap.set(iu.prn_no.trim().toUpperCase(), iu);
-    }
-  });
+  const canonicalStudentByPrn = new Map();
+  const canonicalUserByPrn = new Map();
 
-  const canonicalStudentMap = new Map();
   (INITIAL_DB.students || []).forEach(is => {
-    if (is) {
-      canonicalStudentMap.set(is.id, is);
-      if (is.prn_no) canonicalStudentMap.set(is.prn_no.trim().toUpperCase(), is);
-    }
+    if (is && is.prn_no) canonicalStudentByPrn.set(is.prn_no.trim().toUpperCase(), is);
+  });
+  (INITIAL_DB.users || []).forEach(iu => {
+    if (iu && iu.role === 'STUDENT' && iu.prn_no) canonicalUserByPrn.set(iu.prn_no.trim().toUpperCase(), iu);
   });
 
-  if (db.users) {
-    db.users.forEach(u => {
-      if (!u || u.role !== 'STUDENT') return;
-      const canon = canonicalUserMap.get(u.id) || (u.prn_no ? canonicalUserMap.get(u.prn_no.trim().toUpperCase()) : null);
+  // Heal students strictly by PRN
+  if (db.students) {
+    db.students.forEach(s => {
+      if (!s || !s.prn_no) return;
+      const canon = canonicalStudentByPrn.get(s.prn_no.trim().toUpperCase());
       if (canon) {
-        u.name = canon.name;
-        u.prn_no = canon.prn_no;
-        u.roll_no = canon.roll_no;
-        u.division_id = canon.division_id;
-        u.division_name = canon.division_name;
-        u.batch_id = canon.batch_id;
-        u.batch_name = canon.batch_name;
-        u.username = canon.username || canon.prn_no;
+        s.id = canon.id;
+        s.user_id = canon.user_id;
+        s.name = canon.name;
+        s.roll_no = canon.roll_no;
+        s.division_name = canon.division_name;
+        s.division_id = canon.division_id;
+        s.batch_name = canon.batch_name;
+        s.batch_id = canon.batch_id;
       }
     });
   }
 
-  if (db.students) {
-    db.students.forEach(s => {
-      if (!s) return;
-      const canon = canonicalStudentMap.get(s.id) || (s.prn_no ? canonicalStudentMap.get(s.prn_no.trim().toUpperCase()) : null);
+  // Heal users strictly by PRN
+  if (db.users) {
+    db.users.forEach(u => {
+      if (!u || u.role !== 'STUDENT' || !u.prn_no) return;
+      const canon = canonicalUserByPrn.get(u.prn_no.trim().toUpperCase());
       if (canon) {
-        s.user_id = canon.user_id;
-        s.name = canon.name;
-        s.prn_no = canon.prn_no;
-        s.roll_no = canon.roll_no;
-        s.division_id = canon.division_id;
-        s.division_name = canon.division_name;
-        s.batch_id = canon.batch_id;
-        s.batch_name = canon.batch_name;
+        u.id = canon.id;
+        u.name = canon.name;
+        u.roll_no = canon.roll_no;
+        u.division_name = canon.division_name;
+        u.division_id = canon.division_id;
+        u.batch_name = canon.batch_name;
+        u.batch_id = canon.batch_id;
+        u.username = canon.username || canon.prn_no;
       }
     });
   }
@@ -7044,7 +7040,9 @@ function getSessionUser() {
   if (!u) return null;
   try {
     const user = JSON.parse(u);
-    if (user && user.email) {
+    if (!user) return null;
+
+    if (user.email) {
       const email = user.email.trim().toLowerCase();
       if (email === 'teacher@campus.edu') {
         user.role = 'HOD';
@@ -7056,6 +7054,25 @@ function getSessionUser() {
         user.role = 'TEACHER';
         user.id = 1008;
         user.name = 'Ms. Vrushali Gujar';
+      }
+    }
+
+    // Student canonical resolution: STRICTLY BY PRN FIRST!
+    if (user.role === 'STUDENT') {
+      const normPrn = (user.prn_no || '').trim().toUpperCase();
+      if (normPrn && normPrn !== 'N/A' && !normPrn.startsWith('PRN-')) {
+        const canonStudent = (INITIAL_DB.students || []).find(is => is && is.prn_no && is.prn_no.trim().toUpperCase() === normPrn);
+        const canonUser = (INITIAL_DB.users || []).find(iu => iu && iu.prn_no && iu.prn_no.trim().toUpperCase() === normPrn);
+        if (canonStudent && canonUser) {
+          user.name = canonStudent.name;
+          user.prn_no = canonStudent.prn_no;
+          user.roll_no = canonStudent.roll_no;
+          user.division_name = canonStudent.division_name;
+          user.batch_name = canonStudent.batch_name;
+          user.id = canonUser.id;
+          user.user_id = canonUser.id;
+          user.student_id = canonStudent.id;
+        }
       }
     }
     return user;
@@ -7400,6 +7417,8 @@ const API = {
         user.prn_no = student.prn_no;
         user.division_name = student.division_name;
         user.batch_name = student.batch_name;
+        user.student_id = student.id;
+        if (student.user_id) user.id = student.user_id;
         setSessionUser(user);
       }
       const redirect = isFaculty ? '#/hod/dashboard' : '#/student/dashboard';

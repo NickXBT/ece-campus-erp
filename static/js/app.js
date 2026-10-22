@@ -741,7 +741,8 @@ const App = {
         (normName && s.name && s.name.trim().toLowerCase() === normName)
       );
       const userInDb = (db.users || []).find(u =>
-        (u.id == this.currentUser.id) ||
+        (normPrn && u.prn_no && u.prn_no.trim().toUpperCase() === normPrn.toUpperCase()) ||
+        (this.currentUser.user_id && u.id == this.currentUser.user_id) ||
         (normEmail && u.email && u.email.trim().toLowerCase() === normEmail) ||
         (normPrn && u.prn_no && u.prn_no.trim() === normPrn) ||
         (normName && u.name && u.name.trim().toLowerCase() === normName)

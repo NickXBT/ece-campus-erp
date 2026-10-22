@@ -62,12 +62,12 @@ const StudentView = {
       (normName && s.name && s.name.trim().toLowerCase() === normName)
     );
 
+    // PRN-first lookup for userInDb (never match currentUser.id == u.id first to prevent cross-student ID collision)
     const userInDb = (db.users || []).find(u =>
-      (currentUser.id && u.id == currentUser.id) ||
       (normPrn && u.prn_no && u.prn_no.trim().toUpperCase() === normPrn) ||
-      (normUsername && u.username && u.username.trim().toUpperCase() === normUsername) ||
-      (normEmail && u.email && u.email.trim().toLowerCase() === normEmail) ||
-      (normName && u.name && u.name.trim().toLowerCase() === normName)
+      (currentUser.user_id && u.id == currentUser.user_id) ||
+      (normEmail && !normEmail.endsWith('@campus.edu') && u.email && u.email.trim().toLowerCase() === normEmail) ||
+      (currentUser.id && u.id == currentUser.id && (!currentUser.prn_no || (u.prn_no && u.prn_no.toUpperCase() === normPrn)))
     );
 
     if (!student && !userInDb) {
@@ -80,13 +80,21 @@ const StudentView = {
     const isApproved = (currentUser.status === 'APPROVED') || (resolvedStudent.status === 'APPROVED') || (resolvedUser.status === 'APPROVED');
     const effectiveStatus = isApproved ? 'APPROVED' : (resolvedStudent.status || resolvedUser.status || currentUser.status || 'APPROVED');
 
-    if (isApproved && currentUser.status !== 'APPROVED') {
-      currentUser.status = 'APPROVED';
-      if (typeof setSessionUser === 'function') setSessionUser(currentUser);
-      if (typeof App !== 'undefined') App.currentUser = currentUser;
-    }
-
-    const mergedProfile = { ...currentUser, ...resolvedUser, ...resolvedStudent, status: effectiveStatus };
+    // Strict identity mapping: name, roll, PRN, and division ALWAYS from resolvedStudent
+    const mergedProfile = {
+      ...currentUser,
+      ...resolvedUser,
+      ...resolvedStudent,
+      name: resolvedStudent.name || resolvedUser.name || currentUser.name,
+      prn_no: resolvedStudent.prn_no || resolvedUser.prn_no || currentUser.prn_no,
+      roll_no: resolvedStudent.roll_no || resolvedUser.roll_no || currentUser.roll_no,
+      division_name: resolvedStudent.division_name || resolvedUser.division_name || currentUser.division_name,
+      batch_name: resolvedStudent.batch_name || resolvedUser.batch_name || currentUser.batch_name,
+      id: resolvedStudent.id || currentUser.student_id || currentUser.id,
+      student_id: resolvedStudent.id || currentUser.student_id,
+      user_id: resolvedStudent.user_id || resolvedUser.id || currentUser.user_id,
+      status: effectiveStatus
+    };
     if (typeof App !== 'undefined') App.currentProfile = mergedProfile;
     return mergedProfile;
   },
