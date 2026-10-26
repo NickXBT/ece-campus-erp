@@ -8,6 +8,7 @@ import base64
 import os
 
 SECRET_KEY = os.environ.get("SESSION_SECRET", "ece_erp_auth_secret_antigravity_2026_campus_portal")
+FIREBASE_AUTH_SECRET = os.environ.get("FIREBASE_DATABASE_SECRET", os.environ.get("FIREBASE_AUTH_TOKEN", ""))
 
 # In-memory rate limiting: max 5 failed attempts in 5 minutes per identifier/IP
 _FAILED_ATTEMPTS = {}
@@ -93,39 +94,112 @@ def clear_failed_attempts(key: str):
     if key in _FAILED_ATTEMPTS:
         del _FAILED_ATTEMPTS[key]
 
+# Canonical active faculty records (excluding removed duplicate T555)
+CANONICAL_TEACHERS = {
+    "HOD101": {"id": 1, "user_id": 1, "name": "Dr. Dhanashree Kulkarni", "email": "dhanashree.kulkarni@nmiet.edu.in", "teacher_id_code": "HOD101", "department_id": 1, "designation": "Head of Department", "password_hash": "1234"},
+    "T102": {"id": 2, "user_id": 2, "name": "Dr. Sagar Shinde", "email": "sagar.shinde@campus.edu", "teacher_id_code": "T102", "department_id": 1, "designation": "Professor", "password_hash": "1234"},
+    "T103": {"id": 3, "user_id": 3, "name": "Dr. Priyanka Patil", "email": "priyanka.patil@campus.edu", "teacher_id_code": "T103", "department_id": 1, "designation": "Associate Professor", "password_hash": "1234"},
+    "T104": {"id": 4, "user_id": 4, "name": "Ms. Dhanashree Dixit", "email": "dhanashree.dixit@campus.edu", "teacher_id_code": "T104", "department_id": 1, "designation": "Assistant Professor", "password_hash": "1234"},
+    "T105": {"id": 5, "user_id": 5, "name": "Ms. Muktai Surnar", "email": "muktai.surnar@campus.edu", "teacher_id_code": "T105", "department_id": 1, "designation": "Assistant Professor", "password_hash": "1234"},
+    "T106": {"id": 6, "user_id": 6, "name": "Mr. Vikas T.", "email": "vikas.t@campus.edu", "teacher_id_code": "T106", "department_id": 1, "designation": "Assistant Professor", "password_hash": "1234"},
+    "T107": {"id": 7, "user_id": 7, "name": "Ms. Sujata Gaikwad", "email": "sujata.gaikwad@campus.edu", "teacher_id_code": "T107", "department_id": 1, "designation": "Assistant Professor", "password_hash": "1234"},
+    "T108": {"id": 8, "user_id": 1008, "name": "Ms. Vrushali Gujar", "email": "vrushali.gujar@campus.edu", "teacher_id_code": "T108", "department_id": 1, "designation": "Professor", "password_hash": "1234"}
+}
+
+def get_canonical_students():
+    """Build the fallback baseline student roster from sync INITIAL_DB_STATE with verified student accounts."""
+    students_dict = {}
+    try:
+        from sync import INITIAL_DB_STATE
+        for s in INITIAL_DB_STATE.get("students", []):
+            if isinstance(s, dict) and s.get("id"):
+                students_dict[str(s["id"])] = dict(s)
+    except Exception:
+        pass
+
+    # Account 130 is PARAB SAI SURESH - verified student under Division B (SE(ECE)-B)
+    students_dict["130"] = {
+        "id": 130,
+        "user_id": 130,
+        "name": "PARAB SAI SURESH",
+        "roll_no": "64",
+        "prn_no": "DSE26131803",
+        "username": "DSE26131803",
+        "department_id": 1,
+        "semester_id": 1,
+        "division_id": 2,
+        "batch_id": 6,
+        "division_name": "SE(ECE)-B",
+        "batch_name": "B3",
+        "email": "dse64.parab@nmiet.edu.in",
+        "password_hash": "Student@123",
+        "role": "STUDENT",
+        "status": "APPROVED",
+        "is_activated": True,
+        "must_change_credentials": False
+    }
+    return students_dict
+
 def get_live_credentials():
-    """Fetch credentials server-side with 60-second in-memory caching to minimize Firebase RTDB operations."""
+    """Fetch credentials server-side with 60-second in-memory caching to minimize Firebase RTDB operations.
+    Fails closed if Firebase credentials cannot be fetched securely.
+    """
     now = time.time()
     if _CACHE["last_fetch"] and (now - _CACHE["last_fetch"] < 60) and _CACHE["hod"] is not None:
-        return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"]
+        return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True
     
     hod_data = None
     fac_data = None
     act_data = None
 
+    auth_param = f"?auth={FIREBASE_AUTH_SECRET}" if FIREBASE_AUTH_SECRET else ""
+
     try:
-        with urllib.request.urlopen("https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json", timeout=4) as r:
+        with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json{auth_param}", timeout=4) as r:
             hod_data = json.loads(r.read().decode())
     except Exception:
         pass
 
     try:
-        with urllib.request.urlopen("https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json", timeout=4) as r:
+        with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json{auth_param}", timeout=4) as r:
             fac_data = json.loads(r.read().decode())
     except Exception:
         pass
 
     try:
-        with urllib.request.urlopen("https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json", timeout=4) as r:
+        with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json{auth_param}", timeout=4) as r:
             act_data = json.loads(r.read().decode())
     except Exception:
         pass
 
-    _CACHE["hod"] = hod_data or {}
-    _CACHE["faculty"] = fac_data or {}
-    _CACHE["students"] = act_data or {}
+    # Fail Closed: If server-side credentials are not configured or live Firebase access fails,
+    # do NOT authenticate users using default passwords or an outdated baseline roster.
+    if not act_data or not isinstance(act_data, dict) or not hod_data or not fac_data:
+        return None, None, None, False
+
+    # Purge duplicate T555 and misclassified student 130 if present in RTDB
+    fac_data.pop("T555", None)
+    fac_data.pop("3807", None)
+    fac_data.pop("130", None)
+
+    # Guarantee student 130 has student role and division B in live student records
+    if "130" in act_data:
+        st130 = act_data["130"]
+        if isinstance(st130, dict):
+            st130["role"] = "STUDENT"
+            st130["division_name"] = "SE(ECE)-B"
+            st130["batch_name"] = "B3"
+            st130["roll_no"] = "64"
+            st130["prn_no"] = "DSE26131803"
+            st130["email"] = "dse64.parab@nmiet.edu.in"
+            st130["status"] = st130.get("status") or "APPROVED"
+            st130["is_activated"] = True
+
+    _CACHE["hod"] = hod_data
+    _CACHE["faculty"] = fac_data
+    _CACHE["students"] = act_data
     _CACHE["last_fetch"] = now
-    return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"]
+    return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True
 
 def sanitize_user(user: dict) -> dict:
     """Ensure passwords and pins are NEVER returned to the client browser."""
@@ -153,7 +227,14 @@ def authenticate(email_or_id: str, password: str, portal: str, client_ip: str = 
             "message": "Please enter both your identifier and password."
         }
 
-    hod_creds, fac_creds, act_students = get_live_credentials()
+    hod_creds, fac_creds, act_students, is_live = get_live_credentials()
+    if not is_live:
+        record_failed_attempt(rate_key)
+        return {
+            "success": False,
+            "error": "SERVICE_UNAVAILABLE",
+            "message": "Authentication service is temporarily unavailable while database security credentials are being configured. Please check back shortly."
+        }
 
     # 1. HOD Account Login
     is_hod_id = (
@@ -216,6 +297,14 @@ def authenticate(email_or_id: str, password: str, portal: str, client_ip: str = 
         t_name = (t.get("name") or "").strip().lower()
         clean_t_name = t_name.replace("dr.", "").replace("mr.", "").replace("ms.", "").replace("mrs.", "").replace("prof.", "").strip()
         clean_email = email.replace("dr.", "").replace("mr.", "").replace("ms.", "").replace("mrs.", "").replace("prof.", "").strip()
+
+        # Explicitly skip removed duplicate account T555 / 3807
+        if t_code == "t555" or str(t.get("user_id")) == "3807" or str(t.get("id")) == "3807" or "ms..vrushali.gujar" in t_email:
+            continue
+
+        # Explicitly skip student account 130 (PARAB SAI SURESH) from faculty portal
+        if str(t.get("id")) == "130" or str(t.get("user_id")) == "130" or t_code == "130" or t_email == "dse64.parab@nmiet.edu.in" or "parab sai suresh" in clean_t_name:
+            continue
 
         if t_email == email or t_code == email or t_name == email:
             matched_teacher = t
@@ -332,7 +421,36 @@ def authenticate(email_or_id: str, password: str, portal: str, client_ip: str = 
             "message": "Account not found. Please enter your PRN Number or registered Email."
         }
 
-    st_pass = matched_student.get("password_hash") or "Student@123"
+    # Verify student account approval status
+    st_status = str(matched_student.get("status") or "APPROVED").upper().strip()
+    if st_status and st_status not in ("APPROVED", "ACTIVE"):
+        record_failed_attempt(rate_key)
+        return {
+            "success": False,
+            "error": "ACCOUNT_PENDING_APPROVAL",
+            "message": "Your registration is currently pending HOD approval. Please wait for department confirmation."
+        }
+
+    # Verify student deactivation
+    if matched_student.get("is_activated") is False and matched_student.get("must_change_credentials") is False:
+        record_failed_attempt(rate_key)
+        return {
+            "success": False,
+            "error": "ACCOUNT_DEACTIVATED",
+            "message": "This account has been deactivated by department administration. Please contact the HOD office."
+        }
+
+    st_pass = matched_student.get("password_hash")
+    if not st_pass and matched_student.get("must_change_credentials") is True:
+        st_pass = "Student@123"
+    elif not st_pass:
+        record_failed_attempt(rate_key)
+        return {
+            "success": False,
+            "error": "INVALID_PASSWORD",
+            "message": "Invalid credentials or password not configured."
+        }
+
     if not verify_password(password, st_pass):
         record_failed_attempt(rate_key)
         return {
