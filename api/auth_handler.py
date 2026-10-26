@@ -175,12 +175,12 @@ def get_live_credentials():
         if not last_err:
             last_err = f"ACT: {type(e).__name__} {e}"
 
-    # Fail Closed: If server-side credentials are not configured or live Firebase access fails,
-    # do NOT authenticate users using default passwords or an outdated baseline roster.
+    # Check types
+    detail = f"hod={type(hod_data).__name__}, fac={type(fac_data).__name__}, act={type(act_data).__name__}"
     if not act_data or not isinstance(act_data, dict) or not hod_data or not fac_data:
         has_secret = bool(FIREBASE_AUTH_SECRET)
         secret_len = len(FIREBASE_AUTH_SECRET)
-        detail = f"Database authentication failed (secret_configured={has_secret}, secret_length={secret_len}, error={last_err})"
+        detail = f"Database authentication failed (types: {detail}, secret_configured={has_secret}, secret_length={secret_len}, error={last_err})"
         return None, None, None, False, detail
 
     # Purge duplicate T555 and misclassified student 130 if present in RTDB
