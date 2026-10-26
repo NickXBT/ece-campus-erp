@@ -5756,28 +5756,62 @@ if (typeof firebase !== 'undefined' && firebase.initializeApp) {
 async function uploadAssignmentFile(file) {
   if (!file) return { file_url: '', file_name: '', file_size: 0, storage_path: '' };
 
-  const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const sanitizedName = (file.name || 'document').replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
   const storagePath = 'assignments/' + timestamp + '_' + sanitizedName;
 
-  // 1. Try Firebase Storage upload
+  // 1. Try Firebase Storage upload with strict 3-second timeout & auto-cancel to prevent UI hanging
   if (typeof firebaseStorage !== 'undefined' && firebaseStorage && firebaseStorage.ref) {
     try {
-      const storageRef = firebaseStorage.ref(storagePath);
-      const snapshot = await storageRef.put(file);
-      const downloadUrl = await snapshot.ref.getDownloadURL();
-      return {
-        file_url: downloadUrl,
-        file_name: file.name,
-        file_size: file.size,
-        storage_path: storagePath
-      };
+      const storagePromise = new Promise((resolve, reject) => {
+        let isDone = false;
+        const storageRef = firebaseStorage.ref(storagePath);
+        const uploadTask = storageRef.put(file);
+
+        const timer = setTimeout(() => {
+          if (!isDone) {
+            isDone = true;
+            try { uploadTask.cancel(); } catch (_) {}
+            reject(new Error('Firebase Storage timeout after 3s'));
+          }
+        }, 3000);
+
+        uploadTask.then(
+          async (snapshot) => {
+            if (!isDone) {
+              isDone = true;
+              clearTimeout(timer);
+              try {
+                const downloadUrl = await snapshot.ref.getDownloadURL();
+                resolve({
+                  file_url: downloadUrl,
+                  file_name: file.name,
+                  file_size: file.size,
+                  storage_path: storagePath
+                });
+              } catch (e) {
+                reject(e);
+              }
+            }
+          },
+          (err) => {
+            if (!isDone) {
+              isDone = true;
+              clearTimeout(timer);
+              reject(err);
+            }
+          }
+        );
+      });
+
+      const res = await storagePromise;
+      if (res && res.file_url) return res;
     } catch (storageErr) {
-      console.warn('Firebase Storage upload failed, falling back to base64 DataURL:', storageErr);
+      console.warn('Firebase Storage upload skipped/timed out, using fast base64 fallback:', storageErr.message || storageErr);
     }
   }
 
-  // 2. Safe Fallback: Base64 DataURL (so files never fail even if Storage is blocked)
+  // 2. Safe Instant Fallback: Base64 DataURL (so uploads never hang, fail, or freeze)
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -9069,10 +9103,14 @@ const API = {
         }).catch(err => console.warn('Firebase assignment write err:', err));
       } catch(e) {}
 
-      // Save to Firestore if available
+      // Save to Firestore if available (protect against 1MB document limit)
       try {
         if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
-          firestoreDb.collection('assignments').doc(asgnId).set(newAsgn).catch(() => {});
+          const fsDoc = { ...newAsgn };
+          if (fsDoc.file_url && fsDoc.file_url.startsWith('data:') && fsDoc.file_url.length > 700000) {
+            fsDoc.file_url = 'EMBEDDED_IN_RTDB';
+          }
+          firestoreDb.collection('assignments').doc(asgnId).set(fsDoc).catch(e => console.warn('Firestore doc set warning:', e));
         }
       } catch(e) {}
 
