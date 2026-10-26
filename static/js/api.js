@@ -4824,6 +4824,8 @@ const INITIAL_DB = {
   deleted_cert_ids: [],
   deleted_student_ids: [],
   deleted_teacher_ids: [],
+  assignments: [],
+  assignment_submissions: [],
   activity_records: [],
   activity_subjects: [],
   password_requests: [],
@@ -6016,6 +6018,36 @@ function initFirebaseRealtimeListeners() {
       }
     });
 
+    // 9. Live Push Listener: Assignments
+    firebaseDb.ref('assignments').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(a => a && a.id);
+        const db = getLocalDB();
+        db.assignments = valid;
+        g_cloudDB = db;
+        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+          App.onRealtimeUpdate('assignments');
+        }
+      }
+    });
+
+    // 10. Live Push Listener: Assignment Submissions
+    firebaseDb.ref('assignment_submissions').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const list = Array.isArray(val) ? val : Object.values(val);
+        const valid = list.filter(s => s && s.id);
+        const db = getLocalDB();
+        db.assignment_submissions = valid;
+        g_cloudDB = db;
+        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+          App.onRealtimeUpdate('assignment_submissions');
+        }
+      }
+    });
+
     // 8. Live Push Listener: Deleted Teachers
     firebaseDb.ref('deleted_teacher_ids').on('value', (snapshot) => {
       const val = snapshot.val();
@@ -6536,6 +6568,20 @@ function mergeDBs(localDb, cloudDb) {
     }
   });
   merged.teachers = Array.from(teacherMap.values());
+
+  // Merge assignments
+  const asgnMap = new Map();
+  (cloudDb.assignments || []).concat(localDb.assignments || []).forEach(a => {
+    if (a && a.id) asgnMap.set(String(a.id), a);
+  });
+  merged.assignments = Array.from(asgnMap.values());
+
+  // Merge assignment submissions
+  const subMap = new Map();
+  (cloudDb.assignment_submissions || []).concat(localDb.assignment_submissions || []).forEach(s => {
+    if (s && s.id) subMap.set(String(s.id), s);
+  });
+  merged.assignment_submissions = Array.from(subMap.values());
   merged.deleted_teacher_ids = Array.from(deletedTeacherIds);
 
   // Synchronize teacher emails and names (teachers have authoritative names)
@@ -8831,7 +8877,188 @@ const API = {
       };
     }
 
-    // 17. Reports API (Sums Exact Approved Subject Credits for Every Student)
+    // 18. Assignments API (Full Lifecycle: HOD, Faculty & Student Submissions)
+    // GET /api/assignments
+    if (endpoint === '/api/assignments' && method === 'GET') {
+      const allAsgns = (db.assignments || []).slice().sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+      const allSubs = db.assignment_submissions || [];
+      return { assignments: allAsgns, submissions: allSubs, success: true };
+    }
+
+    // POST /api/assignments (Create/Upload Assignment)
+    if (endpoint === '/api/assignments' && method === 'POST') {
+      if (!currentUser || (currentUser.role !== 'HOD' && currentUser.role !== 'TEACHER')) {
+        throw { message: 'Access Denied: Only Faculty and HOD can create & upload assignments.' };
+      }
+      const { title, subject, division, batch, issue_date, due_date, total_marks, instructions, file_url, file_name, file_size, storage_path } = body;
+      if (!title || !title.trim()) throw { message: 'Assignment Title is required.' };
+      if (!subject || !subject.trim()) throw { message: 'Subject is required.' };
+      if (!issue_date) throw { message: 'Issue Date is required.' };
+      if (!due_date) throw { message: 'Last Date of Submission is required.' };
+
+      // Validate due_date is not earlier than issue_date
+      const issD = new Date(issue_date);
+      const dueD = new Date(due_date.includes('T') ? due_date : due_date + 'T23:59:59');
+      if (dueD < issD) {
+        throw { message: 'Last Date of Submission cannot be earlier than the Issue Date.' };
+      }
+
+      const asgnId = 'asgn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const newAsgn = {
+        id: asgnId,
+        title: title.trim(),
+        subject: subject.trim(),
+        division: division || 'ALL',
+        batch: batch || 'ALL',
+        issue_date: issue_date,
+        due_date: due_date,
+        total_marks: total_marks || '25',
+        instructions: (instructions || '').trim(),
+        file_url: file_url || '',
+        file_name: file_name || '',
+        file_size: file_size || '',
+        storage_path: storage_path || '',
+        created_by_id: currentUser.id || currentUser.user_id || 'FACULTY',
+        created_by_name: currentUser.name || 'Faculty Member',
+        created_by_role: currentUser.role || 'TEACHER',
+        created_at: Date.now(),
+        updated_at: Date.now()
+      };
+
+      db.assignments = db.assignments || [];
+      db.assignments.unshift(newAsgn);
+      saveLocalDB(db);
+
+      // Save to Firebase RTDB
+      try {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newAsgn)
+        }).catch(err => console.warn('Firebase assignment write err:', err));
+      } catch(e) {}
+
+      // Save to Firestore if available
+      try {
+        if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+          firestoreDb.collection('assignments').doc(asgnId).set(newAsgn).catch(() => {});
+        }
+      } catch(e) {}
+
+      return { success: true, assignment: newAsgn, message: 'Assignment uploaded & published successfully!' };
+    }
+
+    // DELETE /api/assignments/:id or POST /api/assignments/delete
+    if ((endpoint.startsWith('/api/assignments/') && (method === 'DELETE' || endpoint.endsWith('/delete'))) || (endpoint === '/api/assignments/delete' && method === 'POST')) {
+      if (!currentUser || (currentUser.role !== 'HOD' && currentUser.role !== 'TEACHER')) {
+        throw { message: 'Access Denied: Only Faculty and HOD can manage assignments.' };
+      }
+      const parts = endpoint.split('/');
+      let asgnId = body.id || body.assignment_id;
+      if (!asgnId && parts.length >= 3) asgnId = parts[3];
+
+      if (!asgnId) throw { message: 'Assignment ID is required.' };
+
+      // Check permission: Faculty can only delete their own assignments; HOD can delete any
+      const existing = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+      if (existing && currentUser.role !== 'HOD') {
+        const isOwner = (existing.created_by_id && String(existing.created_by_id) === String(currentUser.id)) ||
+                        (existing.created_by_name && existing.created_by_name.trim().toLowerCase() === (currentUser.name || '').trim().toLowerCase());
+        if (!isOwner) {
+          throw { message: 'Permission Denied: You can only delete assignments created by you.' };
+        }
+      }
+
+      db.assignments = (db.assignments || []).filter(a => String(a.id) !== String(asgnId));
+      db.assignment_submissions = (db.assignment_submissions || []).filter(s => String(s.assignment_id) !== String(asgnId));
+      saveLocalDB(db);
+
+      // Delete from Firebase RTDB
+      try {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
+      } catch(e) {}
+
+      // Delete from Firestore if available
+      try {
+        if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+          firestoreDb.collection('assignments').doc(asgnId).delete().catch(() => {});
+        }
+      } catch(e) {}
+
+      return { success: true, message: 'Assignment deleted successfully.' };
+    }
+
+    // POST /api/assignments/submit (Student Solution Submission)
+    if (endpoint === '/api/assignments/submit' && method === 'POST') {
+      if (!currentUser || currentUser.role !== 'STUDENT') {
+        throw { message: 'Access Denied: Only registered students can submit assignment solutions.' };
+      }
+      const { assignment_id, remarks, file_url, file_name, file_size, storage_path } = body;
+      if (!assignment_id) throw { message: 'Assignment ID is required.' };
+      if (!file_url && (!remarks || !remarks.trim())) {
+        throw { message: 'Please attach a solution document or provide notes/remarks.' };
+      }
+
+      const asgn = (db.assignments || []).find(a => String(a.id) === String(assignment_id));
+      if (!asgn) throw { message: 'Assignment record not found.' };
+
+      let dueDate = null;
+      if (asgn.due_date) {
+        dueDate = new Date(asgn.due_date.includes('T') ? asgn.due_date : asgn.due_date + 'T23:59:59');
+      }
+      const isPast = dueDate && (new Date() > dueDate);
+
+      const studentPrn = (currentUser.prn_no || '').trim().toUpperCase();
+      const subId = 'sub_' + assignment_id + '_' + (studentPrn || currentUser.student_id || currentUser.id || Date.now());
+
+      const newSub = {
+        id: subId,
+        assignment_id: String(assignment_id),
+        student_id: currentUser.student_id || currentUser.id,
+        student_name: currentUser.name || 'Student',
+        student_prn: studentPrn,
+        student_roll: currentUser.roll_no || 'N/A',
+        division_name: currentUser.division_name || 'SE(ECE)',
+        batch_name: currentUser.batch_name || 'A1',
+        submitted_at: new Date().toISOString(),
+        is_late: isPast,
+        remarks: (remarks || '').trim(),
+        file_url: file_url || '',
+        file_name: file_name || '',
+        file_size: file_size || '',
+        storage_path: storage_path || '',
+        status: isPast ? 'SUBMITTED_LATE' : 'SUBMITTED'
+      };
+
+      db.assignment_submissions = db.assignment_submissions || [];
+      const existingIdx = db.assignment_submissions.findIndex(s => String(s.assignment_id) === String(assignment_id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == newSub.student_id)));
+      if (existingIdx >= 0) {
+        db.assignment_submissions[existingIdx] = newSub;
+      } else {
+        db.assignment_submissions.push(newSub);
+      }
+      saveLocalDB(db);
+
+      // Save to Firebase RTDB
+      try {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/' + subId + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newSub)
+        }).catch(err => console.warn('Firebase submission write err:', err));
+      } catch(e) {}
+
+      // Save to Firestore if available
+      try {
+        if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+          firestoreDb.collection('assignment_submissions').doc(subId).set(newSub).catch(() => {});
+        }
+      } catch(e) {}
+
+      return { success: true, submission: newSub, message: '🎉 Assignment solution submitted successfully!' };
+    }
+
+        // 17. Reports API (Sums Exact Approved Subject Credits for Every Student)
     if (endpoint.startsWith('/api/reports')) {
       const allStudents = db.students || [];
       const allCerts = db.certificates || [];

@@ -328,6 +328,23 @@ const HodView = {
         <div class="dashboard-container">
           ${pendingSectionHtml}
 
+          <!-- Quick Assignment Corner Strip -->
+          <div class="glass-panel" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; padding: 1rem 1.25rem; border-radius: 14px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">ACADEMIC ASSIGNMENTS DESK</div>
+              <div style="font-size: 1.15rem; font-weight: 800; margin-top: 0.15rem;">Coursework & Assignment Corner</div>
+              <p style="font-size: 0.78rem; opacity: 0.9; margin: 0.2rem 0 0 0;">Upload and track coursework assignments for Division A & B students.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm" onclick="TeacherView.openUploadAssignmentModal()" style="background: #ffffff; color: #1d4ed8; font-weight: 800; border: none; border-radius: 8px; padding: 0.45rem 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <i class="fa-solid fa-cloud-arrow-up"></i> + Upload Assignment
+              </button>
+              <a href="#/hod/assignments" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1.5px solid rgba(255,255,255,0.4); font-weight: 800; border-radius: 8px; padding: 0.45rem 0.95rem;">
+                <i class="fa-solid fa-clipboard-list"></i> View All Assignments
+              </a>
+            </div>
+          </div>
+
           <!-- Live Student Activation Stats Summary -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
             <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">

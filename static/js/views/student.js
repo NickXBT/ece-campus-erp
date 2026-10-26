@@ -148,6 +148,163 @@ const StudentView = {
     }
   },
 
+  
+  // Render Academic Assignments Corner on Student Dashboard
+  renderDashboardAssignmentsHtml(db, profile) {
+    const studentDiv = (profile.division_name || 'SE(ECE)-A').toUpperCase();
+    const studentBatch = (profile.batch_name || '').toUpperCase();
+    const studentPrn = (profile.prn_no || '').trim().toUpperCase();
+    const studentId = profile.id || profile.student_id;
+
+    const allAsgns = (db.assignments || []).slice();
+    const allSubs = db.assignment_submissions || [];
+
+    // Filter relevant assignments for this student's division & batch
+    const myAsgns = allAsgns.filter(a => {
+      const aDiv = (a.division || 'ALL').toUpperCase();
+      const aBatch = (a.batch || 'ALL').toUpperCase();
+      if (aDiv !== 'ALL' && !studentDiv.includes(aDiv) && !aDiv.includes(studentDiv)) return false;
+      if (aBatch !== 'ALL' && studentBatch && aBatch !== studentBatch) return false;
+      return true;
+    });
+
+    // Sort newest first
+    myAsgns.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+    const liveAsgns = [];
+    const pastAsgns = [];
+    myAsgns.forEach(a => {
+      const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+      if (st.isLive) liveAsgns.push(a);
+      else pastAsgns.push(a);
+    });
+
+    if (!this.dashboardAsgnTab) this.dashboardAsgnTab = 'LIVE';
+    const displayList = this.dashboardAsgnTab === 'LIVE' ? liveAsgns : pastAsgns;
+
+    const cardsHtml = displayList.length > 0 ? displayList.map(a => {
+      const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { label: 'Live', isDueToday: false, isLive: true };
+      const mySub = allSubs.find(s => String(s.assignment_id) === String(a.id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == studentId)));
+
+      const deadlineBadge = st.isDueToday
+        ? '<span class="badge" style="background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 800; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-clock"></i> Due Today!</span>'
+        : (st.isLive
+          ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
+          : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
+
+      return `
+        <div style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 14px; padding: 1.15rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 14px rgba(0,0,0,0.04); transition: transform 0.2s ease;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <span class="badge-role role-STUDENT" style="font-weight: 800; font-size: 0.74rem; background: #eff6ff; color: #2563eb; padding: 0.2rem 0.55rem;">${a.subject}</span>
+              ${deadlineBadge}
+            </div>
+
+            <h4 style="font-family: var(--font-heading); font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.4rem 0; line-height: 1.35;">
+              ${a.title}
+            </h4>
+
+            <div style="font-size: 0.78rem; color: #64748b; margin-bottom: 0.65rem; display: flex; flex-wrap: wrap; gap: 0.65rem;">
+              <span><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Issued: <strong>${a.issue_date || 'N/A'}</strong></span>
+              <span><i class="fa-solid fa-calendar-xmark" style="color: #dc2626;"></i> Deadline: <strong>${a.due_date || 'N/A'}</strong></span>
+              <span><i class="fa-solid fa-user-tie" style="color: #64748b;"></i> ${a.created_by_name || 'Faculty'}</span>
+            </div>
+
+            ${a.instructions ? `
+              <p style="font-size: 0.8rem; color: #475569; line-height: 1.45; margin: 0 0 0.75rem 0; background: #f8fafc; padding: 0.45rem 0.65rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                ${a.instructions}
+              </p>
+            ` : ''}
+          </div>
+
+          <div style="border-top: 1px solid #f1f5f9; padding-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            ${a.file_url ? `
+              <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.76rem; font-weight: 700;">
+                <i class="fa-solid fa-file-arrow-down"></i> Question Paper
+              </button>
+            ` : '<span></span>'}
+
+            <div>
+              ${mySub ? `
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                    <i class="fa-solid fa-circle-check"></i> Submitted
+                  </span>
+                  ${st.isLive ? `
+                    <button class="btn btn-secondary btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="font-size: 0.74rem; font-weight: 700; padding: 0.25rem 0.55rem;">
+                      <i class="fa-solid fa-pen"></i> Re-submit
+                    </button>
+                  ` : ''}
+                </div>
+              ` : `
+                ${st.isLive ? `
+                  <button class="btn btn-primary btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Submit Solution
+                  </button>
+                ` : `
+                  <span class="badge" style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 700; font-size: 0.74rem; padding: 0.25rem 0.55rem; border-radius: 9999px;">
+                    Closed
+                  </span>
+                `}
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('') : `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1rem; background: #ffffff; border-radius: 14px; border: 1.5px dashed #cbd5e1; color: #64748b;">
+        <i class="fa-solid fa-clipboard-check" style="font-size: 2.2rem; color: #16a34a; margin-bottom: 0.5rem; display: block;"></i>
+        <strong style="color: var(--text-main); font-size: 0.95rem;">All Caught Up!</strong>
+        <p style="font-size: 0.82rem; margin: 0.25rem 0 0 0;">No ${this.dashboardAsgnTab.toLowerCase()} assignments for your division at this time.</p>
+      </div>
+    `;
+
+    return `
+      <!-- ACADEMIC ASSIGNMENTS CORNER PANEL -->
+      <div class="glass-panel" style="border: 2px solid #3b82f6; background: #f8fafc; margin-bottom: 1.75rem; padding: 1.25rem 1.5rem; border-radius: 18px; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.85rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="background: #2563eb; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 20px;">
+                COURSEWORK DESK
+              </span>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #1e3a8a; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-clipboard-list" style="color: #2563eb;"></i> Academic Coursework & Assignments
+              </h3>
+            </div>
+            <p style="color: #64748b; font-size: 0.82rem; margin: 0.25rem 0 0 0;">
+              Active subject assignments, question papers, submission deadlines, and solution uploads for ${studentDiv}.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.4rem; background: #ffffff; padding: 0.25rem; border-radius: 12px; border: 1.5px solid #cbd5e1;">
+            <button class="btn btn-sm ${this.dashboardAsgnTab === 'LIVE' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setDashboardAsgnTab('LIVE')" style="font-weight: 800; font-size: 0.78rem; border-radius: 8px;">
+              <i class="fa-solid fa-circle-check"></i> Live (${liveAsgns.length})
+            </button>
+            <button class="btn btn-sm ${this.dashboardAsgnTab === 'PAST' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setDashboardAsgnTab('PAST')" style="font-weight: 800; font-size: 0.78rem; border-radius: 8px;">
+              <i class="fa-solid fa-calendar-xmark"></i> Past (${pastAsgns.length})
+            </button>
+          </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
+  },
+
+  setDashboardAsgnTab(tab) {
+    this.dashboardAsgnTab = tab;
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], assignment_submissions: [] };
+    const profile = this.getFreshProfile() || {};
+    const container = document.getElementById('view-container');
+    if (container && window.location.hash === '#/student/dashboard') {
+      this.renderDashboard().then(html => container.innerHTML = html);
+    }
+  },
+
   async renderDashboard() {
     if (typeof fetchCloudDB === 'function') {
       await fetchCloudDB(true);
@@ -1737,5 +1894,402 @@ const StudentView = {
       btnSubmit.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Save Account Settings';
       btnSubmit.disabled = false;
     }
-  }
+  },
+
+  // Dedicated Full Student Assignments Portal View
+  async renderAssignments() {
+    try {
+      if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
+      const profile = this.getFreshProfile() || {};
+      const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], assignment_submissions: [] };
+
+      const studentDiv = (profile.division_name || 'SE(ECE)-A').toUpperCase();
+      const studentBatch = (profile.batch_name || '').toUpperCase();
+      const studentPrn = (profile.prn_no || '').trim().toUpperCase();
+      const studentId = profile.id || profile.student_id;
+
+      const allAsgns = (db.assignments || []).slice();
+      const allSubs = db.assignment_submissions || [];
+
+      // Filter relevant assignments for this student's division & batch
+      const myAsgns = allAsgns.filter(a => {
+        const aDiv = (a.division || 'ALL').toUpperCase();
+        const aBatch = (a.batch || 'ALL').toUpperCase();
+        if (aDiv !== 'ALL' && !studentDiv.includes(aDiv) && !aDiv.includes(studentDiv)) return false;
+        if (aBatch !== 'ALL' && studentBatch && aBatch !== studentBatch) return false;
+        return true;
+      });
+
+      // Sort newest first
+      myAsgns.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+      if (!this.studentAsgnTab) this.studentAsgnTab = 'LIVE';
+      if (!this.studentAsgnSubject) this.studentAsgnSubject = 'ALL';
+
+      let liveCount = 0;
+      let pastCount = 0;
+      let submittedCount = 0;
+
+      myAsgns.forEach(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+        const mySub = allSubs.find(s => String(s.assignment_id) === String(a.id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == studentId)));
+        if (st.isLive) liveCount++;
+        else pastCount++;
+        if (mySub) submittedCount++;
+      });
+
+      const filtered = myAsgns.filter(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+        const mySub = allSubs.find(s => String(s.assignment_id) === String(a.id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == studentId)));
+
+        if (this.studentAsgnTab === 'LIVE' && !st.isLive) return false;
+        if (this.studentAsgnTab === 'PAST' && !st.isPast) return false;
+        if (this.studentAsgnTab === 'SUBMITTED' && !mySub) return false;
+        if (this.studentAsgnSubject !== 'ALL' && a.subject !== this.studentAsgnSubject) return false;
+        return true;
+      });
+
+      const cardsHtml = filtered.length > 0 ? filtered.map(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { label: 'Live', isDueToday: false, isLive: true };
+        const mySub = allSubs.find(s => String(s.assignment_id) === String(a.id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == studentId)));
+
+        const deadlineBadge = st.isDueToday
+          ? '<span class="badge" style="background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-clock"></i> Due Today!</span>'
+          : (st.isLive
+            ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
+            : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
+
+        return `
+          <div class="glass-panel" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.65rem;">
+                <span class="badge-role role-STUDENT" style="font-weight: 800; font-size: 0.74rem; background: #eff6ff; color: #2563eb; padding: 0.25rem 0.65rem;">${a.subject}</span>
+                ${deadlineBadge}
+              </div>
+
+              <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem 0; line-height: 1.35;">
+                ${a.title}
+              </h3>
+
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem; font-size: 0.8rem; color: #334155; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Issued: <strong>${a.issue_date || 'N/A'}</strong></div>
+                <div><i class="fa-solid fa-calendar-xmark" style="color: #dc2626;"></i> Deadline: <strong>${a.due_date || 'N/A'}</strong></div>
+                <div><i class="fa-solid fa-award" style="color: #d97706;"></i> Max Marks: <strong>${a.total_marks || '25'}</strong></div>
+                <div><i class="fa-solid fa-user-tie" style="color: #64748b;"></i> Faculty: <strong>${a.created_by_name || 'Faculty Member'}</strong></div>
+              </div>
+
+              ${a.instructions ? `
+                <div style="font-size: 0.82rem; color: #475569; line-height: 1.5; margin-bottom: 0.85rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.55rem 0.75rem;">
+                  <strong style="color: #b45309;"><i class="fa-solid fa-file-lines"></i> Instructions:</strong> ${a.instructions}
+                </div>
+              ` : ''}
+            </div>
+
+            <div style="border-top: 1.5px solid #f1f5f9; padding-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              ${a.file_url ? `
+                <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.78rem; font-weight: 700;">
+                  <i class="fa-solid fa-file-arrow-down"></i> Question Paper
+                </button>
+              ` : '<span></span>'}
+
+              <div>
+                ${mySub ? `
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 800; font-size: 0.76rem; padding: 0.3rem 0.7rem; border-radius: 9999px;">
+                      <i class="fa-solid fa-circle-check"></i> Submitted (${new Date(mySub.submitted_at).toLocaleDateString()})
+                    </span>
+                    ${mySub.file_url ? `
+                      <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${mySub.file_url}', '${encodeURIComponent("My Solution - " + a.title)}', 'Solution Document')" style="font-size: 0.76rem;" title="View My Solution Document">
+                        <i class="fa-solid fa-eye"></i> View Solution
+                      </button>
+                    ` : ''}
+                    ${st.isLive ? `
+                      <button class="btn btn-primary btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="font-size: 0.76rem; font-weight: 700; padding: 0.3rem 0.65rem;">
+                        <i class="fa-solid fa-pen-to-square"></i> Re-submit
+                      </button>
+                    ` : ''}
+                  </div>
+                ` : `
+                  ${st.isLive ? `
+                    <button class="btn btn-primary btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.82rem; padding: 0.45rem 1rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+                      <i class="fa-solid fa-cloud-arrow-up"></i> Submit Solution
+                    </button>
+                  ` : `
+                    <span class="badge" style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 800; font-size: 0.76rem; padding: 0.3rem 0.7rem; border-radius: 9999px;">
+                      <i class="fa-solid fa-lock"></i> Submission Closed
+                    </span>
+                  `}
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') : `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #ffffff; border-radius: 18px; border: 2px dashed #cbd5e1; color: #64748b;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1rem auto;">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+          <h3 style="color: var(--text-main); font-weight: 800; margin-bottom: 0.35rem;">No Coursework Assignments Found</h3>
+          <p style="font-size: 0.88rem; margin: 0;">There are no assignments matching your current filter for ${studentDiv}.</p>
+        </div>
+      `;
+
+      return `
+        <div class="dashboard-container">
+          <!-- Top Header Banner -->
+          <div class="glass-panel" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border: none; margin-bottom: 1.75rem; color: #ffffff; border-radius: 18px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                  <span style="background: rgba(255,255,255,0.2); padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px;">STUDENT ACADEMIC PORTAL</span>
+                  <span style="background: #22c55e; color: #ffffff; padding: 0.2rem 0.55rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">ACTIVE</span>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 800; color: #ffffff; margin: 0;">My Coursework & Assignments</h2>
+                <p style="color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0.35rem 0 0 0;">
+                  Enrolled in <strong>${studentDiv}</strong> • Submit solutions before deadlines to earn academic credits.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <a href="#/student/dashboard" class="btn" style="background: rgba(255,255,255,0.2); color: #ffffff; border: 1.5px solid rgba(255,255,255,0.4); font-weight: 800; border-radius: 12px; padding: 0.65rem 1.15rem;">
+                  <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter & Control Bar -->
+          <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <!-- Tabs -->
+              <div style="display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.25rem; border-radius: 12px; border: 1px solid var(--border-color);">
+                <button class="btn btn-sm ${this.studentAsgnTab === 'LIVE' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setStudentAsgnTab('LIVE')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
+                  <i class="fa-solid fa-circle-check"></i> Live (${liveCount})
+                </button>
+                <button class="btn btn-sm ${this.studentAsgnTab === 'PAST' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setStudentAsgnTab('PAST')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
+                  <i class="fa-solid fa-calendar-xmark"></i> Past Deadlines (${pastCount})
+                </button>
+                <button class="btn btn-sm ${this.studentAsgnTab === 'SUBMITTED' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setStudentAsgnTab('SUBMITTED')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
+                  <i class="fa-solid fa-file-circle-check"></i> My Submissions (${submittedCount})
+                </button>
+              </div>
+
+              <!-- Subject Filter -->
+              <select class="form-control form-control-sm" style="font-weight: 700; width: 220px;" onchange="StudentView.setStudentAsgnSubject(this.value)">
+                <option value="ALL" ${this.studentAsgnSubject === 'ALL' ? 'selected' : ''}>All Subjects</option>
+                <option value="Signals and Systems" ${this.studentAsgnSubject === 'Signals and Systems' ? 'selected' : ''}>Signals & Systems</option>
+                <option value="Data Structures and Algorithms" ${this.studentAsgnSubject === 'Data Structures and Algorithms' ? 'selected' : ''}>Data Structures & Algorithms</option>
+                <option value="Semiconductor Devices and Circuits" ${this.studentAsgnSubject === 'Semiconductor Devices and Circuits' ? 'selected' : ''}>Semiconductor Devices (SDC)</option>
+                <option value="Fundamental of Data Science" ${this.studentAsgnSubject === 'Fundamental of Data Science' ? 'selected' : ''}>Data Science (FDS)</option>
+                <option value="Principles of Management and Entrepreneurship" ${this.studentAsgnSubject === 'Principles of Management and Entrepreneurship' ? 'selected' : ''}>Management & PME</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      return `<div class="dashboard-container"><p style="color: var(--accent-rose);">Failed to load assignments: ${err.message || err}</p></div>`;
+    }
+  },
+
+  setStudentAsgnTab(tab) {
+    this.studentAsgnTab = tab;
+    this.refreshStudentAssignments();
+  },
+
+  setStudentAsgnSubject(subj) {
+    this.studentAsgnSubject = subj;
+    this.refreshStudentAssignments();
+  },
+
+  refreshStudentAssignments() {
+    const hash = window.location.hash || '';
+    const container = document.getElementById('view-container');
+    if (container && hash === '#/student/assignments') {
+      this.renderAssignments().then(html => container.innerHTML = html);
+    } else if (container && hash === '#/student/dashboard') {
+      this.renderDashboard().then(html => container.innerHTML = html);
+    }
+  },
+
+  // Student Submission Handlers
+  openSubmitAssignmentModal(asgnId) {
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], assignment_submissions: [] };
+    const asgn = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+    if (!asgn) {
+      if (typeof Toast !== 'undefined') Toast.error('Assignment not found.');
+      return;
+    }
+
+    const profile = this.getFreshProfile() || {};
+    const idInput = document.getElementById('student-submit-asgn-id');
+    const subtitleEl = document.getElementById('submit-asgn-modal-subtitle');
+    const infoCard = document.getElementById('student-submit-info-card');
+    const fileInput = document.getElementById('student-asgn-file-input');
+    const remarksInput = document.getElementById('student-asgn-remarks');
+
+    if (idInput) idInput.value = asgnId;
+    if (subtitleEl) subtitleEl.innerText = asgn.title + ' • ' + asgn.subject + ' (Due: ' + (asgn.due_date || 'N/A') + ')';
+    if (remarksInput) remarksInput.value = '';
+    if (fileInput) fileInput.value = '';
+
+    this._pendingSolutionFile = null;
+    const labelEl = document.getElementById('student-asgn-file-label');
+    const previewEl = document.getElementById('student-asgn-file-preview-info');
+    if (labelEl) labelEl.style.display = 'block';
+    if (previewEl) previewEl.style.display = 'none';
+
+    if (infoCard) {
+      infoCard.innerHTML = `
+        <div>
+          <strong>${profile.name || 'Student'}</strong> (Roll: <strong>${profile.roll_no || 'N/A'}</strong> | PRN: <strong>${profile.prn_no || 'N/A'}</strong>)
+        </div>
+        <div style="font-weight: 800; color: #2563eb;">
+          ${profile.division_name || 'SE(ECE)'} (${profile.batch_name || 'A1'})
+        </div>
+      `;
+    }
+
+    if (typeof openModal === 'function') openModal('modal-student-submit-assignment');
+  },
+
+  onSolutionFileSelected(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this._pendingSolutionFile = file;
+
+      const labelEl = document.getElementById('student-asgn-file-label');
+      const previewEl = document.getElementById('student-asgn-file-preview-info');
+      const nameEl = document.getElementById('student-asgn-file-name-display');
+      const sizeEl = document.getElementById('student-asgn-file-size-display');
+
+      if (nameEl) nameEl.innerText = file.name;
+      if (sizeEl) sizeEl.innerText = (file.size / 1024).toFixed(1) + ' KB';
+      if (labelEl) labelEl.style.display = 'none';
+      if (previewEl) previewEl.style.display = 'inline-flex';
+    }
+  },
+
+  clearSolutionFile(e) {
+    if (e) e.stopPropagation();
+    this._pendingSolutionFile = null;
+    const input = document.getElementById('student-asgn-file-input');
+    if (input) input.value = '';
+    const labelEl = document.getElementById('student-asgn-file-label');
+    const previewEl = document.getElementById('student-asgn-file-preview-info');
+    if (labelEl) labelEl.style.display = 'block';
+    if (previewEl) previewEl.style.display = 'none';
+  },
+
+  async handleSubmitAssignment(e) {
+    e.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-solution');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting Solution...';
+    }
+
+    try {
+      const asgnId = document.getElementById('student-submit-asgn-id').value;
+      const remarks = document.getElementById('student-asgn-remarks').value;
+
+      if (!asgnId) throw new Error('Assignment ID missing.');
+
+      let fileData = { file_url: '', file_name: '', file_size: '', storage_path: '' };
+      if (this._pendingSolutionFile && typeof uploadAssignmentFile === 'function') {
+        fileData = await uploadAssignmentFile(this._pendingSolutionFile);
+      }
+
+      if (!fileData.file_url && (!remarks || !remarks.trim())) {
+        throw new Error('Please attach a solution document or write your notes.');
+      }
+
+      const res = await API.post('/api/assignments/submit', {
+        assignment_id: asgnId,
+        remarks,
+        file_url: fileData.file_url,
+        file_name: fileData.file_name,
+        file_size: fileData.file_size,
+        storage_path: fileData.storage_path
+      });
+
+      if (typeof Toast !== 'undefined') Toast.success(res.message || '🎉 Assignment solution submitted successfully!');
+      if (typeof closeModal === 'function') closeModal('modal-student-submit-assignment');
+      this.refreshStudentAssignments();
+    } catch(err) {
+      if (typeof Toast !== 'undefined') Toast.error((err && (err.message || err.error)) || 'Failed to submit solution.');
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> Submit Solution';
+      }
+    }
+  },
+
+  // Deadline Alerts Popup Handlers
+  checkDeadlineAlerts() {
+    try {
+      const dismissed = sessionStorage.getItem('dismissed_deadline_alert');
+      if (dismissed === '1') return;
+
+      const profile = this.getFreshProfile();
+      if (!profile || profile.status !== 'APPROVED') return;
+
+      const studentDiv = (profile.division_name || 'SE(ECE)-A').toUpperCase();
+      const studentPrn = (profile.prn_no || '').trim().toUpperCase();
+      const studentId = profile.id || profile.student_id;
+
+      const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], assignment_submissions: [] };
+      const allAsgns = db.assignments || [];
+      const allSubs = db.assignment_submissions || [];
+
+      const urgentAsgns = [];
+      allAsgns.forEach(a => {
+        const aDiv = (a.division || 'ALL').toUpperCase();
+        if (aDiv !== 'ALL' && !studentDiv.includes(aDiv) && !aDiv.includes(studentDiv)) return;
+
+        // Skip if already submitted
+        const hasSubmitted = allSubs.some(s => String(s.assignment_id) === String(a.id) && ((studentPrn && s.student_prn === studentPrn) || (s.student_id == studentId)));
+        if (hasSubmitted) return;
+
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: false };
+        if (st.isLive && (st.isDueToday || st.diffDays <= 2)) {
+          urgentAsgns.push({ asgn: a, status: st });
+        }
+      });
+
+      if (urgentAsgns.length === 0) return;
+
+      const container = document.getElementById('deadline-alert-items-container');
+      if (container) {
+        container.innerHTML = urgentAsgns.map(item => `
+          <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 0.75rem 0.95rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+            <div>
+              <strong style="color: #92400e; font-size: 0.92rem; display: block;">${item.asgn.title}</strong>
+              <span style="font-size: 0.78rem; color: #b45309;">${item.asgn.subject} • Deadline: <strong>${item.asgn.due_date}</strong></span>
+            </div>
+            ${item.status.isDueToday ? 
+              '<span class="badge" style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.55rem; white-space: nowrap;">🚨 Due Today!</span>' :
+              '<span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.55rem; white-space: nowrap;">⏳ ' + item.status.timeRemainingText + '</span>'
+            }
+          </div>
+        `).join('');
+
+        if (typeof openModal === 'function') openModal('modal-assignment-deadline-alert');
+      }
+    } catch(e) {
+      console.warn('Deadline alert check err:', e);
+    }
+  },
+
+  dismissDeadlineAlert() {
+    sessionStorage.setItem('dismissed_deadline_alert', '1');
+    if (typeof closeModal === 'function') closeModal('modal-assignment-deadline-alert');
+  },
+
 };

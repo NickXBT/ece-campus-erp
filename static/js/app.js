@@ -74,7 +74,9 @@ const App = {
     if (!container || !this.currentUser) return;
 
     if (this.currentUser.role === 'HOD' || this.currentUser.role === 'TEACHER') {
-      if (type === 'certificates' && (hash === '#/hod/approvals' || hash === '#/teacher/approvals') && typeof TeacherView !== 'undefined' && TeacherView.renderApprovals) {
+      if ((type === 'assignments' || type === 'assignment_submissions') && (hash === '#/hod/assignments' || hash === '#/teacher/assignments') && typeof TeacherView !== 'undefined' && TeacherView.renderAssignments) {
+        container.innerHTML = await TeacherView.renderAssignments();
+      } else if (type === 'certificates' && (hash === '#/hod/approvals' || hash === '#/teacher/approvals') && typeof TeacherView !== 'undefined' && TeacherView.renderApprovals) {
         container.innerHTML = await TeacherView.renderApprovals();
       } else if ((type === 'students' || type === 'pending_students') && hash === '#/hod/students' && typeof HodView !== 'undefined' && HodView.renderStudents) {
         container.innerHTML = await HodView.renderStudents();
@@ -82,11 +84,17 @@ const App = {
         container.innerHTML = await HodView.renderTeachers();
       } else if (type === 'password_requests' && hash === '#/hod/password-approvals' && typeof TeacherView !== 'undefined' && TeacherView.renderPasswordApprovals) {
         container.innerHTML = await TeacherView.renderPasswordApprovals();
-      } else if ((type === 'certificates' || type === 'students' || type === 'teachers') && (hash === '#/hod/dashboard' || !hash) && typeof TeacherView !== 'undefined' && TeacherView.renderDashboard) {
+      } else if ((type === 'certificates' || type === 'students' || type === 'teachers' || type === 'assignments') && (hash === '#/hod/dashboard' || !hash) && typeof TeacherView !== 'undefined' && TeacherView.renderDashboard) {
         container.innerHTML = await TeacherView.renderDashboard();
       }
     } else if (this.currentUser.role === 'STUDENT') {
-      if (type === 'certificates') {
+      if (type === 'assignments' || type === 'assignment_submissions') {
+        if (hash === '#/student/assignments' && typeof StudentView !== 'undefined' && StudentView.renderAssignments) {
+          container.innerHTML = await StudentView.renderAssignments();
+        } else if (hash === '#/student/dashboard' && typeof StudentView !== 'undefined' && StudentView.renderDashboard) {
+          container.innerHTML = await StudentView.renderDashboard();
+        }
+      } else if (type === 'certificates') {
         if (hash === '#/student/certificates' && typeof StudentView !== 'undefined' && StudentView.renderCertificates) {
           container.innerHTML = await StudentView.renderCertificates();
         } else if (hash === '#/student/dashboard' && typeof StudentView !== 'undefined' && StudentView.renderDashboard) {
@@ -501,6 +509,7 @@ const App = {
     if (role === 'STUDENT') {
       navItems = [
         { hash: '#/student/dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
+        { hash: '#/student/assignments', icon: 'fa-book-bookmark', label: 'Assignments' },
         { hash: '#/student/upload', icon: 'fa-cloud-arrow-up', label: 'Upload Certificate' },
         { hash: '#/student/certificates', icon: 'fa-file-contract', label: 'My Certificates' },
         { hash: '#/student/timetable', icon: 'fa-calendar-week', label: 'My Timetable' },
@@ -508,11 +517,13 @@ const App = {
       ];
     } else if (role === 'TEACHER') {
       navItems = [
-        { hash: '#/hod/approvals', icon: 'fa-file-signature', label: 'Certificate Approvals' }
+        { hash: '#/hod/approvals', icon: 'fa-file-signature', label: 'Certificate Approvals' },
+        { hash: '#/teacher/assignments', icon: 'fa-clipboard-list', label: 'Assignments' }
       ];
     } else if (role === 'HOD') {
       navItems = [
         { hash: '#/hod/dashboard', icon: 'fa-chart-pie', label: 'HOD Dashboard' },
+        { hash: '#/hod/assignments', icon: 'fa-clipboard-list', label: 'Assignments' },
         { hash: '#/hod/teachers', icon: 'fa-user-plus', label: 'Add / Manage Faculty' },
         { hash: '#/hod/students', icon: 'fa-user-graduate', label: 'Student Registration' },
         { hash: '#/hod/approvals', icon: 'fa-file-signature', label: 'HOD Certificate Approvals' },
@@ -810,6 +821,9 @@ const App = {
       if (hash === '#/student/dashboard') {
         pageTitle.innerText = 'Student Dashboard';
         renderedHtml = await StudentView.renderDashboard();
+      } else if (hash === '#/student/assignments') {
+        pageTitle.innerText = 'My Academic Assignments';
+        renderedHtml = await StudentView.renderAssignments();
       } else if (hash === '#/student/upload') {
         pageTitle.innerText = 'Upload New Certificate';
         renderedHtml = await StudentView.renderUploadForm();
@@ -825,6 +839,9 @@ const App = {
       } else if (hash === '#/hod/dashboard' || hash === '#/teacher/dashboard') {
         pageTitle.innerText = 'HOD & Faculty Dashboard';
         renderedHtml = await TeacherView.renderDashboard();
+      } else if (hash === '#/hod/assignments' || hash === '#/teacher/assignments') {
+        pageTitle.innerText = 'Assignment Management Desk';
+        renderedHtml = await TeacherView.renderAssignments();
       } else if (hash === '#/hod/teachers') {
         pageTitle.innerText = 'Faculty / Add Teachers Panel';
         renderedHtml = await HodView.renderTeachers();

@@ -14,3 +14,5 @@ shreyash/
 !api/index.py
 !api/sync.py
 !database.py
+
+step*.js
