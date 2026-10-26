@@ -21,3 +21,7 @@ inspect_*.js
 patch_*.js
 
 apply_under_development.js
+
+verify_all_scripts.js
+
+fix_index.js
