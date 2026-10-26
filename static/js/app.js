@@ -1147,30 +1147,7 @@ const App = {
             body: JSON.stringify({ name: newName, email: newEmail })
           }).catch(() => {});
 
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: newName,
-              email: newEmail,
-              teacher_id_code: tCode,
-              role: user.role,
-              ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim() } : {})
-            })
-          }).catch(() => {});
-
-          if (isHod) {
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: newName,
-                email: newEmail,
-                ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim() } : {}),
-                hod_pin: db.hod_pin || '1234'
-              })
-            }).catch(() => {});
-          }
+// Secure: faculty_credentials write bypassed
         } else if (student) {
           const sPrn = (student.prn_no || `STU_${student.id}`).replace(/[.#$\[\]]/g, '_');
           const studentPatch = {
@@ -1184,18 +1161,7 @@ const App = {
             status: 'APPROVED',
             ...(newPassword && newPassword.trim() ? { password_hash: newPassword.trim(), must_change_credentials: false } : {})
           };
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + sPrn + '.json', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(studentPatch)
-          }).catch(() => {});
-          if (student.id) {
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/' + student.id + '.json', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(studentPatch)
-            }).catch(() => {});
-          }
+// Secure: activated_students write bypassed
         }
       } catch(e) {}
 

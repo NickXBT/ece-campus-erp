@@ -13,6 +13,7 @@ shreyash/
 !app.py
 !api/index.py
 !api/sync.py
+!api/auth_handler.py
 !database.py
 
 step*.js
@@ -25,3 +26,12 @@ apply_under_development.js
 verify_all_scripts.js
 
 fix_index.js
+
+test_auth_logic.py
+patch_sync_auth.py
+
+patch_frontend_security.js
+
+patch_full_cleanup.py
+
+test_serverless_auth.py

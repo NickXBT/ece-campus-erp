@@ -5869,108 +5869,7 @@ function initFirebaseRealtimeListeners() {
       }
     });
 
-    // 2. Live Push Listener: Activated / Registered Students
-    firebaseDb.ref('activated_students').on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val && typeof val === 'object') {
-        const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(s => s && (s.id || s.prn_no));
-        if (valid.length > 0) {
-          const db = getLocalDB();
-          valid.forEach(actSt => {
-            const normActPrn = (actSt.prn_no || '').trim().toUpperCase();
-            const normActEmail = (actSt.email || '').trim().toLowerCase();
-            const actUserId = actSt.user_id;
-
-            let matched = false;
-            (db.students || []).forEach(s => {
-              const sPrn = (s.prn_no || '').trim().toUpperCase();
-              let isMatch = false;
-              if (normActPrn && sPrn && normActPrn === sPrn) {
-                isMatch = true;
-              } else if (actSt.id && s.id && String(s.id) === String(actSt.id)) {
-                isMatch = true;
-              } else if (actUserId && s.user_id && String(s.user_id) === String(actUserId)) {
-                isMatch = true;
-              }
-              if (isMatch) {
-                matched = true;
-                s.name = actSt.name || s.name;
-                if (actSt.email) s.email = actSt.email;
-                if (actSt.prn_no) s.prn_no = actSt.prn_no;
-                if (actSt.roll_no) s.roll_no = actSt.roll_no;
-                if (actSt.password_hash) s.password_hash = actSt.password_hash;
-                s.status = 'APPROVED';
-                s.is_activated = true;
-                s.is_logged_in = true;
-              }
-            });
-            if (!matched && actSt.id) {
-              db.students.push({ ...actSt, status: 'APPROVED', is_activated: true });
-            }
-
-            (db.users || []).forEach(u => {
-              if (u.role && u.role !== 'STUDENT') return;
-              const uPrn = (u.prn_no || '').trim().toUpperCase();
-              const uEmail = (u.email || '').trim().toLowerCase();
-
-              // Strict match: PRN first, or user_id === u.id (NEVER match u.id == actSt.id)
-              let userMatch = false;
-              if (normActPrn && uPrn && normActPrn === uPrn) {
-                userMatch = true;
-              } else if (actUserId && u.id && String(u.id) === String(actUserId)) {
-                userMatch = true;
-              } else if (normActEmail && !normActEmail.endsWith('@campus.edu') && uEmail && normActEmail === uEmail) {
-                userMatch = true;
-              }
-
-              if (userMatch) {
-                u.name = actSt.name || u.name;
-                if (actSt.email) u.email = actSt.email;
-                if (actSt.prn_no) u.prn_no = actSt.prn_no;
-                if (actSt.roll_no) u.roll_no = actSt.roll_no;
-                if (actSt.password_hash) u.password_hash = actSt.password_hash;
-                u.status = 'APPROVED';
-                u.is_activated = true;
-                u.is_logged_in = true;
-              }
-            });
-          });
-          g_cloudDB = db;
-          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
-            App.onRealtimeUpdate('students');
-          }
-        }
-      }
-    });
-
-    // 3. Live Push Listener: Pending Signups
-    firebaseDb.ref('pending_students').on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val && typeof val === 'object') {
-        const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(s => s && s.id);
-        const db = getLocalDB();
-        valid.forEach(pst => {
-          let matched = false;
-          (db.students || []).forEach(s => {
-            if (s.id == pst.id || (pst.prn_no && s.prn_no && pst.prn_no.toUpperCase() === s.prn_no.toUpperCase())) {
-              matched = true;
-              if (s.status !== 'APPROVED') s.status = 'PENDING_APPROVAL';
-            }
-          });
-          if (!matched && pst.id) {
-            db.students.push({ ...pst, status: 'PENDING_APPROVAL' });
-          }
-        });
-        g_cloudDB = db;
-        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
-          App.onRealtimeUpdate('pending_students');
-        }
-      }
-    });
-
-    // 4. Live Push Listener: Password Reset Requests
+// 4. Live Push Listener: Password Reset Requests
     firebaseDb.ref('password_requests').on('value', (snapshot) => {
       const val = snapshot.val();
       if (val && typeof val === 'object') {
@@ -5982,28 +5881,6 @@ function initFirebaseRealtimeListeners() {
         if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
           App.onRealtimeUpdate('password_requests');
         }
-      }
-    });
-
-    // 5. Live Push Listener: HOD Credentials
-    firebaseDb.ref('hod_credentials').on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val && typeof val === 'object') {
-        const db = getLocalDB();
-        const hodUser = (db.users || []).find(u => u && u.role === 'HOD');
-        if (hodUser) {
-          if (val.email) hodUser.email = val.email;
-          if (val.password_hash) hodUser.password_hash = val.password_hash;
-          if (val.name) hodUser.name = val.name;
-        }
-        (db.teachers || []).forEach(t => {
-          if (t.teacher_id_code === 'HOD101' || (hodUser && t.user_id == hodUser.id)) {
-            if (val.name) t.name = val.name;
-            if (val.email) t.email = val.email;
-          }
-        });
-        if (val.hod_pin) db.hod_pin = val.hod_pin;
-        g_cloudDB = db;
       }
     });
 
@@ -6065,51 +5942,6 @@ function initFirebaseRealtimeListeners() {
           g_cloudDB = db;
           if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
             App.onRealtimeUpdate('teachers');
-          }
-        }
-      }
-    });
-
-    // 7. Live Push Listener: Faculty Credentials
-    firebaseDb.ref('faculty_credentials').on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val && typeof val === 'object') {
-        const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(c => c && (c.email || c.teacher_id_code || c.id || c.user_id));
-        if (valid.length > 0) {
-          const db = getLocalDB();
-          valid.forEach(cred => {
-            const normEmail = (cred.email || '').trim().toLowerCase();
-            const normCode = (cred.teacher_id_code || '').trim().toUpperCase();
-
-            // Live update users (strictly faculty)
-            (db.users || []).forEach(u => {
-              if (u.role && u.role !== 'TEACHER' && u.role !== 'HOD') return;
-              if ((normEmail && u.email && u.email.toLowerCase() === normEmail) || 
-                  (normCode && u.username && u.username.toUpperCase() === normCode) || 
-                  (cred.user_id && u.id == cred.user_id) || 
-                  (cred.id && u.id == cred.id)) {
-                if (cred.name) u.name = cred.name;
-                if (cred.email) u.email = cred.email;
-                if (cred.password_hash) u.password_hash = cred.password_hash;
-              }
-            });
-
-            // Live update teachers
-            (db.teachers || []).forEach(t => {
-              if ((normEmail && t.email && t.email.toLowerCase() === normEmail) || 
-                  (normCode && t.teacher_id_code && t.teacher_id_code.toUpperCase() === normCode) || 
-                  (cred.user_id && t.user_id == cred.user_id) || 
-                  (cred.id && t.id == cred.id)) {
-                if (cred.name) t.name = cred.name;
-                if (cred.email) t.email = cred.email;
-                if (cred.designation) t.designation = cred.designation;
-              }
-            });
-          });
-          g_cloudDB = db;
-          if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
-            App.onRealtimeUpdate('faculty_credentials');
           }
         }
       }
@@ -6379,26 +6211,7 @@ function saveLocalDB(db) {
               status: 'APPROVED'
             };
           });
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(actMap)
-          }).catch(() => {});
-        }
-
-        const hodUser = (cleanCopy.users || []).find(u => u && u.role === 'HOD');
-        if (hodUser && currentUser && currentUser.role === 'HOD' && hodUser.password_hash !== '1234') {
-          const hodCreds = {
-            email: hodUser.email,
-            password_hash: hodUser.password_hash,
-            name: hodUser.name,
-            hod_pin: cleanCopy.hod_pin || '1234'
-          };
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(hodCreds)
-          }).catch(() => {});
+// Secure: activated_students not pushed to RTDB
         }
 
         if (cleanCopy.certificates && cleanCopy.certificates.length > 0) {
@@ -6493,42 +6306,10 @@ function saveLocalDB(db) {
           cleanCopy.deleted_teacher_ids.forEach(delId => {
             const safeKey = String(delId).replace(/[.#$\[\]]/g, '_');
             fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+    // Secure: faculty_credentials write bypassed
           });
         }
 
-        // Realtime Firebase RTDB Sync: Faculty Credentials (Passwords, Emails, Designations)
-        if (cleanCopy.users && cleanCopy.users.length > 0) {
-          const facultyCredMap = {};
-          cleanCopy.users.forEach(u => {
-            if (u && (u.role === 'TEACHER' || u.role === 'HOD')) {
-              const matchedTeacher = (cleanCopy.teachers || []).find(t => 
-                t.user_id == u.id || 
-                (u.email && t.email && u.email.toLowerCase() === t.email.toLowerCase()) ||
-                (u.role === 'HOD' && t.teacher_id_code === 'HOD101')
-              );
-              const code = (matchedTeacher && matchedTeacher.teacher_id_code) || u.username || String(u.id);
-              const safeKey = code.replace(/[.#$\[\]]/g, '_');
-              facultyCredMap[safeKey] = {
-                id: u.id,
-                user_id: u.id,
-                name: u.name,
-                email: u.email,
-                role: u.role,
-                password_hash: u.password_hash || '1234',
-                teacher_id_code: code,
-                designation: (matchedTeacher && matchedTeacher.designation) || (u.role === 'HOD' ? 'Head of Department' : 'Faculty')
-              };
-            }
-          });
-          if (Object.keys(facultyCredMap).length > 0) {
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(facultyCredMap)
-            }).catch(() => {});
-          }
-        }
       } catch(e) {}
     }
   } catch (e) {}
@@ -6769,22 +6550,23 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds, fbTeachers, fbFacultyCreds, fbDeletedTeachers, fbAsgns, fbDelAsgns] = await Promise.all([
+    // Secure Cloud Fetch: Credential endpoints removed from client bundle
+    const [resSync, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbTeachers, fbDeletedTeachers, fbAsgns, fbDelAsgns] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/timetable.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids.json').then(r => r.json()).catch(() => null)
     ]);
+    const fbData = null;
+    const fbHodCreds = null;
+    const fbFacultyCreds = null;
 
     if (resSync && resSync.db) {
       cloudDb = resSync.db;
@@ -7418,235 +7200,26 @@ const API = {
       return { user: validUser, profile: student || validUser };
     }
 
-    // 2. POST /api/auth/login
+    // 2. POST /api/auth/login (Secure Server-Side Authentication)
     if (endpoint === '/api/auth/login' && method === 'POST') {
-      const email = (body.email || '').trim().toLowerCase();
-      const password = (body.password || '').trim();
-      const portal = (body.portal || 'DIV_A').toUpperCase();
-
-      let user = null;
-      if (email === 'hod' || email === 'admin' || email === 'teacher' || email === 'teacher@campus.edu' || email === 'hod@campus.edu' || email === 'dhanashree.kulkarni@nmiet.edu.in' || email.includes('dhanashree.kulkarni') || email === 'hod101') {
-        user = (db.users || []).find(u => u.role === 'HOD') || db.users[0];
-      }
-
-      if (!user) {
-        // Faculty lookup by Email, Teacher Code (e.g. T102, T103, T104, T105, T106, T107), or Name
-        const matchedTeacher = (db.teachers || []).find(t => {
-          if (!t) return false;
-          const tEmail = (t.email || '').trim().toLowerCase();
-          const tCode = (t.teacher_id_code || '').trim().toLowerCase();
-          const tName = (t.name || '').trim().toLowerCase();
-          const cleanTName = tName.replace(/^(dr\.|mr\.|ms\.|mrs\.|prof\.)\s*/i, '').trim();
-          const cleanEmail = email.replace(/^(dr\.|mr\.|ms\.|mrs\.|prof\.)\s*/i, '').trim();
-          if (tEmail && tEmail === email) return true;
-          if (tCode && tCode === email) return true;
-          if (tName && tName === email) return true;
-          if (cleanTName && cleanTName === cleanEmail) return true;
-          if (cleanTName && cleanEmail && (cleanTName.includes(cleanEmail) || cleanEmail.includes(cleanTName))) return true;
-          if ((email === 'faculty' || email === 'faculty@campus.edu') && tCode === 't102') return true;
-          return false;
+      try {
+        const resp = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
-
-        if (matchedTeacher) {
-          user = (db.users || []).find(u => u && (u.role === 'TEACHER' || u.role === 'HOD') && (u.id === matchedTeacher.user_id || (u.email && u.email.toLowerCase() === matchedTeacher.email.toLowerCase()))) || {
-            id: matchedTeacher.user_id || matchedTeacher.id,
-            name: matchedTeacher.name,
-            email: matchedTeacher.email,
-            role: (matchedTeacher.designation && matchedTeacher.designation.includes('Head')) ? 'HOD' : 'TEACHER',
-            password_hash: '1234',
-            status: 'APPROVED',
-            is_activated: true,
-            must_change_credentials: false
-          };
-          if (matchedTeacher.name && user) user.name = matchedTeacher.name;
+        const data = await resp.json();
+        if (!resp.ok || !data.success) {
+          throw { message: data.message || 'Invalid credentials. Please check your username and password.' };
         }
-      }
-
-      if (!user) {
-        user = (db.users || []).find(u => {
-          if (!u) return false;
-          const uEmail = (u.email || '').trim().toLowerCase();
-          const uUsername = (u.username || '').trim().toLowerCase();
-          const uPrn = (u.prn_no || '').trim().toLowerCase();
-          const uRollRaw = String(u.roll_no || '').trim();
-          const uRollPad = uRollRaw.padStart(2, '0');
-          const uRollInt = String(parseInt(uRollRaw) || '');
-          const uName = (u.name || '').trim().toLowerCase();
-
-          if (uEmail && uEmail.length > 3 && uEmail === email) return true;
-          if (uPrn && uPrn.length > 2 && uPrn !== 'n/a' && uPrn === email) return true;
-          if (uUsername && uUsername.length > 2 && uUsername === email) return true;
-          if (uName && uName.length > 3 && uName === email) return true;
-          if (email.length >= 4 && !email.includes('@')) {
-            const emailWords = email.split(/\s+/).filter(w => w.length > 2);
-            if (emailWords.length >= 2 && emailWords.every(w => uName.includes(w))) {
-              if (portal === 'DIV_B' && u.division_name && u.division_name.includes('B')) return true;
-              if (portal === 'DIV_A' && (!u.division_name || u.division_name.includes('A'))) return true;
-            }
-          }
-          if (email === uRollRaw || email === uRollPad || email === uRollInt) {
-            if (portal === 'DIV_B' && u.division_name && u.division_name.includes('B')) return true;
-            if (portal === 'DIV_A' && (!u.division_name || u.division_name.includes('A'))) return true;
-          }
-          return false;
-        });
-      }
-
-      // Fallback 1: Search in db.students if not yet synthesized into db.users
-      if (!user) {
-        const matchingStudent = (db.students || []).find(s => {
-          if (!s) return false;
-          const sPrn = (s.prn_no || '').trim().toLowerCase();
-          const sEmail = (s.email || '').trim().toLowerCase();
-          const sUsername = (s.username || '').trim().toLowerCase();
-          const sRollRaw = String(s.roll_no || '').trim();
-          const sRollPad = sRollRaw.padStart(2, '0');
-          const sRollInt = String(parseInt(sRollRaw) || '');
-          const sName = (s.name || '').trim().toLowerCase();
-
-          if (sPrn && sPrn.length > 2 && sPrn !== 'n/a' && sPrn === email) return true;
-          if (sEmail && sEmail.length > 3 && sEmail === email) return true;
-          if (sUsername && sUsername.length > 2 && sUsername === email) return true;
-          if (sName && sName.length > 3 && sName === email) return true;
-          if (email === sRollRaw || email === sRollPad || email === sRollInt) {
-            if (portal === 'DIV_B' && s.division_name && s.division_name.includes('B')) return true;
-            if (portal === 'DIV_A' && (!s.division_name || s.division_name.includes('A'))) return true;
-          }
-          return false;
-        });
-
-        if (matchingStudent) {
-          user = (db.users || []).find(u => u && (u.id === matchingStudent.user_id || (u.prn_no && u.prn_no.toUpperCase() === (matchingStudent.prn_no || '').toUpperCase())));
-          if (!user) {
-            user = {
-              id: matchingStudent.user_id || matchingStudent.id,
-              name: matchingStudent.name,
-              email: matchingStudent.email || '',
-              username: matchingStudent.username || matchingStudent.prn_no,
-              prn_no: matchingStudent.prn_no,
-              roll_no: matchingStudent.roll_no,
-              division_id: matchingStudent.division_id || (portal === 'DIV_B' ? 2 : 1),
-              batch_id: matchingStudent.batch_id || (portal === 'DIV_B' ? 4 : 1),
-              division_name: matchingStudent.division_name || (portal === 'DIV_B' ? 'SE(ECE)-B' : 'SE(ECE)-A'),
-              batch_name: matchingStudent.batch_name || (portal === 'DIV_B' ? 'B1' : 'A1'),
-              password_hash: matchingStudent.password_hash || 'Student@123',
-              role: 'STUDENT',
-              status: matchingStudent.status || 'APPROVED',
-              is_activated: matchingStudent.is_activated !== false,
-              must_change_credentials: matchingStudent.must_change_credentials || false
-            };
-            db.users.push(user);
-            saveLocalDB(db);
-          }
+        setSessionUser(data.user);
+        if (typeof localStorage !== 'undefined' && data.token) {
+          localStorage.setItem('auth_token', data.token);
         }
+        return data;
+      } catch (err) {
+        throw (err && err.message) ? err : { message: (err && (err.message || err.error)) || 'Login failed. Please check your credentials.' };
       }
-
-      // Fallback 2: Direct live lookup from Firebase hod_students and activated_students
-      if (!user) {
-        try {
-          const [fbHodData, fbActData] = await Promise.all([
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
-            fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null)
-          ]);
-          const allFbStudents = [
-            ...(fbHodData ? (Array.isArray(fbHodData) ? fbHodData : Object.values(fbHodData)) : []),
-            ...(fbActData ? (Array.isArray(fbActData) ? fbActData : Object.values(fbActData)) : [])
-          ];
-
-          const foundInFb = allFbStudents.find(s => {
-            if (!s) return false;
-            const sPrn = (s.prn_no || '').trim().toLowerCase();
-            const sEmail = (s.email || '').trim().toLowerCase();
-            const sUsername = (s.username || '').trim().toLowerCase();
-            const sRollRaw = String(s.roll_no || '').trim();
-            const sRollPad = sRollRaw.padStart(2, '0');
-            const sRollInt = String(parseInt(sRollRaw) || '');
-            const sName = (s.name || '').trim().toLowerCase();
-
-            if (sPrn && sPrn.length > 2 && sPrn === email) return true;
-            if (sEmail && sEmail.length > 3 && sEmail === email) return true;
-            if (sUsername && sUsername.length > 2 && sUsername === email) return true;
-            if (sName && sName.length > 3 && sName === email) return true;
-            if (email === sRollRaw || email === sRollPad || email === sRollInt) return true;
-            return false;
-          });
-
-          if (foundInFb) {
-            user = {
-              id: foundInFb.user_id || foundInFb.id,
-              name: foundInFb.name,
-              email: foundInFb.email || '',
-              username: foundInFb.username || foundInFb.prn_no,
-              prn_no: foundInFb.prn_no,
-              roll_no: foundInFb.roll_no,
-              division_id: foundInFb.division_id || (portal === 'DIV_B' ? 2 : 1),
-              batch_id: foundInFb.batch_id || (portal === 'DIV_B' ? 4 : 1),
-              division_name: foundInFb.division_name || (portal === 'DIV_B' ? 'SE(ECE)-B' : 'SE(ECE)-A'),
-              batch_name: foundInFb.batch_name || (portal === 'DIV_B' ? 'B1' : 'A1'),
-              password_hash: foundInFb.password_hash || 'Student@123',
-              role: 'STUDENT',
-              status: foundInFb.status || 'APPROVED',
-              is_activated: true,
-              must_change_credentials: false
-            };
-            db.students.push(foundInFb);
-            db.users.push(user);
-            saveLocalDB(db);
-          }
-        } catch (e) {}
-      }
-
-      if (!user) throw { message: 'Account not found. Please enter your PRN Number or registered Email.' };
-
-      // Security Enforcement: HOD/Faculty vs Division A vs Division B
-      if (portal === 'HOD') {
-        if (user.role !== 'HOD' && user.role !== 'TEACHER') {
-          throw { message: 'Access Denied: The HOD & Faculty section is strictly reserved for faculty and administration. Students must select Division A or Division B.' };
-        }
-      } else {
-        // portal is DIV_A or DIV_B
-        if (user.role === 'HOD' || user.role === 'TEACHER') {
-          throw { message: 'Access Denied: HOD and Faculty accounts can only log in through the "HOD & Faculty Portal" option.' };
-        }
-
-        const student = findCurrentStudent(db, user) || user;
-        const divName = (student.division_name || user.division_name || '').toUpperCase();
-        const divId = student.division_id || user.division_id;
-        const isDivB = divName.includes('B') || divId == 2;
-
-        if (portal === 'DIV_A' && isDivB) {
-          throw { message: 'Access Denied: You are enrolled in Division B. Please select the Division B login option.' };
-        }
-        if (portal === 'DIV_B' && !isDivB) {
-          throw { message: 'Access Denied: You are enrolled in Division A. Please select the Division A login option.' };
-        }
-      }
-
-      const userPass = (user.password_hash || '').trim();
-      if (userPass !== password) {
-        throw { message: 'Invalid password. Please check your credentials.' };
-      }
-
-      setSessionUser(user);
-      const isFaculty = (user.role === 'HOD' || user.role === 'TEACHER');
-      const teacher = isFaculty ? ((db.teachers || []).find(t => (user.id && t.user_id == user.id) || (user.email && t.email && t.email.toLowerCase() === user.email.toLowerCase()) || (user.username && t.teacher_id_code && t.teacher_id_code.toUpperCase() === user.username.toUpperCase())) || user) : null;
-      if (isFaculty && teacher && teacher.name) {
-        user.name = teacher.name;
-        if (typeof teacher === 'object') teacher.name = teacher.name;
-      }
-      const student = !isFaculty ? findCurrentStudent(db, user) : null;
-      if (!isFaculty && student && student.name) {
-        user.name = student.name;
-        user.roll_no = student.roll_no;
-        user.prn_no = student.prn_no;
-        user.division_name = student.division_name;
-        user.batch_name = student.batch_name;
-        user.student_id = student.id;
-        if (student.user_id) user.id = student.user_id;
-        setSessionUser(user);
-      }
-      const redirect = isFaculty ? '#/hod/dashboard' : '#/student/dashboard';
-      return { token: 'jwt_' + user.id + '_' + Date.now(), user, profile: teacher || student || user, redirect };
     }
 
     // 2b. POST /api/auth/register-student
@@ -8367,7 +7940,7 @@ const API = {
       try {
         const safeKey = codeOrId.replace(/[.#$\[\]]/g, '_');
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
+// Secure: faculty_credentials write bypassed
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids/' + safeKey + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -8491,20 +8064,7 @@ const API = {
           body: JSON.stringify(newTeacher)
         }).catch(() => {});
 
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/' + safeKey + '.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: newTeacher.id,
-            user_id: newTeacher.user_id,
-            name: newTeacher.name,
-            email: newTeacher.email,
-            teacher_id_code: autoCode,
-            designation: newTeacher.designation,
-            password_hash: body.password || '1234',
-            role: newUser.role
-          })
-        }).catch(() => {});
+// Secure: faculty_credentials write bypassed
 
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids/' + safeKey + '.json', { method: 'DELETE' }).catch(() => {});
       } catch(e) {}
@@ -8629,11 +8189,7 @@ const API = {
           body: JSON.stringify(st)
         }).catch(err => console.warn('Firebase hod_students write err:', err));
 
-        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/${st.id}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(st)
-        }).catch(err => console.warn('Firebase activated_students write err:', err));
+// Secure: activated_students write bypassed
       } catch (e) {
         console.warn('Firebase direct write caught:', e);
       }
@@ -8701,23 +8257,7 @@ const API = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(s)
         }).catch(() => {});
-        fetch(`https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students/${s.id}.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: s.id,
-            user_id: s.user_id,
-            name: s.name,
-            roll_no: s.roll_no,
-            prn_no: s.prn_no,
-            division_name: s.division_name,
-            batch_name: s.batch_name,
-            email: s.email,
-            password_hash: s.password_hash,
-            is_activated: true,
-            status: 'APPROVED'
-          })
-        }).catch(() => {});
+// Secure: activated_students write bypassed
       }
 
       return { success: true, message: 'Student registration approved successfully' };
@@ -8957,28 +8497,7 @@ const API = {
       saveLocalDB(db);
 
       if (hodUser) {
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: hodUser.email,
-            password_hash: hodUser.password_hash,
-            name: hodUser.name,
-            hod_pin: db.hod_pin || '1234'
-          })
-        }).catch(() => {});
-
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials/HOD101.json', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: hodUser.email,
-            password_hash: hodUser.password_hash,
-            name: hodUser.name,
-            teacher_id_code: 'HOD101',
-            role: 'HOD'
-          })
-        }).catch(() => {});
+// Secure: hod_credentials write bypassed
 
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers/HOD101.json', {
           method: 'PATCH',

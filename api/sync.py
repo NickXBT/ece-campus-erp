@@ -1,6 +1,16 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import sys
+
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _CURRENT_DIR not in sys.path:
+    sys.path.insert(0, _CURRENT_DIR)
+
+try:
+    import auth_handler
+except ImportError:
+    from api import auth_handler
 
 true = True
 false = False
@@ -5833,7 +5843,30 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
+            req_path = self.path.split("?")[0]
+            if req_path == "/api/auth/me":
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token)
+                if not session_data:
+                    self._set_headers(401)
+                    self.wfile.write(json.dumps({"success": False, "message": "Not authenticated"}).encode("utf-8"))
+                    return
+                self._set_headers(200)
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "uid": session_data.get("uid"),
+                    "role": session_data.get("role")
+                }).encode("utf-8"))
+                return
+
             db = get_db()
+            # Security Hardening: Scrub all passwords before serialization in /api/sync
+            if "users" in db and isinstance(db["users"], list):
+                for u in db["users"]:
+                    if isinstance(u, dict):
+                        u.pop("password_hash", None)
+                        u.pop("password", None)
             self._set_headers(200)
             self.wfile.write(json.dumps({"status": "ok", "db": db}).encode("utf-8"))
         except Exception as e:
@@ -5855,9 +5888,39 @@ class handler(BaseHTTPRequestHandler):
             except Exception:
                 payload = {}
 
+            req_path = self.path.split("?")[0]
+
+            # 1. Server-Side Authentication
+            if req_path == "/api/auth/login":
+                forwarded_for = self.headers.get("x-forwarded-for", "127.0.0.1")
+                client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else "127.0.0.1"
+                auth_res = auth_handler.authenticate(
+                    email_or_id=payload.get("email"),
+                    password=payload.get("password"),
+                    portal=payload.get("portal"),
+                    client_ip=client_ip
+                )
+                status_code = 200 if auth_res.get("success") else 401
+                if auth_res.get("error") == "RATE_LIMIT_EXCEEDED":
+                    status_code = 429
+                self._set_headers(status_code)
+                self.wfile.write(json.dumps(auth_res).encode("utf-8"))
+                return
+
+            # 2. Server-Side Logout
+            if req_path == "/api/auth/logout":
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Logged out"}).encode("utf-8"))
+                return
+
+            # 3. Existing Sync Handler
             db = get_db()
             if isinstance(payload, dict):
                 if "users" in payload and isinstance(payload["users"], list):
+                    # Ensure no passwords stored in local sync users
+                    for u in payload["users"]:
+                        if isinstance(u, dict):
+                            u.pop("password_hash", None)
                     db["users"] = payload["users"]
                 if "students" in payload and isinstance(payload["students"], list):
                     db["students"] = payload["students"]
