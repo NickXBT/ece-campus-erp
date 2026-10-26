@@ -2125,9 +2125,14 @@ const TeacherView = {
         throw new Error('Please fill all required assignment fields.');
       }
 
-      let fileData = { file_url: '', file_name: '', file_size: '', storage_path: '' };
-      if (this._pendingAsgnFile && typeof uploadAssignmentFile === 'function') {
-        fileData = await uploadAssignmentFile(this._pendingAsgnFile);
+      let fileData = { file_url: '', file_name: '', file_size: 0, storage_path: '' };
+      if (this._pendingAsgnFile) {
+        const uploader = (typeof uploadAssignmentFile === 'function')
+          ? uploadAssignmentFile
+          : (typeof window !== 'undefined' && typeof window.uploadAssignmentFile === 'function' ? window.uploadAssignmentFile : null);
+        if (uploader) {
+          fileData = await uploader(this._pendingAsgnFile);
+        }
       }
 
       const res = await API.post('/api/assignments', {

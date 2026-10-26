@@ -16,3 +16,6 @@ shreyash/
 !database.py
 
 step*.js
+
+inspect_*.js
+patch_*.js

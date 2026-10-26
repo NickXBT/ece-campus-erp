@@ -29,8 +29,8 @@
   <!-- Clerk Auth JS SDK — deferred, only needed for optional OAuth integration -->
   <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" defer></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100070">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100070">
+  <link rel="stylesheet" href="./static/css/main.css?v=100080">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100080">
 </head>
 <body>
   <!-- User-Designed First-Time Launch Splash Screen ("ECE ERP") -->
@@ -914,11 +914,11 @@
             <i class="fa-solid fa-paperclip" style="color: #2563eb;"></i> Attach Question Paper / Reference Document (Optional)
           </label>
           <div style="border: 2px dashed #93c5fd; background: #f8fafc; border-radius: 12px; padding: 1rem; text-align: center; position: relative;">
-            <input type="file" id="asgn-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" onchange="TeacherView.onAssignmentFileSelected(this)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+            <input type="file" id="asgn-file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip" onchange="TeacherView.onAssignmentFileSelected(this)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
             <div id="asgn-file-label">
               <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.4rem; display: block;"></i>
               <span style="font-size: 0.85rem; font-weight: 700; color: #1e40af;">Click to browse or drag & drop Question Paper file</span>
-              <p style="font-size: 0.75rem; color: #64748b; margin: 0.2rem 0 0 0;">Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 25MB)</p>
+              <p style="font-size: 0.75rem; color: #64748b; margin: 0.2rem 0 0 0;">Supported formats: PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Images, Spreadsheets (Max 50MB)</p>
             </div>
             <div id="asgn-file-preview-info" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 800; font-size: 0.85rem; color: #16a34a;">
               <i class="fa-solid fa-circle-check"></i> <span id="asgn-file-name-display"></span> (<span id="asgn-file-size-display"></span>)
@@ -1076,15 +1076,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
   <!-- JavaScript Modules with Cache Buster v=100046 -->
-  <script src="./static/js/api.js?v=100070"></script>
-  <script src="./static/js/utils/toast.js?v=100070"></script>
-  <script src="./static/js/utils/exporter.js?v=100070"></script>
-  <script src="./static/js/views/auth.js?v=100070"></script>
-  <script src="./static/js/views/student.js?v=100070"></script>
-  <script src="./static/js/views/teacher.js?v=100070"></script>
-  <script src="./static/js/views/hod.js?v=100070"></script>
-  <script src="./static/js/views/timetable.js?v=100070"></script>
-  <script src="./static/js/views/reports.js?v=100070"></script>
-  <script src="./static/js/app.js?v=100070"></script>
+  <script src="./static/js/api.js?v=100080"></script>
+  <script src="./static/js/utils/toast.js?v=100080"></script>
+  <script src="./static/js/utils/exporter.js?v=100080"></script>
+  <script src="./static/js/views/auth.js?v=100080"></script>
+  <script src="./static/js/views/student.js?v=100080"></script>
+  <script src="./static/js/views/teacher.js?v=100080"></script>
+  <script src="./static/js/views/hod.js?v=100080"></script>
+  <script src="./static/js/views/timetable.js?v=100080"></script>
+  <script src="./static/js/views/reports.js?v=100080"></script>
+  <script src="./static/js/app.js?v=100080"></script>
 </body>
 </html>

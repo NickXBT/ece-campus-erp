@@ -2104,6 +2104,27 @@ const StudentView = {
     }
   },
 
+  // File type detection helper for PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel, Images
+  getAssignmentFileInfo(fileName = '', fileUrl = '') {
+    const norm = (fileName + ' ' + fileUrl).toLowerCase();
+    if (norm.includes('.pdf')) {
+      return { type: 'PDF', icon: 'fa-file-pdf', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', label: 'PDF Document', isPdf: true };
+    }
+    if (norm.includes('.doc') || norm.includes('.docx')) {
+      return { type: 'WORD', icon: 'fa-file-word', color: '#1e40af', bg: '#eff6ff', border: '#93c5fd', label: 'Word Document (DOC/DOCX)', isWord: true };
+    }
+    if (norm.includes('.ppt') || norm.includes('.pptx')) {
+      return { type: 'POWERPOINT', icon: 'fa-file-powerpoint', color: '#c2410c', bg: '#fff7ed', border: '#fdba74', label: 'PowerPoint Presentation (PPT/PPTX)', isPpt: true };
+    }
+    if (norm.includes('.xls') || norm.includes('.xlsx')) {
+      return { type: 'EXCEL', icon: 'fa-file-excel', color: '#15803d', bg: '#f0fdf4', border: '#86efac', label: 'Excel Spreadsheet', isExcel: true };
+    }
+    if (norm.includes('.jpg') || norm.includes('.jpeg') || norm.includes('.png') || norm.includes('.webp')) {
+      return { type: 'IMAGE', icon: 'fa-file-image', color: '#047857', bg: '#ecfdf5', border: '#6ee7b7', label: 'Image Attachment', isImage: true };
+    }
+    return { type: 'DOCUMENT', icon: 'fa-file-lines', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', label: 'Assignment File' };
+  },
+
   // View Assignment Details Modal
   openAssignmentDetailsModal(asgnId) {
     const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], deleted_assignment_ids: [] };
@@ -2129,7 +2150,7 @@ const StudentView = {
       issue_date: rawAsgn.issue_date || rawAsgn.issued_date || (rawAsgn.issuedAt ? rawAsgn.issuedAt.slice(0, 10) : 'N/A'),
       due_date: rawAsgn.due_date || rawAsgn.last_date || rawAsgn.last_date_of_submission || (rawAsgn.dueAt ? rawAsgn.dueAt.slice(0, 10) : 'N/A'),
       file_url: rawAsgn.file_url || rawAsgn.fileUrl || rawAsgn.download_url || rawAsgn.url || '',
-      file_name: rawAsgn.file_name || rawAsgn.fileName || (rawAsgn.file_url ? 'assignment.pdf' : ''),
+      file_name: rawAsgn.file_name || rawAsgn.fileName || (rawAsgn.file_url ? 'assignment_attachment' : ''),
       file_size: rawAsgn.file_size || rawAsgn.fileSize || 0,
       division: rawAsgn.division || rawAsgn.division_name || 'ALL',
       batch: rawAsgn.batch || rawAsgn.batch_name || 'ALL'
@@ -2151,7 +2172,7 @@ const StudentView = {
         ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
         : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
 
-    const isPdf = asgn.file_name && asgn.file_name.toLowerCase().endsWith('.pdf') || (asgn.file_url && asgn.file_url.toLowerCase().includes('.pdf'));
+    const fInfo = this.getAssignmentFileInfo(asgn.file_name, asgn.file_url);
 
     if (bodyEl) {
       bodyEl.innerHTML = `
@@ -2191,40 +2212,70 @@ const StudentView = {
         </div>
 
         ${asgn.file_url ? `
-          <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 0.75rem;">
+          <div style="background: ${fInfo.bg}; border: 1.5px solid ${fInfo.border}; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 0.65rem; overflow: hidden;">
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                  <i class="fa-solid ${isPdf ? 'fa-file-pdf' : 'fa-file-lines'}"></i>
+              <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: #ffffff; color: ${fInfo.color}; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; border: 1px solid ${fInfo.border}; flex-shrink: 0;">
+                  <i class="fa-solid ${fInfo.icon}"></i>
                 </div>
                 <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  <strong style="font-size: 0.88rem; color: #1e3a8a; display: block;">${asgn.file_name}</strong>
-                  <span style="font-size: 0.74rem; color: #3b82f6;">${asgn.file_size ? (Math.round(asgn.file_size / 1024) + ' KB • ') : ''}Official Faculty Material</span>
+                  <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.15rem;">
+                    <span class="badge" style="background: #ffffff; color: ${fInfo.color}; border: 1px solid ${fInfo.border}; font-weight: 800; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 6px;">
+                      ${fInfo.label}
+                    </span>
+                    <span style="font-size: 0.75rem; color: #64748b;">${asgn.file_size ? (Math.round(asgn.file_size / 1024) + ' KB') : 'Official Material'}</span>
+                  </div>
+                  <strong style="font-size: 0.9rem; color: var(--text-main); display: block; overflow: hidden; text-overflow: ellipsis;">${asgn.file_name}</strong>
                 </div>
               </div>
 
               <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.viewAssignmentInBrowser('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}')" style="font-size: 0.76rem; font-weight: 700; border-radius: 8px;">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in Tab
+                <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.viewAssignmentInBrowser('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}')" style="font-size: 0.78rem; font-weight: 700; border-radius: 8px;">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open / Read Online
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}', '${encodeURIComponent(asgn.title)}')" style="background: #2563eb; font-size: 0.76rem; font-weight: 800; border-radius: 8px;">
-                  <i class="fa-solid fa-download"></i> Download
+                <button type="button" class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}', '${encodeURIComponent(asgn.title)}')" style="background: #2563eb; font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
+                  <i class="fa-solid fa-download"></i> Download File
                 </button>
               </div>
             </div>
 
-            ${isPdf ? `
-              <div style="margin-top: 0.85rem; border-top: 1px dashed #bfdbfe; padding-top: 0.75rem;">
+            <!-- In-App Preview for PDF & Images -->
+            ${fInfo.isPdf ? `
+              <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
                 <span style="font-size: 0.76rem; font-weight: 700; color: #1e40af; margin-bottom: 0.35rem; display: block;">
                   <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> PDF Document In-App Preview:
                 </span>
                 <iframe src="${asgn.file_url}" style="width: 100%; height: 320px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff;" title="PDF Preview"></iframe>
               </div>
             ` : ''}
+
+            <!-- In-App Preview for Word (DOC/DOCX) & PowerPoint (PPT/PPTX) using Office Online Viewer -->
+            ${(fInfo.isWord || fInfo.isPpt) && asgn.file_url.startsWith('http') ? `
+              <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: ${fInfo.color};">
+                    <i class="fa-solid ${fInfo.icon}"></i> ${fInfo.label} Online Preview:
+                  </span>
+                  <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(asgn.file_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.74rem; font-weight: 700; color: #2563eb; text-decoration: none;">
+                    Full Screen <i class="fa-solid fa-expand"></i>
+                  </a>
+                </div>
+                <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(asgn.file_url)}" style="width: 100%; height: 320px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff;" title="Office Preview"></iframe>
+              </div>
+            ` : ''}
+
+            <!-- In-App Preview for Images -->
+            ${fInfo.isImage ? `
+              <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem; text-align: center;">
+                <img src="${asgn.file_url}" style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06);" alt="Attachment Image" />
+              </div>
+            ` : ''}
           </div>
         ` : `
-          <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 0.85rem; text-align: center; color: #64748b; font-size: 0.82rem;">
-            <i class="fa-solid fa-paperclip" style="color: #94a3b8; margin-right: 0.35rem;"></i> No external document file was attached to this assignment by the faculty member.
+          <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1.15rem; text-align: center; color: #64748b; font-size: 0.85rem;">
+            <i class="fa-solid fa-paperclip" style="color: #94a3b8; font-size: 1.4rem; margin-bottom: 0.35rem; display: block;"></i>
+            <strong>No external file was attached to this assignment.</strong>
+            <p style="margin: 0.2rem 0 0 0; font-size: 0.78rem;">Please refer to the description and instructions above.</p>
           </div>
         `}
       `;
@@ -2233,9 +2284,9 @@ const StudentView = {
     if (actBtnEl) {
       if (asgn.file_url) {
         actBtnEl.innerHTML = `
-          <div style="display: flex; gap: 0.5rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button type="button" class="btn btn-secondary" onclick="StudentView.viewAssignmentInBrowser('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}')" style="font-weight: 700; border-radius: 10px;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open in Browser
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open / Read Online
             </button>
             <button type="button" class="btn btn-primary" onclick="StudentView.downloadAssignmentFile('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}', '${encodeURIComponent(asgn.title)}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
               <i class="fa-solid fa-download"></i> Download Assignment
@@ -2256,10 +2307,24 @@ const StudentView = {
       return;
     }
     const fileName = decodeURIComponent(encodedFileName || 'Document');
-    Toast.info('Opening ' + fileName + ' in browser...');
+    const fInfo = this.getAssignmentFileInfo(fileName, fileUrl);
+    Toast.info('Opening ' + fileName + '...');
+
+    // If Word or PPT and hosted online, open in Microsoft Office Online Viewer
+    if ((fInfo.isWord || fInfo.isPpt || fInfo.isExcel) && fileUrl.startsWith('http')) {
+      const officeViewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(fileUrl);
+      const w = window.open(officeViewerUrl, '_blank');
+      if (!w) {
+        window.open(fileUrl, '_blank');
+      }
+      return;
+    }
+
+    // Direct browser tab for PDF, Images, or DataURLs
     const w = window.open(fileUrl, '_blank');
     if (!w) {
-      Toast.warning('Pop-up was blocked by browser. Please allow popups or use Download button.');
+      Toast.warning('Pop-up was blocked by browser. Initiating direct download instead...');
+      this.downloadAssignmentFile(fileUrl, encodedFileName);
     }
   },
 
@@ -2268,8 +2333,8 @@ const StudentView = {
       Toast.error('No downloadable assignment file attached.');
       return;
     }
-    const fileName = decodeURIComponent(encodedFileName || 'assignment-document.pdf');
-    Toast.info('Downloading file: ' + fileName + '...');
+    const fileName = decodeURIComponent(encodedFileName || 'assignment-document');
+    Toast.info('Downloading: ' + fileName + '...');
 
     try {
       if (fileUrl.startsWith('http')) {
@@ -2297,7 +2362,7 @@ const StudentView = {
       document.body.removeChild(a);
       Toast.success('Download started: ' + fileName);
     } catch (err) {
-      console.warn('Direct blob fetch failed (likely CORS or network), triggering direct anchor download fallback:', err);
+      console.warn('Direct blob fetch error, triggering direct anchor download fallback:', err);
       const a = document.createElement('a');
       a.href = fileUrl;
       a.target = '_blank';
@@ -2306,7 +2371,7 @@ const StudentView = {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      Toast.info('Download initiated: ' + fileName);
+      Toast.info('Download stream opened for: ' + fileName);
     }
   },
 

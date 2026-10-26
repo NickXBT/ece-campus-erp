@@ -5732,13 +5732,75 @@ const FIREBASE_CONFIG = {
 };
 
 let firebaseDb = null;
+let firestoreDb = null;
+let firebaseStorage = null;
+
 if (typeof firebase !== 'undefined' && firebase.initializeApp) {
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
     firebaseDb = firebase.database();
-  } catch(e) {}
+    if (typeof firebase.firestore === 'function') {
+      firestoreDb = firebase.firestore();
+    }
+    if (typeof firebase.storage === 'function') {
+      firebaseStorage = firebase.storage();
+    }
+  } catch(e) {
+    console.warn('Firebase services initialization warning:', e);
+  }
+}
+
+// Upload assignment file helper supporting PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Images, etc.
+async function uploadAssignmentFile(file) {
+  if (!file) return { file_url: '', file_name: '', file_size: 0, storage_path: '' };
+
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const timestamp = Date.now();
+  const storagePath = 'assignments/' + timestamp + '_' + sanitizedName;
+
+  // 1. Try Firebase Storage upload
+  if (typeof firebaseStorage !== 'undefined' && firebaseStorage && firebaseStorage.ref) {
+    try {
+      const storageRef = firebaseStorage.ref(storagePath);
+      const snapshot = await storageRef.put(file);
+      const downloadUrl = await snapshot.ref.getDownloadURL();
+      return {
+        file_url: downloadUrl,
+        file_name: file.name,
+        file_size: file.size,
+        storage_path: storagePath
+      };
+    } catch (storageErr) {
+      console.warn('Firebase Storage upload failed, falling back to base64 DataURL:', storageErr);
+    }
+  }
+
+  // 2. Safe Fallback: Base64 DataURL (so files never fail even if Storage is blocked)
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        file_url: reader.result,
+        file_name: file.name,
+        file_size: file.size,
+        storage_path: storagePath
+      });
+    };
+    reader.onerror = () => {
+      resolve({
+        file_url: '',
+        file_name: file.name,
+        file_size: file.size,
+        storage_path: storagePath
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+if (typeof window !== 'undefined') {
+  window.uploadAssignmentFile = uploadAssignmentFile;
 }
 
 let g_isRealtimeActive = false;
