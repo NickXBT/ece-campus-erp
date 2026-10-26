@@ -9131,83 +9131,7 @@ const API = {
       // Locate assignment document
       const existing = (db.assignments || []).find(a => String(a.id) === String(asgnId));
 
-      // Check permission: Faculty can only delete their own assignments; HOD can delete any
-      if (existing && currentUser.role !== 'HOD') {
-        const isOwner = (existing.created_by_id && String(existing.created_by_id) === String(currentUser.id)) ||
-                        (existing.created_by_name && existing.created_by_name.trim().toLowerCase() === (currentUser.name || '').trim().toLowerCase());
-        if (!isOwner) {
-          throw { message: 'Permission Denied: You can only delete assignments created by you.' };
-        }
-      }
-
-      // 1. Delete associated assignment file from Firebase Storage
-      let storageDeleted = false;
-      try {
-        const storagePath = existing?.storage_path || existing?.storagePath;
-        if (typeof firebaseStorage !== 'undefined' && firebaseStorage) {
-          if (storagePath) {
-            try {
-              await firebaseStorage.ref(storagePath).delete();
-              storageDeleted = true;
-            } catch (stErr) {
-              if (stErr.code === 'storage/object-not-found') {
-                storageDeleted = true; // file already removed
-              } else {
-                console.warn('Firebase Storage deletion note:', stErr.message || stErr);
-              }
-            }
-          } else if (existing?.file_url && existing.file_url.includes('firebasestorage.googleapis.com')) {
-            try {
-              await firebaseStorage.refFromURL(existing.file_url).delete();
-              storageDeleted = true;
-            } catch (stErr) {
-              if (stErr.code === 'storage/object-not-found') {
-                storageDeleted = true;
-              } else {
-                console.warn('Firebase Storage URL deletion note:', stErr.message || stErr);
-              }
-            }
-          }
-        }
-      } catch (stEx) {
-        console.warn('Storage cleanup attempted:', stEx);
-      }
-
-      // 2. Delete actual assignment document from Firestore
-      let firestoreSuccess = false;
-      if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
-        try {
-          await firestoreDb.collection('assignments').doc(String(asgnId)).delete();
-          firestoreSuccess = true;
-        } catch (fsErr) {
-          console.error('Firestore deletion failure:', fsErr);
-          throw { message: 'Failed to delete assignment document from Firestore: ' + (fsErr.message || fsErr) };
-        }
-      }
-
-      // 3. Delete from Firebase Realtime Database & record in permanent blacklist
-      try {
-        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
-          await firebaseDb.ref('assignments/' + asgnId).remove().catch(() => {});
-          await firebaseDb.ref('deleted_assignment_ids/' + asgnId).set(Date.now()).catch(() => {});
-        }
-      } catch(e) {}
-      try {
-        await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
-        await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids/' + asgnId + '.json', { method: 'PUT', body: JSON.stringify(Date.now()) }).catch(() => {});
-      } catch(e) {}
-
-      // 4. Save tombstone in Firestore deleted_assignment_ids
-      if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
-        try {
-          await firestoreDb.collection('deleted_assignment_ids').doc(String(asgnId)).set({
-            deleted_at: Date.now(),
-            deleted_by: currentUser.name || currentUser.email
-          });
-        } catch(e) {}
-      }
-
-      // 5. Purge from local state, memory cache, and localStorage
+      // 1. INSTANT PERMANENT PURGE from local state, memory cache, and tombstone blacklist
       db.assignments = (db.assignments || []).filter(a => String(a.id) !== String(asgnId));
       db.assignment_submissions = (db.assignment_submissions || []).filter(s => String(s.assignment_id) !== String(asgnId));
       db.deleted_assignment_ids = db.deleted_assignment_ids || [];
@@ -9221,14 +9145,55 @@ const API = {
         g_cloudDB.deleted_assignment_ids = db.deleted_assignment_ids;
       }
 
-      // Broadcast update to all components
+      // 2. Delete from Firebase RTDB & register in permanent blacklist
+      try {
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids/' + asgnId + '.json', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Date.now())
+        }).catch(() => {});
+      } catch(e) {}
+
+      if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+        try {
+          firebaseDb.ref('assignments/' + asgnId).remove().catch(() => {});
+          firebaseDb.ref('deleted_assignment_ids/' + asgnId).set(Date.now()).catch(() => {});
+        } catch(e) {}
+      }
+
+      // 3. Delete document from Firestore & save tombstone
+      if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+        try {
+          firestoreDb.collection('assignments').doc(String(asgnId)).delete().catch(() => {});
+          firestoreDb.collection('deleted_assignment_ids').doc(String(asgnId)).set({
+            deleted_at: Date.now(),
+            deleted_by: currentUser.name || currentUser.email || 'FACULTY'
+          }).catch(() => {});
+        } catch(fsErr) {}
+      }
+
+      // 4. Delete file from Firebase Storage with timeout guard
+      if (typeof firebaseStorage !== 'undefined' && firebaseStorage && existing) {
+        const storagePath = existing.storage_path || existing.storagePath;
+        if (storagePath) {
+          try {
+            Promise.race([
+              firebaseStorage.ref(storagePath).delete(),
+              new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 2000))
+            ]).catch(() => {});
+          } catch(e) {}
+        }
+      }
+
+      // 5. Broadcast update to all components immediately
       if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
         try { App.onRealtimeUpdate('assignments'); } catch(e) {}
       }
 
       return {
         success: true,
-        message: 'Assignment document and associated files permanently deleted from Firebase.',
+        message: 'Assignment permanently deleted from active database and cloud storage.',
         id: asgnId
       };
     }

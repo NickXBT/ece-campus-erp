@@ -137,114 +137,8 @@ const TeacherView = {
   
   // Render Assignment Corner inside Approval Desk
   renderApprovalAssignmentCornerHtml(db) {
-    const allAsgns = (db.assignments || []).slice();
-    const allSubs = db.assignment_submissions || [];
-    
-    // Sort newest first
-    allAsgns.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-
-    let liveCount = 0;
-    let pastCount = 0;
-    allAsgns.forEach(a => {
-      const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
-      if (st.isLive) liveCount++;
-      else if (st.isPast) pastCount++;
-    });
-
-    const recentAsgns = allAsgns.slice(0, 4);
-
-    const cardsHtml = recentAsgns.length > 0 ? recentAsgns.map(a => {
-      const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { label: 'Active', isDueToday: false, isLive: true };
-      const subCount = allSubs.filter(s => String(s.assignment_id) === String(a.id)).length;
-      const statusBadge = st.isDueToday 
-        ? '<span class="badge" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; font-weight: 800; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-clock"></i> Due Today!</span>'
-        : (st.isLive 
-          ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 800; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
-          : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; font-weight: 700; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
-
-      return `
-        <div style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 14px; padding: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.4rem;">
-              <span class="badge-role role-STUDENT" style="font-weight: 800; font-size: 0.72rem; background: #eff6ff; color: #2563eb;">${a.subject || 'ECE'}</span>
-              ${statusBadge}
-            </div>
-            <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.35rem 0; line-height: 1.35;">${a.title}</h4>
-            <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-              <span><i class="fa-solid fa-users" style="color: #2563eb;"></i> ${a.division || 'All Divisions'}</span>
-              <span><i class="fa-solid fa-calendar-days" style="color: #64748b;"></i> Due: <strong>${a.due_date || 'N/A'}</strong></span>
-              <span><i class="fa-solid fa-user-pen" style="color: #64748b;"></i> ${a.created_by_name || 'Faculty'}</span>
-            </div>
-          </div>
-          <div style="border-top: 1px solid #f1f5f9; padding-top: 0.65rem; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; flex-wrap: wrap;">
-            <button class="btn btn-sm" onclick="TeacherView.openSubmissionsModal('${a.id}')" style="background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 800; font-size: 0.76rem; border-radius: 8px; padding: 0.3rem 0.6rem;">
-              <i class="fa-solid fa-users-viewfinder"></i> Submissions (${subCount})
-            </button>
-            <div style="display: flex; gap: 0.3rem;">
-              ${a.file_url ? `<button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.74rem; padding: 0.3rem 0.55rem;" title="View Question Paper"><i class="fa-solid fa-eye"></i> Paper</button>` : ''}
-              <button class="btn btn-danger btn-sm" onclick="TeacherView.deleteAssignment('${a.id}')" style="font-size: 0.74rem; padding: 0.3rem 0.55rem;" title="Delete Assignment"><i class="fa-solid fa-trash-can"></i></button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('') : `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: #ffffff; border-radius: 12px; border: 1.5px dashed #cbd5e1; color: #64748b;">
-        <i class="fa-solid fa-clipboard-question" style="font-size: 2.2rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
-        <strong style="color: var(--text-main); font-size: 0.95rem;">No Coursework Assignments Created Yet</strong>
-        <p style="font-size: 0.8rem; margin: 0.25rem 0 1rem 0;">Issue assignments, problem statements, and deadlines to Division A & B students.</p>
-        <button class="btn btn-primary btn-sm" onclick="TeacherView.openUploadAssignmentModal()" style="font-weight: 800;">
-          <i class="fa-solid fa-plus"></i> Upload First Assignment
-        </button>
-      </div>
-    `;
-
-    return `
-      <!-- ASSIGNMENTS MANAGEMENT CORNER SECTION -->
-      <div class="glass-panel" style="border: 2px solid #3b82f6; background: linear-gradient(135deg, #f8fafc, #eff6ff); margin-bottom: 2rem; padding: 1.25rem 1.5rem; border-radius: 18px; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #dbeafe; padding-bottom: 0.85rem;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <span style="background: #2563eb; color: #ffffff; font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.55rem; border-radius: 20px;">
-                ACADEMIC CORNER
-              </span>
-              <h3 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800; color: #1e3a8a; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-clipboard-list" style="color: #2563eb;"></i> Student Assignment Management Corner
-              </h3>
-            </div>
-            <p style="color: #475569; font-size: 0.82rem; margin: 0.25rem 0 0 0;">
-              Issue coursework with live deadlines, attached question papers, and monitor student solution submissions.
-            </p>
-          </div>
-
-          <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="TeacherView.openUploadAssignmentModal()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.88rem; padding: 0.55rem 1.15rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
-              <i class="fa-solid fa-cloud-arrow-up"></i> + Upload Assignment
-            </button>
-            <a href="#/hod/assignments" class="btn btn-secondary" style="font-weight: 800; font-size: 0.85rem; padding: 0.55rem 0.95rem; border-radius: 10px;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Full Desk (${allAsgns.length})
-            </a>
-          </div>
-        </div>
-
-        <!-- Quick Summary Stats Strip -->
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.15rem;">
-          <span style="background: #ffffff; border: 1.5px solid #bfdbfe; color: #1e40af; font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-circle-dot" style="color: #2563eb;"></i> Live Active Assignments: <strong>${liveCount}</strong>
-          </span>
-          <span style="background: #ffffff; border: 1.5px solid #cbd5e1; color: #475569; font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-calendar-xmark" style="color: #dc2626;"></i> Past Deadlines: <strong>${pastCount}</strong>
-          </span>
-          <span style="background: #ffffff; border: 1.5px solid #86efac; color: #15803d; font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.85rem; border-radius: 30px; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> Total Student Submissions: <strong>${allSubs.length}</strong>
-          </span>
-        </div>
-
-        <!-- Grid of Recent Assignments -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-          ${cardsHtml}
-        </div>
-      </div>
-    `;
+    // Assignment corner and all popups completely removed from Approval and Student Registration
+    return '';
   },
 
   async renderApprovals() {
@@ -1847,176 +1741,27 @@ const TeacherView = {
 
   // Dedicated Full Assignments Management View
   async renderAssignments() {
-    try {
-      if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
-      const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], assignment_submissions: [] };
-      const allAsgns = (db.assignments || []).slice();
-      const allSubs = db.assignment_submissions || [];
-
-      // Sort newest first
-      allAsgns.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-
-      if (!this.currentAsgnTab) this.currentAsgnTab = 'ALL';
-      if (!this.currentAsgnDiv) this.currentAsgnDiv = 'ALL';
-      if (!this.currentAsgnSubject) this.currentAsgnSubject = 'ALL';
-
-      let liveCount = 0;
-      let pastCount = 0;
-      allAsgns.forEach(a => {
-        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
-        if (st.isLive) liveCount++;
-        else if (st.isPast) pastCount++;
-      });
-
-      // Filter
-      const filtered = allAsgns.filter(a => {
-        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
-        if (this.currentAsgnTab === 'LIVE' && !st.isLive) return false;
-        if (this.currentAsgnTab === 'PAST' && !st.isPast) return false;
-        if (this.currentAsgnDiv !== 'ALL' && a.division !== 'ALL' && a.division !== this.currentAsgnDiv) return false;
-        if (this.currentAsgnSubject !== 'ALL' && a.subject !== this.currentAsgnSubject) return false;
-        return true;
-      });
-
-      const cardsHtml = filtered.length > 0 ? filtered.map(a => {
-        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { label: 'Active', isDueToday: false, isLive: true };
-        const subCount = allSubs.filter(s => String(s.assignment_id) === String(a.id)).length;
-        const statusBadge = st.isDueToday 
-          ? '<span class="badge" style="background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-clock"></i> Due Today!</span>'
-          : (st.isLive 
-            ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
-            : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
-
-        return `
-          <div class="glass-panel" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease;">
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.65rem;">
-                <span class="badge-role role-STUDENT" style="font-weight: 800; font-size: 0.74rem; background: #eff6ff; color: #2563eb; padding: 0.25rem 0.65rem;">${a.subject}</span>
-                ${statusBadge}
-              </div>
-
-              <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem 0; line-height: 1.35;">
-                ${a.title}
-              </h3>
-
-              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem; font-size: 0.8rem; color: #334155; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <div><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Issued: <strong>${a.issue_date || 'N/A'}</strong></div>
-                <div><i class="fa-solid fa-calendar-xmark" style="color: #dc2626;"></i> Deadline: <strong>${a.due_date || 'N/A'}</strong></div>
-                <div><i class="fa-solid fa-users" style="color: #2563eb;"></i> Target: <strong>${a.division || 'All Divisions'}</strong></div>
-                <div><i class="fa-solid fa-award" style="color: #d97706;"></i> Max Marks: <strong>${a.total_marks || '25'}</strong></div>
-              </div>
-
-              ${a.instructions ? `
-                <div style="font-size: 0.82rem; color: #475569; line-height: 1.5; margin-bottom: 0.85rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.55rem 0.75rem;">
-                  <strong style="color: #b45309;"><i class="fa-solid fa-file-lines"></i> Instructions:</strong> ${a.instructions}
-                </div>
-              ` : ''}
-
-              <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.5rem;">
-                <i class="fa-solid fa-user-tie"></i> Issued by: <strong>${a.created_by_name || 'Faculty Member'}</strong>
-              </div>
+    return `
+        <div class="dashboard-container" style="max-width: 1000px; margin: 2rem auto; padding: 1.5rem 1rem;">
+          <div style="background: #ffffff; border: 2.5px dashed #f59e0b; border-radius: 24px; padding: 4.5rem 2rem; text-align: center; box-shadow: 0 20px 45px rgba(245, 158, 11, 0.1);">
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: #fef3c7; color: #d97706; display: inline-flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 1.5rem; border: 3px solid #fde68a; box-shadow: 0 10px 25px rgba(217, 119, 6, 0.18);">
+              🚧
             </div>
-
-            <div style="border-top: 1.5px solid #f1f5f9; padding-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <button class="btn btn-sm" onclick="TeacherView.openSubmissionsModal('${a.id}')" style="background: #16a34a; color: #ffffff; border: none; font-weight: 800; font-size: 0.8rem; border-radius: 10px; padding: 0.45rem 0.85rem; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);">
-                <i class="fa-solid fa-users-viewfinder"></i> Submissions (${subCount})
-              </button>
-
-              <div style="display: flex; gap: 0.4rem;">
-                ${a.file_url ? `
-                  <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.78rem; font-weight: 700;">
-                    <i class="fa-solid fa-file-arrow-down"></i> Question Paper
-                  </button>
-                ` : ''}
-                <button class="btn btn-danger btn-sm" onclick="TeacherView.deleteAssignment('${a.id}')" style="font-size: 0.78rem;" title="Delete Assignment">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </div>
+            <h1 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 900; color: #92400e; margin: 0 0 1rem 0; letter-spacing: -0.5px;">
+              🚧 UNDER DEVELOPMENT 🚧
+            </h1>
+            <p style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.85rem 0;">
+              Assignment Management is currently under development.
+            </p>
+            <p style="font-size: 1.05rem; color: #64748b; margin: 0 auto 2.25rem auto; max-width: 550px; line-height: 1.6;">
+              This feature is temporarily unavailable. Please check back later.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 0.65rem; background: #fffbeb; border: 1.5px solid #fde68a; padding: 0.65rem 1.5rem; border-radius: 9999px; color: #b45309; font-weight: 800; font-size: 0.92rem;">
+              <i class="fa-solid fa-clock-rotate-left"></i> ECE Academic Portal — Feature Coming Soon
             </div>
-          </div>
-        `;
-      }).join('') : `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #ffffff; border-radius: 18px; border: 2px dashed #cbd5e1; color: #64748b;">
-          <div style="width: 64px; height: 64px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1rem auto;">
-            <i class="fa-solid fa-clipboard-question"></i>
-          </div>
-          <h3 style="color: var(--text-main); font-weight: 800; margin-bottom: 0.35rem;">No Assignments Match This Filter</h3>
-          <p style="font-size: 0.88rem; margin: 0 0 1.25rem 0;">Create and issue coursework, homework, or lab assignments with deadlines to your students.</p>
-          <button class="btn btn-primary" onclick="TeacherView.openUploadAssignmentModal()" style="font-weight: 800; padding: 0.65rem 1.35rem; border-radius: 12px;">
-            <i class="fa-solid fa-cloud-arrow-up"></i> + Create New Assignment
-          </button>
-        </div>
-      `;
-
-      return `
-        <div class="dashboard-container">
-          <!-- Top Header Banner -->
-          <div class="glass-panel" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); border: none; margin-bottom: 1.75rem; color: #ffffff; border-radius: 18px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
-              <div>
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-                  <span style="background: rgba(255,255,255,0.2); padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px;">DEPARTMENT ACADEMIC DESK</span>
-                  <span style="background: #22c55e; color: #ffffff; padding: 0.2rem 0.55rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">LIVE SYNC</span>
-                </div>
-                <h2 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 800; color: #ffffff; margin: 0;">Assignment & Coursework Management</h2>
-                <p style="color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0.35rem 0 0 0;">
-                  Upload course assignments, track submission deadlines, and review student solution papers.
-                </p>
-              </div>
-
-              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="TeacherView.openUploadAssignmentModal()" style="background: #ffffff; color: #1d4ed8; font-weight: 800; border: none; border-radius: 12px; padding: 0.75rem 1.35rem; box-shadow: 0 4px 14px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> + Upload New Assignment
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Filter & Control Bar -->
-          <div class="glass-panel" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-              <!-- Status Tabs -->
-              <div style="display: flex; gap: 0.4rem; background: #f1f5f9; padding: 0.25rem; border-radius: 12px; border: 1px solid var(--border-color);">
-                <button class="btn btn-sm ${this.currentAsgnTab === 'ALL' ? 'btn-primary' : 'btn-secondary'}" onclick="TeacherView.setAsgnTab('ALL')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
-                  All (${allAsgns.length})
-                </button>
-                <button class="btn btn-sm ${this.currentAsgnTab === 'LIVE' ? 'btn-primary' : 'btn-secondary'}" onclick="TeacherView.setAsgnTab('LIVE')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
-                  <i class="fa-solid fa-circle-check"></i> Live (${liveCount})
-                </button>
-                <button class="btn btn-sm ${this.currentAsgnTab === 'PAST' ? 'btn-primary' : 'btn-secondary'}" onclick="TeacherView.setAsgnTab('PAST')" style="font-weight: 800; font-size: 0.8rem; border-radius: 8px;">
-                  <i class="fa-solid fa-calendar-xmark"></i> Past Deadlines (${pastCount})
-                </button>
-              </div>
-
-              <!-- Division & Subject Filter Dropdowns -->
-              <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-                <select class="form-control form-control-sm" style="font-weight: 700; width: 160px;" onchange="TeacherView.setAsgnDiv(this.value)">
-                  <option value="ALL" ${this.currentAsgnDiv === 'ALL' ? 'selected' : ''}>All Divisions</option>
-                  <option value="SE(ECE)-A" ${this.currentAsgnDiv === 'SE(ECE)-A' ? 'selected' : ''}>Division SE(ECE)-A</option>
-                  <option value="SE(ECE)-B" ${this.currentAsgnDiv === 'SE(ECE)-B' ? 'selected' : ''}>Division SE(ECE)-B</option>
-                </select>
-
-                <select class="form-control form-control-sm" style="font-weight: 700; width: 200px;" onchange="TeacherView.setAsgnSubject(this.value)">
-                  <option value="ALL" ${this.currentAsgnSubject === 'ALL' ? 'selected' : ''}>All Subjects</option>
-                  <option value="Signals and Systems" ${this.currentAsgnSubject === 'Signals and Systems' ? 'selected' : ''}>Signals & Systems</option>
-                  <option value="Data Structures and Algorithms" ${this.currentAsgnSubject === 'Data Structures and Algorithms' ? 'selected' : ''}>Data Structures & Algorithms</option>
-                  <option value="Semiconductor Devices and Circuits" ${this.currentAsgnSubject === 'Semiconductor Devices and Circuits' ? 'selected' : ''}>Semiconductor Devices (SDC)</option>
-                  <option value="Fundamental of Data Science" ${this.currentAsgnSubject === 'Fundamental of Data Science' ? 'selected' : ''}>Data Science (FDS)</option>
-                  <option value="Principles of Management and Entrepreneurship" ${this.currentAsgnSubject === 'Principles of Management and Entrepreneurship' ? 'selected' : ''}>Management & PME</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Cards Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
-            ${cardsHtml}
           </div>
         </div>
-      `;
-    } catch (err) {
-      return `<div class="dashboard-container"><p style="color: var(--accent-rose);">Failed to load assignments: ${err.message || err}</p></div>`;
-    }
+`;
   },
 
   setAsgnTab(tab) {
