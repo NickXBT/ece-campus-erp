@@ -2263,12 +2263,14 @@ const TeacherView = {
   },
 
   async deleteAssignment(asgnId) {
-    if (!confirm('Are you sure you want to delete this assignment and all its student submissions?')) return;
+    if (!confirm('Permanently delete this assignment and associated files from Firebase Firestore & Storage? This cannot be undone.')) return;
+    if (typeof Toast !== 'undefined') Toast.info('Deleting assignment from Firebase cloud...');
     try {
       const res = await API.post('/api/assignments/delete', { id: asgnId });
-      if (typeof Toast !== 'undefined') Toast.success(res.message || 'Assignment deleted successfully.');
-      this.refreshAssignmentsView();
+      if (typeof Toast !== 'undefined') Toast.success(res.message || 'Assignment deleted permanently.');
+      await this.refreshAssignmentsView();
     } catch(err) {
+      console.error('Permanent deletion error:', err);
       if (typeof Toast !== 'undefined') Toast.error((err && err.message) || 'Failed to delete assignment.');
     }
   },

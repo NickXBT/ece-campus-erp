@@ -29,8 +29,8 @@
   <!-- Clerk Auth JS SDK — deferred, only needed for optional OAuth integration -->
   <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" defer></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100060">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100060">
+  <link rel="stylesheet" href="./static/css/main.css?v=100070">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100070">
 </head>
 <body>
   <!-- User-Designed First-Time Launch Splash Screen ("ECE ERP") -->
@@ -1037,6 +1037,35 @@
     </div>
   </div>
 
+  <!-- 5. View Assignment Details Modal (Student View Details) -->
+  <div class="modal-overlay" id="modal-view-assignment-details" style="z-index: 999999; backdrop-filter: blur(8px);">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto; border-radius: 20px; border: 2px solid #3b82f6; box-shadow: 0 20px 45px rgba(37, 99, 235, 0.2);">
+      <div class="modal-header" style="border-bottom: 2px solid #2563eb; padding-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 42px; height: 42px; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; border: 1.5px solid #bfdbfe;">
+            <i class="fa-solid fa-file-lines"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-main);" id="detail-asgn-title">Assignment Details</h3>
+            <p style="margin: 0; font-size: 0.78rem; color: #64748b;" id="detail-asgn-subject">Academic Coursework Information</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-view-assignment-details')">&times;</button>
+      </div>
+
+      <div style="padding: 1.25rem 0;" id="detail-asgn-body">
+        <!-- Injected dynamically by StudentView.openAssignmentDetailsModal -->
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-view-assignment-details')" style="font-weight: 700; border-radius: 10px;">
+          Close
+        </button>
+        <div id="detail-asgn-action-btn"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1047,15 +1076,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
   <!-- JavaScript Modules with Cache Buster v=100046 -->
-  <script src="./static/js/api.js?v=100060"></script>
-  <script src="./static/js/utils/toast.js?v=100060"></script>
-  <script src="./static/js/utils/exporter.js?v=100060"></script>
-  <script src="./static/js/views/auth.js?v=100060"></script>
-  <script src="./static/js/views/student.js?v=100060"></script>
-  <script src="./static/js/views/teacher.js?v=100060"></script>
-  <script src="./static/js/views/hod.js?v=100060"></script>
-  <script src="./static/js/views/timetable.js?v=100060"></script>
-  <script src="./static/js/views/reports.js?v=100060"></script>
-  <script src="./static/js/app.js?v=100060"></script>
+  <script src="./static/js/api.js?v=100070"></script>
+  <script src="./static/js/utils/toast.js?v=100070"></script>
+  <script src="./static/js/utils/exporter.js?v=100070"></script>
+  <script src="./static/js/views/auth.js?v=100070"></script>
+  <script src="./static/js/views/student.js?v=100070"></script>
+  <script src="./static/js/views/teacher.js?v=100070"></script>
+  <script src="./static/js/views/hod.js?v=100070"></script>
+  <script src="./static/js/views/timetable.js?v=100070"></script>
+  <script src="./static/js/views/reports.js?v=100070"></script>
+  <script src="./static/js/app.js?v=100070"></script>
 </body>
 </html>

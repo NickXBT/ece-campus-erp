@@ -4824,6 +4824,7 @@ const INITIAL_DB = {
   deleted_cert_ids: [],
   deleted_student_ids: [],
   deleted_teacher_ids: [],
+  deleted_assignment_ids: [],
   assignments: [],
   assignment_submissions: [],
   activity_records: [],
@@ -6021,12 +6022,38 @@ function initFirebaseRealtimeListeners() {
     // 9. Live Push Listener: Assignments
     firebaseDb.ref('assignments').on('value', (snapshot) => {
       const val = snapshot.val();
+      const db = getLocalDB();
+      const delSet = new Set((db.deleted_assignment_ids || []).map(String));
+      let valid = [];
       if (val && typeof val === 'object') {
         const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(a => a && a.id);
+        valid = list.filter(a => a && a.id && !delSet.has(String(a.id)));
+      }
+      db.assignments = valid;
+      saveLocalDB(db);
+      if (typeof g_cloudDB !== 'undefined' && g_cloudDB) {
+        g_cloudDB.assignments = valid;
+      }
+      if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+        App.onRealtimeUpdate('assignments');
+      }
+    });
+
+    // 9b. Live Push Listener: Deleted Assignment IDs
+    firebaseDb.ref('deleted_assignment_ids').on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && typeof val === 'object') {
+        const keys = Array.isArray(val) ? val : Object.keys(val);
         const db = getLocalDB();
-        db.assignments = valid;
-        g_cloudDB = db;
+        const curDel = new Set((db.deleted_assignment_ids || []).map(String));
+        keys.forEach(k => curDel.add(String(k)));
+        db.deleted_assignment_ids = Array.from(curDel);
+        db.assignments = (db.assignments || []).filter(a => a && a.id && !curDel.has(String(a.id)));
+        saveLocalDB(db);
+        if (typeof g_cloudDB !== 'undefined' && g_cloudDB) {
+          g_cloudDB.assignments = db.assignments;
+          g_cloudDB.deleted_assignment_ids = db.deleted_assignment_ids;
+        }
         if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
           App.onRealtimeUpdate('assignments');
         }
@@ -6569,12 +6596,21 @@ function mergeDBs(localDb, cloudDb) {
   });
   merged.teachers = Array.from(teacherMap.values());
 
-  // Merge assignments
+  // Merge assignments with permanent deletion tombstone blacklist
+  const deletedAsgnIds = new Set(
+    (cloudDb.deleted_assignment_ids || [])
+      .concat(localDb.deleted_assignment_ids || [])
+      .map(x => String(x))
+  );
+
   const asgnMap = new Map();
   (cloudDb.assignments || []).concat(localDb.assignments || []).forEach(a => {
-    if (a && a.id) asgnMap.set(String(a.id), a);
+    if (a && a.id && !deletedAsgnIds.has(String(a.id))) {
+      asgnMap.set(String(a.id), a);
+    }
   });
   merged.assignments = Array.from(asgnMap.values());
+  merged.deleted_assignment_ids = Array.from(deletedAsgnIds);
 
   // Merge assignment submissions
   const subMap = new Map();
@@ -6637,7 +6673,7 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds, fbTeachers, fbFacultyCreds, fbDeletedTeachers] = await Promise.all([
+    const [resSync, fbData, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbHodCreds, fbTeachers, fbFacultyCreds, fbDeletedTeachers, fbAsgns, fbDelAsgns] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json').then(r => r.json()).catch(() => null),
@@ -6649,7 +6685,9 @@ async function fetchCloudDB(force = false) {
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments.json').then(r => r.json()).catch(() => null),
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids.json').then(r => r.json()).catch(() => null)
     ]);
 
     if (resSync && resSync.db) {
@@ -6691,6 +6729,37 @@ async function fetchCloudDB(force = false) {
       const rawDel = Array.isArray(fbDeletedTeachers) ? fbDeletedTeachers : (typeof fbDeletedTeachers === 'object' ? Object.keys(fbDeletedTeachers) : []);
       const upperDel = rawDel.map(x => String(x).toUpperCase());
       cloudDb.deleted_teacher_ids = Array.from(new Set((cloudDb.deleted_teacher_ids || []).concat(upperDel)));
+    }
+
+    if (fbDelAsgns) {
+      const rawDelAsgns = Array.isArray(fbDelAsgns) ? fbDelAsgns : (typeof fbDelAsgns === 'object' ? Object.keys(fbDelAsgns) : []);
+      cloudDb.deleted_assignment_ids = Array.from(new Set((cloudDb.deleted_assignment_ids || []).concat(rawDelAsgns.map(String))));
+    }
+
+    if (fbAsgns && typeof fbAsgns === 'object') {
+      const asgnList = Array.isArray(fbAsgns) ? fbAsgns : Object.values(fbAsgns);
+      const delAsgnSet = new Set((cloudDb.deleted_assignment_ids || []).map(String));
+      cloudDb.assignments = asgnList.filter(a => a && a.id && !delAsgnSet.has(String(a.id)));
+    }
+
+    // Direct Firestore Assignment Sync
+    if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+      try {
+        const snap = await firestoreDb.collection('assignments').get();
+        if (snap && !snap.empty) {
+          const fsAsgns = [];
+          const delAsgnSet = new Set((cloudDb.deleted_assignment_ids || []).map(String));
+          snap.forEach(doc => {
+            const data = doc.data();
+            if (data && !delAsgnSet.has(String(doc.id))) {
+              fsAsgns.push({ id: doc.id, ...data });
+            }
+          });
+          if (fsAsgns.length > 0) {
+            cloudDb.assignments = fsAsgns;
+          }
+        }
+      } catch(e) {}
     }
 
     if (fbTeachers && typeof fbTeachers === 'object') {
@@ -8959,8 +9028,10 @@ const API = {
 
       if (!asgnId) throw { message: 'Assignment ID is required.' };
 
-      // Check permission: Faculty can only delete their own assignments; HOD can delete any
+      // Locate assignment document
       const existing = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+
+      // Check permission: Faculty can only delete their own assignments; HOD can delete any
       if (existing && currentUser.role !== 'HOD') {
         const isOwner = (existing.created_by_id && String(existing.created_by_id) === String(currentUser.id)) ||
                         (existing.created_by_name && existing.created_by_name.trim().toLowerCase() === (currentUser.name || '').trim().toLowerCase());
@@ -8969,23 +9040,97 @@ const API = {
         }
       }
 
-      db.assignments = (db.assignments || []).filter(a => String(a.id) !== String(asgnId));
-      db.assignment_submissions = (db.assignment_submissions || []).filter(s => String(s.assignment_id) !== String(asgnId));
-      saveLocalDB(db);
-
-      // Delete from Firebase RTDB
+      // 1. Delete associated assignment file from Firebase Storage
+      let storageDeleted = false;
       try {
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
-      } catch(e) {}
+        const storagePath = existing?.storage_path || existing?.storagePath;
+        if (typeof firebaseStorage !== 'undefined' && firebaseStorage) {
+          if (storagePath) {
+            try {
+              await firebaseStorage.ref(storagePath).delete();
+              storageDeleted = true;
+            } catch (stErr) {
+              if (stErr.code === 'storage/object-not-found') {
+                storageDeleted = true; // file already removed
+              } else {
+                console.warn('Firebase Storage deletion note:', stErr.message || stErr);
+              }
+            }
+          } else if (existing?.file_url && existing.file_url.includes('firebasestorage.googleapis.com')) {
+            try {
+              await firebaseStorage.refFromURL(existing.file_url).delete();
+              storageDeleted = true;
+            } catch (stErr) {
+              if (stErr.code === 'storage/object-not-found') {
+                storageDeleted = true;
+              } else {
+                console.warn('Firebase Storage URL deletion note:', stErr.message || stErr);
+              }
+            }
+          }
+        }
+      } catch (stEx) {
+        console.warn('Storage cleanup attempted:', stEx);
+      }
 
-      // Delete from Firestore if available
+      // 2. Delete actual assignment document from Firestore
+      let firestoreSuccess = false;
+      if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+        try {
+          await firestoreDb.collection('assignments').doc(String(asgnId)).delete();
+          firestoreSuccess = true;
+        } catch (fsErr) {
+          console.error('Firestore deletion failure:', fsErr);
+          throw { message: 'Failed to delete assignment document from Firestore: ' + (fsErr.message || fsErr) };
+        }
+      }
+
+      // 3. Delete from Firebase Realtime Database & record in permanent blacklist
       try {
-        if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
-          firestoreDb.collection('assignments').doc(asgnId).delete().catch(() => {});
+        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+          await firebaseDb.ref('assignments/' + asgnId).remove().catch(() => {});
+          await firebaseDb.ref('deleted_assignment_ids/' + asgnId).set(Date.now()).catch(() => {});
         }
       } catch(e) {}
+      try {
+        await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
+        await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids/' + asgnId + '.json', { method: 'PUT', body: JSON.stringify(Date.now()) }).catch(() => {});
+      } catch(e) {}
 
-      return { success: true, message: 'Assignment deleted successfully.' };
+      // 4. Save tombstone in Firestore deleted_assignment_ids
+      if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
+        try {
+          await firestoreDb.collection('deleted_assignment_ids').doc(String(asgnId)).set({
+            deleted_at: Date.now(),
+            deleted_by: currentUser.name || currentUser.email
+          });
+        } catch(e) {}
+      }
+
+      // 5. Purge from local state, memory cache, and localStorage
+      db.assignments = (db.assignments || []).filter(a => String(a.id) !== String(asgnId));
+      db.assignment_submissions = (db.assignment_submissions || []).filter(s => String(s.assignment_id) !== String(asgnId));
+      db.deleted_assignment_ids = db.deleted_assignment_ids || [];
+      if (!db.deleted_assignment_ids.includes(String(asgnId))) {
+        db.deleted_assignment_ids.push(String(asgnId));
+      }
+      saveLocalDB(db);
+
+      if (typeof g_cloudDB !== 'undefined' && g_cloudDB) {
+        g_cloudDB.assignments = (g_cloudDB.assignments || []).filter(a => String(a.id) !== String(asgnId));
+        g_cloudDB.deleted_assignment_ids = db.deleted_assignment_ids;
+      }
+
+      // Broadcast update to all components
+      if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+        try { App.onRealtimeUpdate('assignments'); } catch(e) {}
+      }
+
+      return {
+        success: true,
+        message: 'Assignment document and associated files permanently deleted from Firebase.',
+        id: asgnId
+      };
     }
 
     // POST /api/assignments/submit (Student Solution Submission)
