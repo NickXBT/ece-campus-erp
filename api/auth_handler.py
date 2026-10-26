@@ -146,7 +146,7 @@ def get_live_credentials():
     """
     now = time.time()
     if _CACHE["last_fetch"] and (now - _CACHE["last_fetch"] < 60) and _CACHE["hod"] is not None:
-        return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True
+        return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True, ""
     
     hod_data = None
     fac_data = None
@@ -154,28 +154,34 @@ def get_live_credentials():
 
     auth_param = f"?auth={FIREBASE_AUTH_SECRET}" if FIREBASE_AUTH_SECRET else ""
 
+    last_err = ""
     try:
         with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/hod_credentials.json{auth_param}", timeout=4) as r:
             hod_data = json.loads(r.read().decode())
-    except Exception:
-        pass
+    except Exception as e:
+        last_err = f"HOD: {type(e).__name__} {e}"
 
     try:
         with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/faculty_credentials.json{auth_param}", timeout=4) as r:
             fac_data = json.loads(r.read().decode())
-    except Exception:
-        pass
+    except Exception as e:
+        if not last_err:
+            last_err = f"FAC: {type(e).__name__} {e}"
 
     try:
         with urllib.request.urlopen(f"https://ece-campus-erp-default-rtdb.firebaseio.com/activated_students.json{auth_param}", timeout=4) as r:
             act_data = json.loads(r.read().decode())
-    except Exception:
-        pass
+    except Exception as e:
+        if not last_err:
+            last_err = f"ACT: {type(e).__name__} {e}"
 
     # Fail Closed: If server-side credentials are not configured or live Firebase access fails,
     # do NOT authenticate users using default passwords or an outdated baseline roster.
     if not act_data or not isinstance(act_data, dict) or not hod_data or not fac_data:
-        return None, None, None, False
+        has_secret = bool(FIREBASE_AUTH_SECRET)
+        secret_len = len(FIREBASE_AUTH_SECRET)
+        detail = f"Database authentication failed (secret_configured={has_secret}, secret_length={secret_len}, error={last_err})"
+        return None, None, None, False, detail
 
     # Purge duplicate T555 and misclassified student 130 if present in RTDB
     fac_data.pop("T555", None)
@@ -199,7 +205,7 @@ def get_live_credentials():
     _CACHE["faculty"] = fac_data
     _CACHE["students"] = act_data
     _CACHE["last_fetch"] = now
-    return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True
+    return _CACHE["hod"], _CACHE["faculty"], _CACHE["students"], True, ""
 
 def sanitize_user(user: dict) -> dict:
     """Ensure passwords and pins are NEVER returned to the client browser."""
@@ -227,13 +233,13 @@ def authenticate(email_or_id: str, password: str, portal: str, client_ip: str = 
             "message": "Please enter both your identifier and password."
         }
 
-    hod_creds, fac_creds, act_students, is_live = get_live_credentials()
+    hod_creds, fac_creds, act_students, is_live, err_detail = get_live_credentials()
     if not is_live:
         record_failed_attempt(rate_key)
         return {
             "success": False,
             "error": "SERVICE_UNAVAILABLE",
-            "message": "Authentication service is temporarily unavailable while database security credentials are being configured. Please check back shortly."
+            "message": f"Authentication service is temporarily unavailable: {err_detail}" if err_detail else "Authentication service is temporarily unavailable while database security credentials are being configured. Please check back shortly."
         }
 
     # 1. HOD Account Login
