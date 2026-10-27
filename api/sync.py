@@ -5824,6 +5824,26 @@ def get_db():
         data["users"] = [u for u in data["users"] if str(u.get("id")) not in del_ids and str(u.get("prn_no", "")).upper() not in del_ids and str(u.get("id")) not in del_t_ids and str(u.get("username", "")).upper() not in del_t_ids]
     return data
 
+def scrub_sensitive_data(data):
+    if not isinstance(data, dict):
+        return data
+    cleaned = json.loads(json.dumps(data))
+    cleaned.pop("password_requests", None)
+    cleaned.pop("hod_pin", None)
+    cleaned.pop("hod_credentials", None)
+    cleaned.pop("faculty_credentials", None)
+    cleaned.pop("activated_students", None)
+    cleaned.pop("pending_students", None)
+    cleaned.pop("hod_students", None)
+    for key in ("users", "students", "teachers"):
+        if key in cleaned and isinstance(cleaned[key], list):
+            for item in cleaned[key]:
+                if isinstance(item, dict):
+                    item.pop("password_hash", None)
+                    item.pop("password", None)
+                    item.pop("hod_pin", None)
+    return cleaned
+
 def save_db(db):
     try:
         with open(TMP_DB_PATH, "w") as f:
@@ -5887,19 +5907,14 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             db = get_db()
-            # Security Hardening: Scrub all passwords and private password_requests before serialization in /api/sync
-            db.pop("password_requests", None)
-            if "users" in db and isinstance(db["users"], list):
-                for u in db["users"]:
-                    if isinstance(u, dict):
-                        u.pop("password_hash", None)
-                        u.pop("password", None)
+            # Security Hardening: Scrub all passwords, PINs, and credentials before serialization in /api/sync
+            cleaned_db = scrub_sensitive_data(db)
             self._set_headers(200)
-            self.wfile.write(json.dumps({"status": "ok", "db": db}).encode("utf-8"))
+            self.wfile.write(json.dumps({"status": "ok", "db": cleaned_db}).encode("utf-8"))
         except Exception as e:
             try:
                 self._set_headers(200)
-                self.wfile.write(json.dumps({"status": "ok", "db": INITIAL_DB_STATE, "warning": str(e)}).encode("utf-8"))
+                self.wfile.write(json.dumps({"status": "ok", "db": scrub_sensitive_data(INITIAL_DB_STATE), "warning": str(e)}).encode("utf-8"))
             except Exception:
                 pass
 
