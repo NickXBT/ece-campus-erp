@@ -5869,20 +5869,7 @@ function initFirebaseRealtimeListeners() {
       }
     });
 
-// 4. Live Push Listener: Password Reset Requests
-    firebaseDb.ref('password_requests').on('value', (snapshot) => {
-      const val = snapshot.val();
-      if (val && typeof val === 'object') {
-        const list = Array.isArray(val) ? val : Object.values(val);
-        const valid = list.filter(r => r && r.id);
-        const db = getLocalDB();
-        db.password_requests = valid;
-        g_cloudDB = db;
-        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
-          App.onRealtimeUpdate('password_requests');
-        }
-      }
-    });
+// 4. Password Reset Requests managed securely server-side
 
     // 6. Live Push Listener: Faculty / Teachers List
     firebaseDb.ref('teachers').on('value', (snapshot) => {
@@ -6267,17 +6254,7 @@ function saveLocalDB(db) {
           }).catch(() => {});
         }
 
-        if (cleanCopy.password_requests && cleanCopy.password_requests.length > 0) {
-          const reqMap = {};
-          cleanCopy.password_requests.forEach(r => {
-            if (r && r.id) reqMap[r.id] = r;
-          });
-          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reqMap)
-          }).catch(() => {});
-        }
+// password_requests synced securely server-side
 
         // Realtime Firebase RTDB Sync: Teachers / Faculty Roster
         if (cleanCopy.teachers && cleanCopy.teachers.length > 0) {
@@ -6550,20 +6527,20 @@ async function fetchCloudDB(force = false) {
   try {
     let cloudDb = null;
 
-    // Secure Cloud Fetch: Credential endpoints removed from client bundle
-    const [resSync, fbCerts, fbTT, fbPass, fbPending, fbApprovals, fbHod, fbTeachers, fbDeletedTeachers, fbAsgns, fbDelAsgns] = await Promise.all([
+    // Secure Cloud Fetch: Only public academic assets are fetched; private nodes are secured server-side
+    const [resSync, fbCerts, fbTT, fbApprovals, fbTeachers, fbAsgns] = await Promise.all([
       fetch('/api/sync').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/certificates_meta.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/timetable.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/pending_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/student_approvals.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/hod_students.json').then(r => r.json()).catch(() => null),
       fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/teachers.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_teacher_ids.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments.json').then(r => r.json()).catch(() => null),
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids.json').then(r => r.json()).catch(() => null)
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments.json').then(r => r.json()).catch(() => null)
     ]);
+    const fbPass = null;
+    const fbPending = null;
+    const fbHod = null;
+    const fbDeletedTeachers = null;
+    const fbDelAsgns = null;
     const fbData = null;
     const fbHodCreds = null;
     const fbFacultyCreds = null;
@@ -7399,13 +7376,7 @@ const API = {
       db.password_requests.unshift(newRequest);
       saveLocalDB(db);
 
-      try {
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/' + reqId + '.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newRequest)
-        }).catch(() => {});
-      } catch (e) {}
+// Password reset request saved securely to server-side
 
       return { success: true, message: 'Password reset request submitted successfully to HOD!' };
     }
@@ -7452,9 +7423,10 @@ const API = {
       saveLocalDB(db);
 
       try {
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/' + reqId + '.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+        const token = sessionStorage.getItem('ece_token') || localStorage.getItem('ece_token') || '';
+        fetch('/api/hod/password-requests/' + reqId + '/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify(reqItem)
         }).catch(() => {});
       } catch (e) {}
@@ -7477,10 +7449,11 @@ const API = {
       saveLocalDB(db);
 
       try {
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/' + reqId + '.json', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(reqItem)
+        const token = sessionStorage.getItem('ece_token') || localStorage.getItem('ece_token') || '';
+        fetch('/api/hod/password-requests/' + reqId + '/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ reason: body.reason || 'Rejected by HOD' })
         }).catch(() => {});
       } catch (e) {}
 

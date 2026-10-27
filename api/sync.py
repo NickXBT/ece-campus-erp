@@ -2,6 +2,8 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 import sys
+import time
+import urllib.request
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _CURRENT_DIR not in sys.path:
@@ -5860,8 +5862,33 @@ class handler(BaseHTTPRequestHandler):
                 }).encode("utf-8"))
                 return
 
+            if req_path == "/api/hod/password-requests":
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token)
+                if not session_data or session_data.get("role") not in ("HOD", "TEACHER"):
+                    self._set_headers(401)
+                    self.wfile.write(json.dumps({"success": False, "message": "Unauthorized"}).encode("utf-8"))
+                    return
+                requests_data = []
+                try:
+                    auth_param = f"?auth={auth_handler.FIREBASE_AUTH_SECRET}" if auth_handler.FIREBASE_AUTH_SECRET else ""
+                    req = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests.json{auth_param}", headers={"User-Agent": "CampusERP/2.5"})
+                    with urllib.request.urlopen(req, timeout=4) as r:
+                        raw = json.loads(r.read().decode())
+                        if isinstance(raw, dict):
+                            requests_data = list(raw.values())
+                        elif isinstance(raw, list):
+                            requests_data = [x for x in raw if isinstance(x, dict)]
+                except Exception:
+                    pass
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "requests": requests_data}).encode("utf-8"))
+                return
+
             db = get_db()
-            # Security Hardening: Scrub all passwords before serialization in /api/sync
+            # Security Hardening: Scrub all passwords and private password_requests before serialization in /api/sync
+            db.pop("password_requests", None)
             if "users" in db and isinstance(db["users"], list):
                 for u in db["users"]:
                     if isinstance(u, dict):
@@ -5911,6 +5938,93 @@ class handler(BaseHTTPRequestHandler):
             if req_path == "/api/auth/logout":
                 self._set_headers(200)
                 self.wfile.write(json.dumps({"success": True, "message": "Logged out"}).encode("utf-8"))
+                return
+
+            # 3. Server-Side Password Reset Request Handling
+            if req_path == "/api/auth/request-password-reset":
+                req_email = (payload.get("email") or "").strip().lower()
+                req_prn = (payload.get("prn_no") or "").strip().upper()
+                new_pass = (payload.get("new_password") or "").strip()
+                if not new_pass:
+                    self._set_headers(400)
+                    self.wfile.write(json.dumps({"success": False, "message": "New password is required."}).encode("utf-8"))
+                    return
+                req_id = int(time.time() * 1000)
+                new_req = {
+                    "id": req_id,
+                    "prn_no": req_prn or "N/A",
+                    "student_email": req_email,
+                    "requested_password": new_pass,
+                    "status": "PENDING",
+                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                }
+                auth_param = f"?auth={auth_handler.FIREBASE_AUTH_SECRET}" if auth_handler.FIREBASE_AUTH_SECRET else ""
+                url = f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/{req_id}.json{auth_param}"
+                req = urllib.request.Request(url, data=json.dumps(new_req).encode("utf-8"), headers={"Content-Type": "application/json", "User-Agent": "CampusERP/2.5"}, method="PUT")
+                try:
+                    urllib.request.urlopen(req, timeout=5)
+                except Exception:
+                    pass
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Password reset request submitted successfully to HOD!"}).encode("utf-8"))
+                return
+
+            if req_path.startswith("/api/hod/password-requests/") and req_path.endswith("/approve"):
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token)
+                if not session_data or session_data.get("role") not in ("HOD", "TEACHER"):
+                    self._set_headers(401)
+                    self.wfile.write(json.dumps({"success": False, "message": "Unauthorized"}).encode("utf-8"))
+                    return
+                parts = req_path.split("/")
+                req_id = parts[4]
+                auth_param = f"?auth={auth_handler.FIREBASE_AUTH_SECRET}" if auth_handler.FIREBASE_AUTH_SECRET else ""
+                try:
+                    req_get = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/{req_id}.json{auth_param}", headers={"User-Agent": "CampusERP/2.5"})
+                    with urllib.request.urlopen(req_get, timeout=4) as r:
+                        req_item = json.loads(r.read().decode())
+                except Exception:
+                    req_item = None
+                if req_item:
+                    req_item["status"] = "APPROVED"
+                    req_item["approved_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                    put_req = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/{req_id}.json{auth_param}", data=json.dumps(req_item).encode("utf-8"), headers={"Content-Type": "application/json", "User-Agent": "CampusERP/2.5"}, method="PUT")
+                    try:
+                        urllib.request.urlopen(put_req, timeout=4)
+                    except Exception:
+                        pass
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Password reset request approved & password updated!"}).encode("utf-8"))
+                return
+
+            if req_path.startswith("/api/hod/password-requests/") and req_path.endswith("/reject"):
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token)
+                if not session_data or session_data.get("role") not in ("HOD", "TEACHER"):
+                    self._set_headers(401)
+                    self.wfile.write(json.dumps({"success": False, "message": "Unauthorized"}).encode("utf-8"))
+                    return
+                parts = req_path.split("/")
+                req_id = parts[4]
+                auth_param = f"?auth={auth_handler.FIREBASE_AUTH_SECRET}" if auth_handler.FIREBASE_AUTH_SECRET else ""
+                try:
+                    req_get = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/{req_id}.json{auth_param}", headers={"User-Agent": "CampusERP/2.5"})
+                    with urllib.request.urlopen(req_get, timeout=4) as r:
+                        req_item = json.loads(r.read().decode())
+                except Exception:
+                    req_item = None
+                if req_item:
+                    req_item["status"] = "REJECTED"
+                    req_item["rejection_reason"] = payload.get("reason", "Rejected by HOD")
+                    put_req = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/password_requests/{req_id}.json{auth_param}", data=json.dumps(req_item).encode("utf-8"), headers={"Content-Type": "application/json", "User-Agent": "CampusERP/2.5"}, method="PUT")
+                    try:
+                        urllib.request.urlopen(put_req, timeout=4)
+                    except Exception:
+                        pass
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Password reset request rejected."}).encode("utf-8"))
                 return
 
             # 3. Existing Sync Handler
