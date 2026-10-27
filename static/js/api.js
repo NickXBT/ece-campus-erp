@@ -7372,11 +7372,24 @@ const API = {
         created_at: new Date().toISOString()
       };
 
+      // Submit securely to server-side
+      try {
+        const resp = await fetch('/api/auth/request-password-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRequest)
+        });
+        const resJson = await resp.json();
+        if (!resp.ok) {
+          throw new Error(resJson.message || 'Failed to submit password reset request');
+        }
+      } catch (err) {
+        console.warn('Server password reset error, saving locally:', err);
+      }
+
       db.password_requests = db.password_requests || [];
       db.password_requests.unshift(newRequest);
       saveLocalDB(db);
-
-// Password reset request saved securely to server-side
 
       return { success: true, message: 'Password reset request submitted successfully to HOD!' };
     }
@@ -7384,6 +7397,20 @@ const API = {
     if (endpoint === '/api/hod/password-requests' && method === 'GET') {
       if (!currentUser || (currentUser.role !== 'HOD' && currentUser.role !== 'TEACHER')) {
         throw { message: 'Unauthorized access' };
+      }
+      try {
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
+        const resp = await fetch('/api/hod/password-requests', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await resp.json();
+        if (data && data.success && Array.isArray(data.requests)) {
+          db.password_requests = data.requests;
+          saveLocalDB(db);
+          return data;
+        }
+      } catch (e) {
+        console.warn('Failed to fetch password requests from server:', e);
       }
       return { requests: db.password_requests || [], success: true };
     }
@@ -7423,7 +7450,7 @@ const API = {
       saveLocalDB(db);
 
       try {
-        const token = sessionStorage.getItem('ece_token') || localStorage.getItem('ece_token') || '';
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
         fetch('/api/hod/password-requests/' + reqId + '/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -7449,7 +7476,7 @@ const API = {
       saveLocalDB(db);
 
       try {
-        const token = sessionStorage.getItem('ece_token') || localStorage.getItem('ece_token') || '';
+        const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token') || '';
         fetch('/api/hod/password-requests/' + reqId + '/reject', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

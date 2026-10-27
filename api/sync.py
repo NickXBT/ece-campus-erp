@@ -5957,17 +5957,22 @@ class handler(BaseHTTPRequestHandler):
 
             # 3. Server-Side Password Reset Request Handling
             if req_path == "/api/auth/request-password-reset":
-                req_email = (payload.get("email") or "").strip().lower()
-                req_prn = (payload.get("prn_no") or "").strip().upper()
-                new_pass = (payload.get("new_password") or "").strip()
+                req_email = (payload.get("email") or payload.get("student_email") or "").strip().lower()
+                req_prn = (payload.get("prn_no") or payload.get("prn") or "").strip().upper()
+                new_pass = (payload.get("new_password") or payload.get("requested_password") or "").strip()
                 if not new_pass:
                     self._set_headers(400)
                     self.wfile.write(json.dumps({"success": False, "message": "New password is required."}).encode("utf-8"))
                     return
-                req_id = int(time.time() * 1000)
+                req_id = payload.get("id") or int(time.time() * 1000)
                 new_req = {
                     "id": req_id,
+                    "student_id": payload.get("student_id") or 1,
+                    "student_name": payload.get("student_name") or "Student",
+                    "roll_no": payload.get("roll_no") or "N/A",
                     "prn_no": req_prn or "N/A",
+                    "division_name": payload.get("division_name") or "SE(ECE)-A",
+                    "batch_name": payload.get("batch_name") or "A1",
                     "student_email": req_email,
                     "requested_password": new_pass,
                     "status": "PENDING",
