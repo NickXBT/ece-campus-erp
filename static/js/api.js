@@ -6154,6 +6154,22 @@ function saveLocalDB(db) {
       try {
         const dbForLocal = { ...db };
         delete dbForLocal.certificates;
+        if (dbForLocal.assignments && Array.isArray(dbForLocal.assignments)) {
+          dbForLocal.assignments = dbForLocal.assignments.map(a => {
+            if (a && a.file_url && a.file_url.startsWith('data:') && a.file_url.length > 500) {
+              return { ...a, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
+            }
+            return a;
+          });
+        }
+        if (dbForLocal.assignment_submissions && Array.isArray(dbForLocal.assignment_submissions)) {
+          dbForLocal.assignment_submissions = dbForLocal.assignment_submissions.map(s => {
+            if (s && s.file_url && s.file_url.startsWith('data:') && s.file_url.length > 500) {
+              return { ...s, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
+            }
+            return s;
+          });
+        }
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
       } catch (e) {}
 
@@ -6167,6 +6183,22 @@ function saveLocalDB(db) {
             file_url: (file_url && file_url.length < 200) ? file_url : '',
             has_file: !!(file_url && file_url.length > 50)
           };
+        });
+      }
+      if (cleanCopy.assignments && Array.isArray(cleanCopy.assignments)) {
+        cleanCopy.assignments = cleanCopy.assignments.map(a => {
+          if (a && a.file_url && a.file_url.startsWith('data:') && a.file_url.length > 500) {
+            return { ...a, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
+          }
+          return a;
+        });
+      }
+      if (cleanCopy.assignment_submissions && Array.isArray(cleanCopy.assignment_submissions)) {
+        cleanCopy.assignment_submissions = cleanCopy.assignment_submissions.map(s => {
+          if (s && s.file_url && s.file_url.startsWith('data:') && s.file_url.length > 500) {
+            return { ...s, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
+          }
+          return s;
         });
       }
       fetch('/api/sync', {
@@ -6460,7 +6492,18 @@ function mergeDBs(localDb, cloudDb) {
   const asgnMap = new Map();
   (cloudDb.assignments || []).concat(localDb.assignments || []).forEach(a => {
     if (a && a.id && !deletedAsgnIds.has(String(a.id))) {
-      asgnMap.set(String(a.id), a);
+      const existing = asgnMap.get(String(a.id));
+      if (!existing) {
+        asgnMap.set(String(a.id), { ...a });
+      } else {
+        const mergedA = { ...existing, ...a };
+        if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB') && (existing.file_url && existing.file_url !== 'EMBEDDED_IN_RTDB')) {
+          mergedA.file_url = existing.file_url;
+        } else if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB') && (a.file_url && a.file_url !== 'EMBEDDED_IN_RTDB')) {
+          mergedA.file_url = a.file_url;
+        }
+        asgnMap.set(String(a.id), mergedA);
+      }
     }
   });
   merged.assignments = Array.from(asgnMap.values());
@@ -6469,7 +6512,20 @@ function mergeDBs(localDb, cloudDb) {
   // Merge assignment submissions
   const subMap = new Map();
   (cloudDb.assignment_submissions || []).concat(localDb.assignment_submissions || []).forEach(s => {
-    if (s && s.id) subMap.set(String(s.id), s);
+    if (s && s.id) {
+      const existingSub = subMap.get(String(s.id));
+      if (!existingSub) {
+        subMap.set(String(s.id), { ...s });
+      } else {
+        const mergedSub = { ...existingSub, ...s };
+        if ((!mergedSub.file_url || mergedSub.file_url === 'EMBEDDED_IN_RTDB') && (existingSub.file_url && existingSub.file_url !== 'EMBEDDED_IN_RTDB')) {
+          mergedSub.file_url = existingSub.file_url;
+        } else if ((!mergedSub.file_url || mergedSub.file_url === 'EMBEDDED_IN_RTDB') && (s.file_url && s.file_url !== 'EMBEDDED_IN_RTDB')) {
+          mergedSub.file_url = s.file_url;
+        }
+        subMap.set(String(s.id), mergedSub);
+      }
+    }
   });
   merged.assignment_submissions = Array.from(subMap.values());
   merged.deleted_teacher_ids = Array.from(deletedTeacherIds);
@@ -6597,7 +6653,7 @@ async function fetchCloudDB(force = false) {
       cloudDb.assignments = asgnList.filter(a => a && a.id && !delAsgnSet.has(String(a.id)));
     }
 
-    // Direct Firestore Assignment Sync
+    // Direct Firestore Assignment Sync (merge preserving rich RTDB file_url)
     if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
       try {
         const snap = await firestoreDb.collection('assignments').get();
@@ -6611,7 +6667,20 @@ async function fetchCloudDB(force = false) {
             }
           });
           if (fsAsgns.length > 0) {
-            cloudDb.assignments = fsAsgns;
+            const existingMap = new Map((cloudDb.assignments || []).map(a => [String(a.id), a]));
+            fsAsgns.forEach(fa => {
+              const ex = existingMap.get(String(fa.id));
+              if (ex) {
+                const merged = { ...ex, ...fa };
+                if ((!fa.file_url || fa.file_url === 'EMBEDDED_IN_RTDB') && (ex.file_url && ex.file_url !== 'EMBEDDED_IN_RTDB')) {
+                  merged.file_url = ex.file_url;
+                }
+                existingMap.set(String(fa.id), merged);
+              } else {
+                existingMap.set(String(fa.id), fa);
+              }
+            });
+            cloudDb.assignments = Array.from(existingMap.values());
           }
         }
       } catch(e) {}
@@ -8623,10 +8692,16 @@ const API = {
 
       db.assignments = db.assignments || [];
       db.assignments.unshift(newAsgn);
+      if (typeof g_cloudDB !== 'undefined' && g_cloudDB) {
+        g_cloudDB.assignments = db.assignments;
+      }
       saveLocalDB(db);
 
-      // Save to Firebase RTDB
+      // Save to Firebase RTDB via both WebSocket SDK and REST
       try {
+        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+          firebaseDb.ref('assignments/' + asgnId).set(newAsgn).catch(err => console.warn('Firebase RTDB write err:', err));
+        }
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -8642,6 +8717,12 @@ const API = {
             fsDoc.file_url = 'EMBEDDED_IN_RTDB';
           }
           firestoreDb.collection('assignments').doc(asgnId).set(fsDoc).catch(e => console.warn('Firestore doc set warning:', e));
+        }
+      } catch(e) {}
+
+      try {
+        if (typeof App !== 'undefined' && typeof App.onRealtimeUpdate === 'function') {
+          App.onRealtimeUpdate('assignments');
         }
       } catch(e) {}
 
@@ -8780,8 +8861,11 @@ const API = {
       }
       saveLocalDB(db);
 
-      // Save to Firebase RTDB
+      // Save to Firebase RTDB via SDK and REST
       try {
+        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+          firebaseDb.ref('assignment_submissions/' + subId).set(newSub).catch(err => console.warn('Firebase RTDB submission write err:', err));
+        }
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/' + subId + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

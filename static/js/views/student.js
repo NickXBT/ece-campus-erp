@@ -232,15 +232,29 @@ const StudentView = {
           </div>
 
           <div style="border-top: 1px solid #f1f5f9; padding-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-            <button class="btn btn-secondary btn-sm" onclick="StudentView.openAssignmentDetailsModal('${a.id}')" style="font-size: 0.76rem; font-weight: 700; border-radius: 8px;">
-              <i class="fa-solid fa-eye"></i> View Assignment
-            </button>
-
-            ${a.file_url ? `
-              <button class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${a.file_url}', '${encodeURIComponent(a.file_name || 'Assignment')}', '${encodeURIComponent(a.title || 'Assignment')}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.76rem; padding: 0.35rem 0.85rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);">
-                <i class="fa-solid fa-download"></i> Download Assignment
+            <div style="display: flex; gap: 0.4rem; align-items: center;">
+              <button class="btn btn-secondary btn-sm" onclick="StudentView.openAssignmentDetailsModal('${a.id}')" style="font-size: 0.76rem; font-weight: 700; border-radius: 8px;">
+                <i class="fa-solid fa-eye"></i> View Assignment
               </button>
-            ` : '<span class="badge" style="background: #f1f5f9; color: #94a3b8; font-weight: 600; font-size: 0.74rem;">No File Attached</span>'}
+              ${(a.file_url || a.file_name) ? `
+                <button class="btn btn-outline-primary btn-sm" onclick="StudentView.downloadAssignmentById('${a.id}')" style="font-weight: 700; font-size: 0.76rem; padding: 0.3rem 0.65rem; border-radius: 8px;" title="Download Assignment">
+                  <i class="fa-solid fa-download"></i> PDF
+                </button>
+              ` : ''}
+            </div>
+
+            <div>
+              ${(() => {
+                const subs = (db.assignment_submissions || []);
+                const myPrn = (profile && profile.prn_no) || '';
+                const myId = (profile && profile.id) || '';
+                const hasSub = subs.some(s => String(s.assignment_id) === String(a.id) && ((myPrn && s.student_prn === myPrn) || (myId && s.student_id == myId)));
+                if (hasSub) {
+                  return '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 800; font-size: 0.74rem; padding: 0.3rem 0.6rem; border-radius: 8px;"><i class="fa-solid fa-check-double"></i> Submitted</span>';
+                }
+                return `<button class="btn btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="background: #16a34a; color: #ffffff; border: none; font-weight: 800; font-size: 0.76rem; padding: 0.3rem 0.7rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2);"><i class="fa-solid fa-cloud-arrow-up"></i> Submit Solution</button>`;
+              })()}
+            </div>
           </div>
         </div>
       `;
@@ -1987,15 +2001,29 @@ const StudentView = {
             </div>
 
             <div style="border-top: 1.5px solid #f1f5f9; padding-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <button class="btn btn-secondary btn-sm" onclick="StudentView.openAssignmentDetailsModal('${a.id}')" style="font-size: 0.78rem; font-weight: 700; border-radius: 8px;">
-                <i class="fa-solid fa-eye"></i> View Assignment
-              </button>
-
-              ${a.file_url ? `
-                <button class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${a.file_url}', '${encodeURIComponent(a.file_name || 'Assignment')}', '${encodeURIComponent(a.title || 'Assignment')}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);">
-                  <i class="fa-solid fa-download"></i> Download Assignment
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button class="btn btn-secondary btn-sm" onclick="StudentView.openAssignmentDetailsModal('${a.id}')" style="font-size: 0.78rem; font-weight: 700; border-radius: 8px;">
+                  <i class="fa-solid fa-eye"></i> View Assignment
                 </button>
-              ` : '<span class="badge" style="background: #f1f5f9; color: #94a3b8; font-weight: 600; font-size: 0.74rem;">No File Attached</span>'}
+                ${(a.file_url || a.file_name) ? `
+                  <button class="btn btn-outline-primary btn-sm" onclick="StudentView.downloadAssignmentById('${a.id}')" style="font-weight: 700; font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 8px;" title="Download Assignment PDF">
+                    <i class="fa-solid fa-file-arrow-down"></i> Download PDF
+                  </button>
+                ` : ''}
+              </div>
+
+              <div>
+                ${(() => {
+                  const subs = (db.assignment_submissions || []);
+                  const myPrn = (profile && profile.prn_no) || '';
+                  const myId = (profile && profile.id) || '';
+                  const hasSub = subs.some(s => String(s.assignment_id) === String(a.id) && ((myPrn && s.student_prn === myPrn) || (myId && s.student_id == myId)));
+                  if (hasSub) {
+                    return '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.75rem; border-radius: 8px;"><i class="fa-solid fa-check-double"></i> Solution Submitted</span>';
+                  }
+                  return `<button class="btn btn-sm" onclick="StudentView.openSubmitAssignmentModal('${a.id}')" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: none; font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);"><i class="fa-solid fa-cloud-arrow-up"></i> Submit Solution</button>`;
+                })()}
+              </div>
             </div>
           </div>
         `;
@@ -2104,39 +2132,77 @@ const StudentView = {
     }
   },
 
+  // Helper to convert base64 Data URL to Blob (for safe tab opening and native downloading)
+  dataUrlToBlob(dataUrl) {
+    try {
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+      const parts = dataUrl.split(',');
+      if (parts.length < 2) return null;
+      const mimeMatch = parts[0].match(/:(.*?);/);
+      const mime = (mimeMatch && mimeMatch[1]) || 'application/pdf';
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    } catch (e) {
+      console.warn('dataUrlToBlob conversion failed:', e);
+      return null;
+    }
+  },
+
   // File type detection helper for PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel, Images
   getAssignmentFileInfo(fileName = '', fileUrl = '') {
-    const norm = (fileName + ' ' + fileUrl).toLowerCase();
-    if (norm.includes('.pdf')) {
+    const fn = (fileName || '').toLowerCase();
+    const fuStart = (fileUrl || '').slice(0, 200).toLowerCase();
+    if (fn.includes('.pdf') || fuStart.includes('application/pdf') || fuStart.includes('.pdf')) {
       return { type: 'PDF', icon: 'fa-file-pdf', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', label: 'PDF Document', isPdf: true };
     }
-    if (norm.includes('.doc') || norm.includes('.docx')) {
+    if (fn.includes('.doc') || fn.includes('.docx') || fuStart.includes('word') || fuStart.includes('.doc')) {
       return { type: 'WORD', icon: 'fa-file-word', color: '#1e40af', bg: '#eff6ff', border: '#93c5fd', label: 'Word Document (DOC/DOCX)', isWord: true };
     }
-    if (norm.includes('.ppt') || norm.includes('.pptx')) {
+    if (fn.includes('.ppt') || fn.includes('.pptx') || fuStart.includes('powerpoint') || fuStart.includes('.ppt')) {
       return { type: 'POWERPOINT', icon: 'fa-file-powerpoint', color: '#c2410c', bg: '#fff7ed', border: '#fdba74', label: 'PowerPoint Presentation (PPT/PPTX)', isPpt: true };
     }
-    if (norm.includes('.xls') || norm.includes('.xlsx')) {
+    if (fn.includes('.xls') || fn.includes('.xlsx') || fuStart.includes('spreadsheet') || fuStart.includes('.xls')) {
       return { type: 'EXCEL', icon: 'fa-file-excel', color: '#15803d', bg: '#f0fdf4', border: '#86efac', label: 'Excel Spreadsheet', isExcel: true };
     }
-    if (norm.includes('.jpg') || norm.includes('.jpeg') || norm.includes('.png') || norm.includes('.webp')) {
+    if (fn.includes('.jpg') || fn.includes('.jpeg') || fn.includes('.png') || fn.includes('.webp') || fuStart.startsWith('data:image')) {
       return { type: 'IMAGE', icon: 'fa-file-image', color: '#047857', bg: '#ecfdf5', border: '#6ee7b7', label: 'Image Attachment', isImage: true };
     }
     return { type: 'DOCUMENT', icon: 'fa-file-lines', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', label: 'Assignment File' };
   },
 
   // View Assignment Details Modal
-  openAssignmentDetailsModal(asgnId) {
+  async openAssignmentDetailsModal(asgnId) {
     const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], deleted_assignment_ids: [] };
     const delSet = new Set((db.deleted_assignment_ids || []).map(String));
     if (delSet.has(String(asgnId))) {
       Toast.error('This assignment has been deleted.');
       return;
     }
-    const rawAsgn = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+    let rawAsgn = (db.assignments || []).find(a => String(a.id) === String(asgnId));
     if (!rawAsgn) {
       Toast.error('Assignment details could not be found.');
       return;
+    }
+
+    // If file_url is missing or 'EMBEDDED_IN_RTDB', fetch full data from Firebase RTDB
+    if (!rawAsgn.file_url || rawAsgn.file_url === 'EMBEDDED_IN_RTDB') {
+      try {
+        const live = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json').then(r => r.json());
+        if (live && live.file_url) {
+          rawAsgn.file_url = live.file_url;
+          if (live.file_name) rawAsgn.file_name = live.file_name;
+          if (live.file_size) rawAsgn.file_size = live.file_size;
+          if (typeof g_cloudDB !== 'undefined' && g_cloudDB && g_cloudDB.assignments) {
+            const cached = g_cloudDB.assignments.find(x => String(x.id) === String(asgnId));
+            if (cached) cached.file_url = live.file_url;
+          }
+        }
+      } catch(e) {}
     }
 
     // Normalized assignment fields
@@ -2150,7 +2216,7 @@ const StudentView = {
       issue_date: rawAsgn.issue_date || rawAsgn.issued_date || (rawAsgn.issuedAt ? rawAsgn.issuedAt.slice(0, 10) : 'N/A'),
       due_date: rawAsgn.due_date || rawAsgn.last_date || rawAsgn.last_date_of_submission || (rawAsgn.dueAt ? rawAsgn.dueAt.slice(0, 10) : 'N/A'),
       file_url: rawAsgn.file_url || rawAsgn.fileUrl || rawAsgn.download_url || rawAsgn.url || '',
-      file_name: rawAsgn.file_name || rawAsgn.fileName || (rawAsgn.file_url ? 'assignment_attachment' : ''),
+      file_name: rawAsgn.file_name || rawAsgn.fileName || (rawAsgn.file_url ? 'assignment_attachment.pdf' : ''),
       file_size: rawAsgn.file_size || rawAsgn.fileSize || 0,
       division: rawAsgn.division || rawAsgn.division_name || 'ALL',
       batch: rawAsgn.batch || rawAsgn.batch_name || 'ALL'
@@ -2211,7 +2277,7 @@ const StudentView = {
           </div>
         </div>
 
-        ${asgn.file_url ? `
+        ${(asgn.file_url && asgn.file_url !== 'EMBEDDED_IN_RTDB') ? `
           <div style="background: ${fInfo.bg}; border: 1.5px solid ${fInfo.border}; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden;">
@@ -2230,26 +2296,35 @@ const StudentView = {
               </div>
 
               <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.viewAssignmentInBrowser('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}')" style="font-size: 0.78rem; font-weight: 700; border-radius: 8px;">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Open / Read Online
-                </button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}', '${encodeURIComponent(asgn.title)}')" style="background: #2563eb; font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="StudentView.downloadAssignmentById('${asgn.id}')" style="font-size: 0.78rem; font-weight: 800; border-radius: 8px;">
                   <i class="fa-solid fa-download"></i> Download File
                 </button>
               </div>
             </div>
 
-            <!-- In-App Preview for PDF & Images -->
+            <!-- In-App Preview for PDF -->
             ${fInfo.isPdf ? `
               <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
-                <span style="font-size: 0.76rem; font-weight: 700; color: #1e40af; margin-bottom: 0.35rem; display: block;">
-                  <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> PDF Document In-App Preview:
-                </span>
-                <iframe src="${asgn.file_url}" style="width: 100%; height: 320px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff;" title="PDF Preview"></iframe>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: #1e40af;">
+                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> PDF Question Paper Preview:
+                  </span>
+                  <button type="button" class="btn btn-sm" onclick="StudentView.downloadAssignmentById('${asgn.id}')" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 6px;">
+                    <i class="fa-solid fa-file-arrow-down"></i> Save Copy
+                  </button>
+                </div>
+                <object data="${asgn.file_url}" type="application/pdf" style="width: 100%; height: 460px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #525659; display: block;">
+                  <iframe src="${asgn.file_url}" style="width: 100%; height: 460px; border: none; border-radius: 8px;" title="PDF Preview">
+                    <div style="padding: 1.5rem; text-align: center; color: #475569; background: #f8fafc; border-radius: 8px;">
+                      <p style="font-weight: 700; margin-bottom: 0.5rem;">PDF Document Ready</p>
+                      <button class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentById('${asgn.id}')"><i class="fa-solid fa-download"></i> Download Assignment PDF</button>
+                    </div>
+                  </iframe>
+                </object>
               </div>
             ` : ''}
 
-            <!-- In-App Preview for Word (DOC/DOCX) & PowerPoint (PPT/PPTX) using Office Online Viewer -->
+            <!-- In-App Preview for Word / PowerPoint using Office Online Viewer -->
             ${(fInfo.isWord || fInfo.isPpt) && asgn.file_url.startsWith('http') ? `
               <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
@@ -2260,14 +2335,14 @@ const StudentView = {
                     Full Screen <i class="fa-solid fa-expand"></i>
                   </a>
                 </div>
-                <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(asgn.file_url)}" style="width: 100%; height: 320px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff;" title="Office Preview"></iframe>
+                <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(asgn.file_url)}" style="width: 100%; height: 360px; border: 1.5px solid #cbd5e1; border-radius: 8px; background: #ffffff;" title="Office Preview"></iframe>
               </div>
             ` : ''}
 
             <!-- In-App Preview for Images -->
             ${fInfo.isImage ? `
               <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem; text-align: center;">
-                <img src="${asgn.file_url}" style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06);" alt="Attachment Image" />
+                <img src="${asgn.file_url}" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06);" alt="Attachment Image" />
               </div>
             ` : ''}
           </div>
@@ -2282,13 +2357,10 @@ const StudentView = {
     }
 
     if (actBtnEl) {
-      if (asgn.file_url) {
+      if (asgn.file_url && asgn.file_url !== 'EMBEDDED_IN_RTDB') {
         actBtnEl.innerHTML = `
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-secondary" onclick="StudentView.viewAssignmentInBrowser('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}')" style="font-weight: 700; border-radius: 10px;">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open / Read Online
-            </button>
-            <button type="button" class="btn btn-primary" onclick="StudentView.downloadAssignmentFile('${asgn.file_url}', '${encodeURIComponent(asgn.file_name)}', '${encodeURIComponent(asgn.title)}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+            <button type="button" class="btn btn-primary" onclick="StudentView.downloadAssignmentById('${asgn.id}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; border-radius: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
               <i class="fa-solid fa-download"></i> Download Assignment
             </button>
           </div>
@@ -2302,7 +2374,7 @@ const StudentView = {
   },
 
   viewAssignmentInBrowser(fileUrl, encodedFileName) {
-    if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined') {
+    if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined' || fileUrl === 'EMBEDDED_IN_RTDB') {
       Toast.error('No assignment file attached to open.');
       return;
     }
@@ -2320,7 +2392,21 @@ const StudentView = {
       return;
     }
 
-    // Direct browser tab for PDF, Images, or DataURLs
+    // If Base64 Data URL, convert to Blob URL to bypass browser top-frame data URL navigation blocks
+    if (fileUrl.startsWith('data:')) {
+      const blob = this.dataUrlToBlob(fileUrl);
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        const w = window.open(blobUrl, '_blank');
+        if (!w) {
+          Toast.warning('Pop-up blocked. Initiating direct download instead...');
+          this.downloadAssignmentFile(fileUrl, encodedFileName);
+        }
+        return;
+      }
+    }
+
+    // Direct browser tab for http/blob URLs
     const w = window.open(fileUrl, '_blank');
     if (!w) {
       Toast.warning('Pop-up was blocked by browser. Initiating direct download instead...');
@@ -2328,12 +2414,44 @@ const StudentView = {
     }
   },
 
+  downloadAssignmentById(asgnId) {
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [] };
+    const asgn = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+    if (!asgn) {
+      Toast.error('Assignment not found.');
+      return;
+    }
+    if (!asgn.file_url || asgn.file_url === 'EMBEDDED_IN_RTDB') {
+      Toast.info('Fetching assignment document from cloud...');
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json')
+        .then(r => r.json())
+        .then(live => {
+          const url = (live && live.file_url) || asgn.file_url;
+          let name = (live && live.file_name) || asgn.file_name || (asgn.title + '.pdf');
+          if (url && (url.includes('application/pdf') || url.endsWith('.pdf')) && !name.toLowerCase().endsWith('.pdf')) {
+            name += '.pdf';
+          }
+          this.downloadAssignmentFile(url, encodeURIComponent(name), encodeURIComponent(asgn.title));
+        })
+        .catch(() => Toast.error('Could not download assignment file.'));
+      return;
+    }
+    let name = asgn.file_name || (asgn.title + '.pdf');
+    if (asgn.file_url && (asgn.file_url.includes('application/pdf') || asgn.file_url.endsWith('.pdf')) && !name.toLowerCase().endsWith('.pdf')) {
+      name += '.pdf';
+    }
+    this.downloadAssignmentFile(asgn.file_url, encodeURIComponent(name), encodeURIComponent(asgn.title));
+  },
+
   async downloadAssignmentFile(fileUrl, encodedFileName, encodedTitle) {
-    if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined') {
+    if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined' || fileUrl === 'EMBEDDED_IN_RTDB') {
       Toast.error('No downloadable assignment file attached.');
       return;
     }
-    const fileName = decodeURIComponent(encodedFileName || 'assignment-document');
+    let fileName = decodeURIComponent(encodedFileName || 'assignment-document');
+    if ((fileUrl.includes('application/pdf') || fileUrl.endsWith('.pdf')) && !fileName.toLowerCase().endsWith('.pdf')) {
+      fileName += '.pdf';
+    }
     Toast.info('Downloading: ' + fileName + '...');
 
     try {
@@ -2353,7 +2471,23 @@ const StudentView = {
         return;
       }
 
-      // If DataURL or blob
+      if (fileUrl.startsWith('data:')) {
+        const blob = this.dataUrlToBlob(fileUrl);
+        if (blob) {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 40000);
+          Toast.success('Download started: ' + fileName);
+          return;
+        }
+      }
+
+      // Fallback
       const a = document.createElement('a');
       a.href = fileUrl;
       a.download = fileName;
@@ -2362,7 +2496,7 @@ const StudentView = {
       document.body.removeChild(a);
       Toast.success('Download started: ' + fileName);
     } catch (err) {
-      console.warn('Direct blob fetch error, triggering direct anchor download fallback:', err);
+      console.warn('Download error:', err);
       const a = document.createElement('a');
       a.href = fileUrl;
       a.target = '_blank';
@@ -2371,7 +2505,118 @@ const StudentView = {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      Toast.info('Download stream opened for: ' + fileName);
+    }
+  },
+
+  // Student Assignment Solution Submission Handlers
+  openSubmitAssignmentModal(asgnId) {
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [] };
+    const asgn = (db.assignments || []).find(a => String(a.id) === String(asgnId));
+    if (!asgn) {
+      Toast.error('Assignment details could not be found.');
+      return;
+    }
+    const idEl = document.getElementById('student-submit-asgn-id');
+    const subTitleEl = document.getElementById('submit-asgn-modal-subtitle');
+    const infoCardEl = document.getElementById('student-submit-info-card');
+    const remarksEl = document.getElementById('student-asgn-remarks');
+    const fileInput = document.getElementById('student-asgn-file-input');
+
+    if (idEl) idEl.value = asgn.id;
+    if (subTitleEl) subTitleEl.innerText = `${asgn.title} (${asgn.subject})`;
+    if (remarksEl) remarksEl.value = '';
+    if (fileInput) fileInput.value = '';
+    this._pendingSolutionFile = null;
+
+    const labelEl = document.getElementById('student-asgn-file-label');
+    const previewEl = document.getElementById('student-asgn-file-preview-info');
+    if (labelEl) labelEl.style.display = 'block';
+    if (previewEl) previewEl.style.display = 'none';
+
+    const currentUser = (typeof App !== 'undefined' && App.currentUser) ? App.currentUser : {};
+    if (infoCardEl) {
+      infoCardEl.innerHTML = `
+        <div><strong>Student:</strong> ${currentUser.name || 'Student'} (${currentUser.prn_no || 'PRN'})</div>
+        <div><strong>Division:</strong> ${currentUser.division_name || 'SE(ECE)'} • <strong>Batch:</strong> ${currentUser.batch_name || 'A1'}</div>
+        <div><strong>Due Date:</strong> ${asgn.due_date || 'N/A'}</div>
+      `;
+    }
+
+    if (typeof openModal === 'function') openModal('modal-student-submit-assignment');
+  },
+
+  onSolutionFileSelected(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this._pendingSolutionFile = file;
+
+      const labelEl = document.getElementById('student-asgn-file-label');
+      const previewEl = document.getElementById('student-asgn-file-preview-info');
+      const nameEl = document.getElementById('student-asgn-file-name-display');
+      const sizeEl = document.getElementById('student-asgn-file-size-display');
+
+      if (nameEl) nameEl.innerText = file.name;
+      if (sizeEl) sizeEl.innerText = (file.size / 1024).toFixed(1) + ' KB';
+      if (labelEl) labelEl.style.display = 'none';
+      if (previewEl) previewEl.style.display = 'inline-flex';
+    }
+  },
+
+  clearSolutionFile(e) {
+    if (e) e.stopPropagation();
+    this._pendingSolutionFile = null;
+    const input = document.getElementById('student-asgn-file-input');
+    if (input) input.value = '';
+    const labelEl = document.getElementById('student-asgn-file-label');
+    const previewEl = document.getElementById('student-asgn-file-preview-info');
+    if (labelEl) labelEl.style.display = 'block';
+    if (previewEl) previewEl.style.display = 'none';
+  },
+
+  async handleSubmitAssignment(e) {
+    e.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-solution');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting...';
+    }
+
+    try {
+      const asgnId = document.getElementById('student-submit-asgn-id').value;
+      const remarks = (document.getElementById('student-asgn-remarks') || {}).value || '';
+
+      if (!asgnId) throw new Error('Assignment ID is missing.');
+      if (!this._pendingSolutionFile && !remarks.trim()) {
+        throw new Error('Please attach a solution document or enter remarks.');
+      }
+
+      let fileData = { file_url: '', file_name: '', file_size: 0, storage_path: '' };
+      if (this._pendingSolutionFile) {
+        const uploader = (typeof uploadAssignmentFile === 'function') ? uploadAssignmentFile : (window.uploadAssignmentFile || null);
+        if (uploader) {
+          fileData = await uploader(this._pendingSolutionFile);
+        }
+      }
+
+      const res = await API.post('/api/assignments/submit', {
+        assignment_id: asgnId,
+        remarks: remarks.trim(),
+        file_url: fileData.file_url,
+        file_name: fileData.file_name,
+        file_size: fileData.file_size,
+        storage_path: fileData.storage_path
+      });
+
+      if (typeof Toast !== 'undefined') Toast.success(res.message || 'Assignment solution submitted successfully!');
+      if (typeof closeModal === 'function') closeModal('modal-student-submit-assignment');
+      if (typeof this.refreshAssignmentsPortal === 'function') this.refreshAssignmentsPortal();
+    } catch (err) {
+      if (typeof Toast !== 'undefined') Toast.error((err && (err.message || err.error)) || 'Failed to submit solution.');
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> Submit Solution';
+      }
     }
   },
 

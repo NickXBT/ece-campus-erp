@@ -181,7 +181,7 @@ const TeacherView = {
               <i class="fa-solid fa-users-viewfinder"></i> Submissions (${subCount})
             </button>
             <div style="display: flex; gap: 0.3rem;">
-              ${a.file_url ? `<button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.74rem; padding: 0.3rem 0.55rem;" title="View Question Paper"><i class="fa-solid fa-eye"></i> Paper</button>` : ''}
+              ${(a.file_url || a.file_name) ? `<button class="btn btn-secondary btn-sm" onclick="TeacherView.previewAssignmentFile('${a.id}')" style="font-size: 0.74rem; padding: 0.3rem 0.55rem;" title="View Question Paper"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Paper</button>` : ''}
               <button class="btn btn-danger btn-sm" onclick="TeacherView.deleteAssignment('${a.id}')" style="font-size: 0.74rem; padding: 0.3rem 0.55rem;" title="Delete Assignment"><i class="fa-solid fa-trash-can"></i></button>
             </div>
           </div>
@@ -1923,9 +1923,9 @@ const TeacherView = {
               </button>
 
               <div style="display: flex; gap: 0.4rem;">
-                ${a.file_url ? `
-                  <button class="btn btn-secondary btn-sm" onclick="StudentView.previewFile('${a.file_url}', '${encodeURIComponent(a.title)}', 'Question Paper')" style="font-size: 0.78rem; font-weight: 700;">
-                    <i class="fa-solid fa-file-arrow-down"></i> Question Paper
+                ${(a.file_url || a.file_name) ? `
+                  <button class="btn btn-secondary btn-sm" onclick="TeacherView.previewAssignmentFile('${a.id}')" style="font-size: 0.78rem; font-weight: 700;" title="View Question Paper">
+                    <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Question Paper
                   </button>
                 ` : ''}
                 <button class="btn btn-danger btn-sm" onclick="TeacherView.deleteAssignment('${a.id}')" style="font-size: 0.78rem;" title="Delete Assignment">
@@ -2041,6 +2041,25 @@ const TeacherView = {
       this.renderAssignments().then(html => container.innerHTML = html);
     } else if (container && (hash === '#/hod/approvals' || hash === '#/teacher/approvals')) {
       this.renderApprovals().then(html => container.innerHTML = html);
+    }
+  },
+
+  // Assignment File & Submission Preview Handlers
+  previewAssignmentFile(asgnId) {
+    if (typeof StudentView !== 'undefined' && typeof StudentView.openAssignmentDetailsModal === 'function') {
+      StudentView.openAssignmentDetailsModal(asgnId);
+    }
+  },
+
+  previewSubmissionFile(subId) {
+    const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignment_submissions: [] };
+    const sub = (db.assignment_submissions || []).find(s => String(s.id) === String(subId));
+    if (!sub || !sub.file_url) {
+      if (typeof Toast !== 'undefined') Toast.warning('No file attached to this submission.');
+      return;
+    }
+    if (typeof StudentView !== 'undefined' && typeof StudentView.viewAssignmentInBrowser === 'function') {
+      StudentView.viewAssignmentInBrowser(sub.file_url, encodeURIComponent(sub.file_name || (sub.student_name + '_solution')));
     }
   },
 
@@ -2247,7 +2266,7 @@ const TeacherView = {
                       <td style="font-size: 0.78rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${s.remarks || ''}">${s.remarks || '<span style="color: #94a3b8;">None</span>'}</td>
                       <td>
                         ${s.file_url ? `
-                          <button class="btn btn-primary btn-sm" onclick="StudentView.previewFile('${s.file_url}', '${encodeURIComponent(s.student_name + " - " + asgn.title)}', 'Solution Paper')" style="font-size: 0.74rem; padding: 0.25rem 0.6rem; font-weight: 700;">
+                          <button class="btn btn-primary btn-sm" onclick="TeacherView.previewSubmissionFile('${s.id}')" style="font-size: 0.74rem; padding: 0.25rem 0.6rem; font-weight: 700;">
                             <i class="fa-solid fa-file-arrow-down"></i> Solution
                           </button>
                         ` : '<span style="color: #94a3b8; font-size: 0.75rem;">Text Only</span>'}
