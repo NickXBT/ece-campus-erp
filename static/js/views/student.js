@@ -1891,27 +1891,200 @@ const StudentView = {
 
   // Dedicated Full Student Assignments Portal View
   async renderAssignments() {
-    return `
-        <div class="dashboard-container" style="max-width: 1000px; margin: 2rem auto; padding: 1.5rem 1rem;">
-          <div style="background: #ffffff; border: 2.5px dashed #f59e0b; border-radius: 24px; padding: 4.5rem 2rem; text-align: center; box-shadow: 0 20px 45px rgba(245, 158, 11, 0.1);">
-            <div style="width: 100px; height: 100px; border-radius: 50%; background: #fef3c7; color: #d97706; display: inline-flex; align-items: center; justify-content: center; font-size: 3.5rem; margin-bottom: 1.5rem; border: 3px solid #fde68a; box-shadow: 0 10px 25px rgba(217, 119, 6, 0.18);">
-              🚧
+    try {
+      if (typeof fetchCloudDB === 'function') await fetchCloudDB(true);
+      const profile = this.getFreshProfile() || {};
+      const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], deleted_assignment_ids: [] };
+
+      const studentDiv = (profile.division_name || 'SE(ECE)-A').toUpperCase();
+      const studentBatch = (profile.batch_name || '').toUpperCase();
+
+      const allAsgns = (db.assignments || []).slice();
+      const delSet = new Set((db.deleted_assignment_ids || []).map(String));
+
+      // Normalize and filter relevant, non-deleted assignments for this student's division & batch
+      const myAsgns = allAsgns.map(raw => {
+        const a = { ...raw };
+        a.id = a.id || a.assignment_id;
+        a.title = a.title || a.assignment_title || 'Untitled Assignment';
+        a.subject = a.subject || a.subject_name || 'General ECE';
+        a.created_by_name = a.created_by_name || a.faculty_name || a.teacher_name || 'Faculty Member';
+        a.instructions = a.instructions || a.description || '';
+        a.description = a.description || a.instructions || '';
+        a.issue_date = a.issue_date || a.issued_date || (a.issuedAt ? a.issuedAt.slice(0, 10) : 'N/A');
+        a.due_date = a.due_date || a.last_date || a.last_date_of_submission || (a.dueAt ? a.dueAt.slice(0, 10) : 'N/A');
+        a.file_url = a.file_url || a.fileUrl || a.download_url || a.url || '';
+        a.file_name = a.file_name || a.fileName || (a.file_url ? 'assignment.pdf' : '');
+        a.file_size = a.file_size || a.fileSize || 0;
+        a.division = a.division || a.division_name || 'ALL';
+        a.batch = a.batch || a.batch_name || 'ALL';
+        return a;
+      }).filter(a => {
+        if (!a || !a.id || delSet.has(String(a.id))) return false;
+        const aDiv = (a.division || 'ALL').toUpperCase();
+        const aBatch = (a.batch || 'ALL').toUpperCase();
+        if (aDiv !== 'ALL' && !studentDiv.includes(aDiv) && !aDiv.includes(studentDiv)) return false;
+        if (aBatch !== 'ALL' && studentBatch && aBatch !== studentBatch) return false;
+        return true;
+      });
+
+      // Sort newest first
+      myAsgns.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+
+      if (!this.studentAsgnTab) this.studentAsgnTab = 'LIVE';
+      if (!this.studentAsgnSubject) this.studentAsgnSubject = 'ALL';
+
+      let liveCount = 0;
+      let pastCount = 0;
+
+      myAsgns.forEach(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+        if (st.isLive) liveCount++;
+        else pastCount++;
+      });
+
+      const filtered = myAsgns.filter(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+        if (this.studentAsgnTab === 'LIVE' && !st.isLive) return false;
+        if (this.studentAsgnTab === 'PAST' && !st.isPast) return false;
+        if (this.studentAsgnSubject !== 'ALL' && a.subject !== this.studentAsgnSubject) return false;
+        return true;
+      });
+
+      const cardsHtml = filtered.length > 0 ? filtered.map(a => {
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { label: 'Live', isDueToday: false, isLive: true };
+
+        const deadlineBadge = st.isDueToday
+          ? '<span class="badge" style="background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-clock"></i> Due Today!</span>'
+          : (st.isLive
+            ? '<span class="badge" style="background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-circle-check"></i> ' + (st.timeRemainingText || 'Live') + '</span>'
+            : '<span class="badge" style="background: #f1f5f9; color: #64748b; border: 1.5px solid #cbd5e1; font-weight: 700; font-size: 0.74rem; padding: 0.25rem 0.65rem; border-radius: 9999px;"><i class="fa-solid fa-calendar-xmark"></i> Deadline Passed</span>');
+
+        return `
+          <div class="glass-panel" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.65rem;">
+                <span class="badge-role role-STUDENT" style="font-weight: 800; font-size: 0.74rem; background: #eff6ff; color: #2563eb; padding: 0.25rem 0.65rem;">${a.subject}</span>
+                ${deadlineBadge}
+              </div>
+
+              <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.5rem 0; line-height: 1.35;">
+                ${a.title}
+              </h3>
+
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem; font-size: 0.8rem; color: #334155; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div><i class="fa-solid fa-calendar-plus" style="color: #2563eb;"></i> Issued: <strong>${a.issue_date || 'N/A'}</strong></div>
+                <div><i class="fa-solid fa-calendar-xmark" style="color: #dc2626;"></i> Deadline: <strong>${a.due_date || 'N/A'}</strong></div>
+                <div><i class="fa-solid fa-users" style="color: #2563eb;"></i> Division: <strong>${a.division || 'ALL'}</strong></div>
+                <div><i class="fa-solid fa-user-tie" style="color: #64748b;"></i> Faculty: <strong>${a.created_by_name || 'Faculty Member'}</strong></div>
+              </div>
+
+              ${a.instructions ? `
+                <div style="font-size: 0.82rem; color: #475569; line-height: 1.5; margin-bottom: 0.85rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 0.55rem 0.75rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                  <strong style="color: #b45309;"><i class="fa-solid fa-file-lines"></i> Instructions:</strong> ${a.instructions}
+                </div>
+              ` : ''}
             </div>
-            <h1 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 900; color: #92400e; margin: 0 0 1rem 0; letter-spacing: -0.5px;">
-              🚧 UNDER DEVELOPMENT 🚧
-            </h1>
-            <p style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.85rem 0;">
-              Assignment Management is currently under development.
-            </p>
-            <p style="font-size: 1.05rem; color: #64748b; margin: 0 auto 2.25rem auto; max-width: 550px; line-height: 1.6;">
-              This feature is temporarily unavailable. Please check back later.
-            </p>
-            <div style="display: inline-flex; align-items: center; gap: 0.65rem; background: #fffbeb; border: 1.5px solid #fde68a; padding: 0.65rem 1.5rem; border-radius: 9999px; color: #b45309; font-weight: 800; font-size: 0.92rem;">
-              <i class="fa-solid fa-clock-rotate-left"></i> ECE Academic Portal — Feature Coming Soon
+
+            <div style="border-top: 1.5px solid #f1f5f9; padding-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <button class="btn btn-secondary btn-sm" onclick="StudentView.openAssignmentDetailsModal('${a.id}')" style="font-size: 0.78rem; font-weight: 700; border-radius: 8px;">
+                <i class="fa-solid fa-eye"></i> View Assignment
+              </button>
+
+              ${a.file_url ? `
+                <button class="btn btn-primary btn-sm" onclick="StudentView.downloadAssignmentFile('${a.file_url}', '${encodeURIComponent(a.file_name || 'Assignment')}', '${encodeURIComponent(a.title || 'Assignment')}')" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; font-size: 0.78rem; padding: 0.35rem 0.85rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);">
+                  <i class="fa-solid fa-download"></i> Download Assignment
+                </button>
+              ` : '<span class="badge" style="background: #f1f5f9; color: #94a3b8; font-weight: 600; font-size: 0.74rem;">No File Attached</span>'}
             </div>
           </div>
+        `;
+      }).join('') : `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #ffffff; border-radius: 16px; border: 2px dashed #cbd5e1; color: #64748b;">
+          <i class="fa-solid fa-clipboard-check" style="font-size: 2.5rem; color: #16a34a; margin-bottom: 0.65rem; display: block;"></i>
+          <h4 style="font-family: var(--font-heading); color: var(--text-main); font-size: 1.1rem; margin: 0 0 0.35rem 0;">No ${this.studentAsgnTab === 'LIVE' ? 'Live' : 'Past'} Assignments Found</h4>
+          <p style="font-size: 0.85rem; margin: 0 auto; max-width: 420px;">
+            ${this.studentAsgnTab === 'LIVE' ? 'All assignments for your division are either completed or have expired. Check Past Assignments for reference.' : 'No past assignments recorded for this category.'}
+          </p>
         </div>
-`;
+      `;
+
+      return `
+        <div class="erp-fade-in" style="max-width: 1200px; margin: 0 auto;">
+          <!-- Header Banner -->
+          <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); border-radius: 20px; padding: 1.75rem 2rem; color: #ffffff; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.15);">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.35rem;">
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: #ffffff; font-weight: 800; font-size: 0.74rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 0.2rem 0.65rem;">
+                  ${studentDiv} COURSEWORK
+                </span>
+                <span class="badge" style="background: #22c55e; color: #ffffff; font-weight: 800; font-size: 0.74rem; border-radius: 20px; padding: 0.2rem 0.65rem;">
+                  <i class="fa-solid fa-shield-halved"></i> Verified Enrolled
+                </span>
+              </div>
+              <h1 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 800; margin: 0 0 0.35rem 0;">
+                Academic Assignments Desk
+              </h1>
+              <p style="margin: 0; font-size: 0.88rem; opacity: 0.9; max-width: 650px;">
+                Review coursework, download question papers, and check deadlines issued by ECE Department faculty.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn" onclick="StudentView.refreshAssignmentsPortal()" style="background: rgba(255,255,255,0.18); color: #ffffff; font-weight: 800; border: 1.5px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 0.65rem 1.15rem;">
+                <i class="fa-solid fa-rotate-right"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls Strip: Tabs & Subject Filter -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <!-- Tabs -->
+            <div style="display: flex; gap: 0.5rem; background: #ffffff; padding: 0.35rem; border-radius: 14px; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+              <button class="btn btn-sm ${this.studentAsgnTab === 'LIVE' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setStudentAsgnTab('LIVE')" style="font-weight: 800; font-size: 0.82rem; border-radius: 10px; padding: 0.5rem 1rem;">
+                <i class="fa-solid fa-circle-check"></i> Live Assignments (${liveCount})
+              </button>
+              <button class="btn btn-sm ${this.studentAsgnTab === 'PAST' ? 'btn-primary' : 'btn-secondary'}" onclick="StudentView.setStudentAsgnTab('PAST')" style="font-weight: 800; font-size: 0.82rem; border-radius: 10px; padding: 0.5rem 1rem;">
+                <i class="fa-solid fa-calendar-xmark"></i> Past Assignments (${pastCount})
+              </button>
+            </div>
+
+            <!-- Subject Filter Dropdown -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Subject:</label>
+              <select class="form-control" onchange="StudentView.setStudentAsgnSubject(this.value)" style="font-weight: 700; font-size: 0.82rem; padding: 0.45rem 0.85rem; border-radius: 10px; min-width: 240px;">
+                <option value="ALL" ${this.studentAsgnSubject === 'ALL' ? 'selected' : ''}>All ECE Subjects</option>
+                <option value="Signals and Systems" ${this.studentAsgnSubject === 'Signals and Systems' ? 'selected' : ''}>Signals and Systems (SS)</option>
+                <option value="Data Structures and Algorithms" ${this.studentAsgnSubject === 'Data Structures and Algorithms' ? 'selected' : ''}>Data Structures and Algorithms (DSA)</option>
+                <option value="Semiconductor Devices and Circuits" ${this.studentAsgnSubject === 'Semiconductor Devices and Circuits' ? 'selected' : ''}>Semiconductor Devices & Circuits (SDC)</option>
+                <option value="Fundamental of Data Science" ${this.studentAsgnSubject === 'Fundamental of Data Science' ? 'selected' : ''}>Fundamental of Data Science (FDS)</option>
+                <option value="Principles of Management and Entrepreneurship" ${this.studentAsgnSubject === 'Principles of Management and Entrepreneurship' ? 'selected' : ''}>Principles of Management & Entrepreneurship (PME)</option>
+                <option value="Vocational & Skill Enhancement Course" ${this.studentAsgnSubject === 'Vocational & Skill Enhancement Course' ? 'selected' : ''}>Vocational & Skill Course (VSEC)</option>
+                <option value="Open Elective Course" ${this.studentAsgnSubject === 'Open Elective Course' ? 'selected' : ''}>Open Elective Course (OEC)</option>
+                <option value="Value Added Course" ${this.studentAsgnSubject === 'Value Added Course' ? 'selected' : ''}>Value Added Course (VEC)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    } catch(err) {
+      console.error('renderAssignments error:', err);
+      return `
+        <div class="glass-panel" style="text-align: center; padding: 3rem 1.5rem;">
+          <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: #dc2626; margin-bottom: 0.5rem; display: block;"></i>
+          <h3 style="color: #991b1b; margin: 0 0 0.5rem 0;">Unable to Load Assignments</h3>
+          <p style="color: #64748b; font-size: 0.85rem;">${err.message || 'Error fetching assignment records from Firebase.'}</p>
+          <button class="btn btn-primary btn-sm" onclick="StudentView.refreshAssignmentsPortal()">
+            <i class="fa-solid fa-rotate-right"></i> Try Again
+          </button>
+        </div>
+      `;
+    }
   },
 
   setStudentAsgnTab(tab) {
@@ -2204,8 +2377,53 @@ const StudentView = {
 
   // Deadline Alerts Popup Handlers
   checkDeadlineAlerts() {
-    // Permanently disabled: Assignment deadline popups removed from registration & approval
-    return;
+    try {
+      const dismissed = sessionStorage.getItem('dismissed_deadline_alert');
+      if (dismissed === '1') return;
+
+      const profile = this.getFreshProfile();
+      if (!profile || profile.status !== 'APPROVED') return;
+
+      const studentDiv = (profile.division_name || 'SE(ECE)-A').toUpperCase();
+
+      const db = typeof getLocalDB === 'function' ? getLocalDB() : { assignments: [], deleted_assignment_ids: [] };
+      const allAsgns = db.assignments || [];
+      const delSet = new Set((db.deleted_assignment_ids || []).map(String));
+
+      const urgentAsgns = [];
+      allAsgns.forEach(a => {
+        if (!a || !a.id || delSet.has(String(a.id))) return;
+        const aDiv = (a.division || 'ALL').toUpperCase();
+        if (aDiv !== 'ALL' && !studentDiv.includes(aDiv) && !aDiv.includes(studentDiv)) return;
+
+        const st = typeof getAssignmentStatus === 'function' ? getAssignmentStatus(a) : { isLive: true };
+        if (st.isLive && (st.isDueToday || (st.daysLeft <= 2))) {
+          urgentAsgns.push({ asgn: a, status: st });
+        }
+      });
+
+      if (urgentAsgns.length > 0) {
+        const container = document.getElementById('deadline-alert-items-container');
+        if (!container) return;
+
+        container.innerHTML = urgentAsgns.map(item => `
+          <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center; gap: 0.65rem;">
+            <div>
+              <strong style="color: #92400e; font-size: 0.92rem; display: block;">${item.asgn.title}</strong>
+              <span style="font-size: 0.78rem; color: #b45309;">${item.asgn.subject} • Deadline: <strong>${item.asgn.due_date}</strong></span>
+            </div>
+            ${item.status.isDueToday ? 
+              '<span class="badge" style="background: #fee2e2; color: #dc2626; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.55rem; white-space: nowrap;">🚨 Due Today!</span>' :
+              '<span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.74rem; padding: 0.25rem 0.55rem; white-space: nowrap;">⏳ ' + item.status.timeRemainingText + '</span>'
+            }
+          </div>
+        `).join('');
+
+        if (typeof openModal === 'function') openModal('modal-assignment-deadline-alert');
+      }
+    } catch(e) {
+      console.warn('Deadline alert check err:', e);
+    }
   },
 
   dismissDeadlineAlert() {
