@@ -7195,6 +7195,18 @@ const API = {
         }
         return data;
       } catch (err) {
+        const isNetworkErr = (!navigator.onLine) || (err && (
+          (err.name === 'TypeError' && err.message && err.message.toLowerCase().includes('fetch')) ||
+          (typeof err.message === 'string' && (
+            err.message.toLowerCase().includes('failed to fetch') ||
+            err.message.toLowerCase().includes('networkerror') ||
+            err.message.toLowerCase().includes('load failed') ||
+            err.message.toLowerCase().includes('network error')
+          ))
+        ));
+        if (isNetworkErr) {
+          throw { message: 'Network error: Please check your internet connection and try again.' };
+        }
         throw (err && err.message) ? err : { message: (err && (err.message || err.error)) || 'Login failed. Please check your credentials.' };
       }
     }

@@ -550,8 +550,18 @@ const AuthView = {
 
       await App.handleRoute();
     } catch (err) {
-      const errMsg = err ? (err.message || err.error || (typeof err === 'string' ? err : 'Login Failed')) : 'Login Failed';
-      Toast.error(errMsg);
+      let errMsg = err ? (err.message || err.error || (typeof err === 'string' ? err : 'Login Failed')) : 'Login Failed';
+      const isNet = (!navigator.onLine) || (typeof errMsg === 'string' && (
+        errMsg.toLowerCase().includes('failed to fetch') ||
+        errMsg.toLowerCase().includes('networkerror') ||
+        errMsg.toLowerCase().includes('load failed') ||
+        errMsg.toLowerCase().includes('network error')
+      ));
+      if (isNet) {
+        Toast.error('Network Error', 'Please check your internet connection and try again.');
+      } else {
+        Toast.error(errMsg);
+      }
       if (btnSubmit) {
         btnSubmit.innerHTML = `Sign In to Portal <i class="fa-solid fa-arrow-right"></i>`;
         btnSubmit.disabled = false;

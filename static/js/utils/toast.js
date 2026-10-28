@@ -14,6 +14,8 @@ const Toast = {
     'Something Went Wrong': { title: 'Something Went Wrong', desc: 'Please try again.', type: 'error' },
     'Upload Failed': { title: 'Upload Failed', desc: "We couldn't upload your certificate. Please try again.", type: 'error' },
     'Unable to Load Data': { title: 'Unable to Load Data', desc: 'Please try again in a moment.', type: 'error' },
+    'Failed to fetch': { title: 'Network Error', desc: 'Please check your internet connection and try again.', type: 'error' },
+    'Network Error': { title: 'Network Error', desc: 'Please check your internet connection and try again.', type: 'error' },
     
     'No Internet Connection': { title: 'No Internet Connection', desc: 'Please check your connection and try again.', type: 'warning' },
     'Server Unavailable': { title: 'Server Unavailable', desc: 'Please try again in a moment.', type: 'warning' },
@@ -47,6 +49,14 @@ const Toast = {
       finalTitle = p.title;
       finalDesc = finalDesc || p.desc;
       finalType = p.type;
+    } else if (typeof titleOrMsg === 'string' && (
+      titleOrMsg.toLowerCase().includes('failed to fetch') ||
+      titleOrMsg.toLowerCase().includes('networkerror') ||
+      titleOrMsg.toLowerCase().includes('load failed')
+    )) {
+      finalTitle = 'Network Error';
+      finalDesc = 'Please check your internet connection and try again.';
+      finalType = 'error';
     }
 
     const toast = document.createElement('div');
