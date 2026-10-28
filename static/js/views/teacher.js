@@ -2037,9 +2037,12 @@ const TeacherView = {
   refreshAssignmentsView() {
     const hash = window.location.hash || '';
     const container = document.getElementById('view-container');
-    if (container && (hash === '#/hod/assignments' || hash === '#/teacher/assignments')) {
+    if (!container) return;
+    if (hash === '#/hod/assignments' || hash === '#/teacher/assignments') {
       this.renderAssignments().then(html => container.innerHTML = html);
-    } else if (container && (hash === '#/hod/approvals' || hash === '#/teacher/approvals')) {
+    } else if (hash === '#/hod/dashboard' || hash === '#/teacher/dashboard' || hash === '#/hod' || hash === '#/teacher' || !hash || hash === '#') {
+      this.renderDashboard().then(html => container.innerHTML = html);
+    } else if (hash === '#/hod/approvals' || hash === '#/teacher/approvals') {
       this.renderApprovals().then(html => container.innerHTML = html);
     }
   },
@@ -2145,12 +2148,14 @@ const TeacherView = {
       }
 
       let fileData = { file_url: '', file_name: '', file_size: 0, storage_path: '' };
-      if (this._pendingAsgnFile) {
+      const fileInput = document.getElementById('asgn-file-input');
+      const fileToUpload = this._pendingAsgnFile || (fileInput && fileInput.files && fileInput.files[0]) || null;
+      if (fileToUpload) {
         const uploader = (typeof uploadAssignmentFile === 'function')
           ? uploadAssignmentFile
           : (typeof window !== 'undefined' && typeof window.uploadAssignmentFile === 'function' ? window.uploadAssignmentFile : null);
         if (uploader) {
-          fileData = await uploader(this._pendingAsgnFile);
+          fileData = await uploader(fileToUpload);
         }
       }
 

@@ -8652,7 +8652,8 @@ const API = {
 
     // POST /api/assignments (Create/Upload Assignment)
     if (endpoint === '/api/assignments' && method === 'POST') {
-      if (!currentUser || (currentUser.role !== 'HOD' && currentUser.role !== 'TEACHER')) {
+      const userRole = String((currentUser && currentUser.role) || '').toUpperCase();
+      if (userRole !== 'HOD' && userRole !== 'TEACHER' && userRole !== 'FACULTY' && userRole !== 'ADMIN') {
         throw { message: 'Access Denied: Only Faculty and HOD can create & upload assignments.' };
       }
       const { title, subject, division, batch, issue_date, due_date, total_marks, instructions, file_url, file_name, file_size, storage_path } = body;
@@ -8697,26 +8698,50 @@ const API = {
       }
       saveLocalDB(db);
 
-      // Save to Firebase RTDB via both WebSocket SDK and REST
+      // 1. Direct AWAITED write to Firebase RTDB assignments node to guarantee immediate cloud persistence!
       try {
-        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
-          firebaseDb.ref('assignments/' + asgnId).set(newAsgn).catch(err => console.warn('Firebase RTDB write err:', err));
-        }
-        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', {
+        await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newAsgn)
-        }).catch(err => console.warn('Firebase assignment write err:', err));
+        });
+      } catch (err) {
+        console.warn('Firebase assignment REST PUT warning:', err);
+      }
+
+      // 2. Also save to dedicated assignment_files node for guaranteed file preservation
+      if (newAsgn.file_url) {
+        try {
+          await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_files/' + asgnId + '.json', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: asgnId,
+              file_url: newAsgn.file_url,
+              file_name: newAsgn.file_name,
+              file_size: newAsgn.file_size
+            })
+          });
+        } catch (err) {
+          console.warn('Firebase assignment_files REST PUT warning:', err);
+        }
+      }
+
+      // 3. Update via SDK if connected
+      try {
+        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+          await firebaseDb.ref('assignments/' + asgnId).set(newAsgn).catch(() => {});
+        }
       } catch(e) {}
 
-      // Save to Firestore if available (protect against 1MB document limit)
+      // 4. Save to Firestore if available
       try {
         if (typeof firestoreDb !== 'undefined' && firestoreDb && firestoreDb.collection) {
           const fsDoc = { ...newAsgn };
           if (fsDoc.file_url && fsDoc.file_url.startsWith('data:') && fsDoc.file_url.length > 700000) {
             fsDoc.file_url = 'EMBEDDED_IN_RTDB';
           }
-          firestoreDb.collection('assignments').doc(asgnId).set(fsDoc).catch(e => console.warn('Firestore doc set warning:', e));
+          await firestoreDb.collection('assignments').doc(asgnId).set(fsDoc).catch(e => console.warn('Firestore doc set warning:', e));
         }
       } catch(e) {}
 
@@ -8760,6 +8785,7 @@ const API = {
       // 2. Delete from Firebase RTDB & register in permanent blacklist
       try {
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
+        fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_files/' + asgnId + '.json', { method: 'DELETE' }).catch(() => {});
         fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/deleted_assignment_ids/' + asgnId + '.json', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

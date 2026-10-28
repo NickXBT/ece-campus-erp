@@ -4873,6 +4873,9 @@ INITIAL_DB_STATE = {
     "password_requests": [],
     "audit_logs": [],
     "hod_pin": "1234",
+    "assignments": [],
+    "assignment_submissions": [],
+    "deleted_assignment_ids": [],
     "teachers": [
         {
             "id": 1,
@@ -6074,6 +6077,14 @@ class handler(BaseHTTPRequestHandler):
                     cur_t_del = set(db.get("deleted_teacher_ids", []))
                     cur_t_del.update(payload["deleted_teacher_ids"])
                     db["deleted_teacher_ids"] = list(cur_t_del)
+                if "assignments" in payload and isinstance(payload["assignments"], list):
+                    db["assignments"] = payload["assignments"]
+                if "assignment_submissions" in payload and isinstance(payload["assignment_submissions"], list):
+                    db["assignment_submissions"] = payload["assignment_submissions"]
+                if "deleted_assignment_ids" in payload and isinstance(payload["deleted_assignment_ids"], list):
+                    cur_asgn_del = set(db.get("deleted_assignment_ids", []))
+                    cur_asgn_del.update(payload["deleted_assignment_ids"])
+                    db["deleted_assignment_ids"] = list(cur_asgn_del)
 
                 save_db(db)
 

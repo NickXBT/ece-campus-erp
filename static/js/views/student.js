@@ -2189,10 +2189,13 @@ const StudentView = {
       return;
     }
 
-    // If file_url is missing or 'EMBEDDED_IN_RTDB', fetch full data from Firebase RTDB
+    // If file_url is missing or 'EMBEDDED_IN_RTDB', fetch full data from Firebase RTDB (checking assignment_files and assignments)
     if (!rawAsgn.file_url || rawAsgn.file_url === 'EMBEDDED_IN_RTDB') {
       try {
-        const live = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json').then(r => r.json());
+        let live = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_files/' + asgnId + '.json').then(r => r.json()).catch(() => null);
+        if (!live || !live.file_url) {
+          live = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json').then(r => r.json()).catch(() => null);
+        }
         if (live && live.file_url) {
           rawAsgn.file_url = live.file_url;
           if (live.file_name) rawAsgn.file_name = live.file_name;
@@ -2423,9 +2426,12 @@ const StudentView = {
     }
     if (!asgn.file_url || asgn.file_url === 'EMBEDDED_IN_RTDB') {
       Toast.info('Fetching assignment document from cloud...');
-      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json')
+      fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_files/' + asgnId + '.json')
         .then(r => r.json())
-        .then(live => {
+        .then(async (live) => {
+          if (!live || !live.file_url) {
+            live = await fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + asgnId + '.json').then(r => r.json()).catch(() => null);
+          }
           const url = (live && live.file_url) || asgn.file_url;
           let name = (live && live.file_name) || asgn.file_name || (asgn.title + '.pdf');
           if (url && (url.includes('application/pdf') || url.endsWith('.pdf')) && !name.toLowerCase().endsWith('.pdf')) {
