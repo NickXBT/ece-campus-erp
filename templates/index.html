@@ -122,9 +122,6 @@
           </div>
         </div>
         <div class="sidebar-footer-actions">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" style="width: 100%; justify-content: center; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800; border-radius: var(--radius-md); margin-bottom: 0.4rem;">
-            <i class="fa-solid fa-headset" style="color: #2563eb;"></i> <span>Help & Support</span>
-          </button>
           <button type="button" class="btn btn-sidebar-logout" id="btn-sidebar-logout" onclick="App.closeMobileMenu(); App.logout();" title="Sign out of account">
             <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
           </button>
@@ -145,9 +142,6 @@
         <div class="navbar-actions">
           <button class="btn btn-primary btn-sm" id="btn-universal-edit-profile-nav" onclick="App.openEditProfileModal()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; font-weight: 800; border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);">
             <i class="fa-solid fa-user-pen"></i> <span class="btn-text">Edit Profile</span>
-          </button>
-          <button class="btn btn-secondary btn-sm" onclick="openModal('modal-help-support')" title="Get Help & Support" style="background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-weight: 800;">
-            <i class="fa-solid fa-headset" style="color: #2563eb;"></i> <span class="btn-text">Help</span>
           </button>
           <span class="badge-role" id="navbar-role-badge">HOD</span>
           <button class="btn btn-secondary btn-sm" id="btn-hod-change-pass-nav" style="display: none;" onclick="HodView.openAccountSettingsModal()">
@@ -554,31 +548,6 @@
       </form>
     </div>
   </div>
-
-  <!-- Help & Support Desk Modal -->
-  <div class="modal-overlay" id="modal-help-support" style="z-index: 999999; backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.75);">
-    <div class="modal-content" style="max-width: 440px; border-radius: 24px; border: 2px solid #3b82f6; text-align: center; padding: 2.25rem 1.75rem; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.35);">
-      <div style="width: 72px; height: 72px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 2.2rem; border: 2px solid #bfdbfe; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);">
-        <i class="fa-solid fa-headset"></i>
-      </div>
-      <h3 style="font-family: var(--font-heading); font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; font-size: 1.4rem;">
-        ECE Help & Support Desk
-      </h3>
-      <p style="font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 1.5rem; font-weight: 500;">
-        Have a question or facing any issue? Reach out directly to <strong>Nikhil</strong> for quick support:
-      </p>
-      <div style="display: flex; flex-direction: column; gap: 0.85rem; width: 100%;">
-        <a href="https://wa.me/917768075930?text=Hello%20Nikhil,%20I%20need%20help%20with%20ECE%20ERP" target="_blank" class="btn" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #ffffff; font-weight: 800; font-size: 0.98rem; padding: 0.85rem 1.5rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; border: none; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);">
-          <i class="fa-brands fa-whatsapp" style="font-size: 1.3rem;"></i> <span>Chat on WhatsApp (7768075930)</span>
-        </a>
-        <a href="tel:7768075930" class="btn" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; font-weight: 800; font-size: 0.98rem; padding: 0.85rem 1.5rem; border-radius: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; border: none; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
-          <i class="fa-solid fa-phone-flip" style="font-size: 1.1rem;"></i> <span>Call 7768075930 Directly</span>
-        </a>
-        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-help-support')" style="margin-top: 0.5rem; font-weight: 700; border-radius: 12px; border: 1.5px solid #cbd5e1; color: #64748b;">
-          Close
-        </button>
-      </div>
-    </div>
   </div>
 
   <!-- Toast Container -->
