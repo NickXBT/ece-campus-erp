@@ -96,7 +96,7 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card-wrap">
+          <div class="login-card-wrap" style="flex-direction: column;">
             <div class="login-card">
               <div style="text-align: center; margin-bottom: 1.15rem;">
                 <div class="vibe-badge" style="margin-bottom: 0.85rem;">
@@ -178,6 +178,14 @@ const AuthView = {
                 <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.45rem 0.65rem; margin: 0.35rem 0; font-size: 0.74rem; color: #1e40af; font-weight: 600; line-height: 1.45;">
                   <i class="fa-solid fa-user-lock" style="color: #2563eb;"></i> <strong>Security:</strong> Please update your password and email immediately after signing in.
                 </div>
+                <div style="margin-top: 0.45rem; padding-top: 0.45rem; border-top: 1px dashed #bfdbfe; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem;">
+                  <span style="font-size: 0.72rem; color: #1e40af; font-weight: 700;">
+                    <i class="fa-solid fa-compass" style="color: #2563eb;"></i> Need full instructions?
+                  </span>
+                  <button type="button" onclick="openModal('modal-first-time-guide')" style="background: #ffffff; color: #1d4ed8; border: 1.5px solid #93c5fd; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s ease;">
+                    <span>View 5-Step Guide</span> <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem;"></i>
+                  </button>
+                </div>
               </div>
 
               <form id="form-login" onsubmit="AuthView.handleLogin(event)">
@@ -208,6 +216,7 @@ const AuthView = {
                 </button>
               </form>
             </div>
+            ${this.renderAuthFooter()}
           </div>
         </div>
       </div>
@@ -219,7 +228,7 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card-wrap">
+          <div class="login-card-wrap" style="flex-direction: column;">
             <div class="login-card">
               <div style="text-align: center; margin-bottom: 1.15rem;">
                 <div class="vibe-badge" style="margin-bottom: 0.85rem;">
@@ -306,6 +315,7 @@ const AuthView = {
                 </button>
               </form>
             </div>
+            ${this.renderAuthFooter()}
           </div>
         </div>
       </div>
@@ -317,7 +327,7 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card-wrap">
+          <div class="login-card-wrap" style="flex-direction: column;">
             <div class="login-card">
               <div style="text-align: center; margin-bottom: 1.5rem;">
                 <div class="vibe-badge">
@@ -359,12 +369,41 @@ const AuthView = {
                 </div>
               </form>
             </div>
+            ${this.renderAuthFooter()}
           </div>
         </div>
       </div>
     `;
   },
 
+
+
+  renderAuthFooter() {
+    return `
+      <div class="auth-app-footer" style="margin-top: 1.15rem; text-align: center; font-family: var(--font-body); width: 100%;">
+        <!-- Quick App Help & Legal Bar -->
+        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 0.65rem 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.65rem; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); margin-bottom: 0.75rem;">
+          <button type="button" onclick="openModal('modal-first-time-guide')" style="background: none; border: none; color: #2563eb; font-weight: 800; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.35rem;">
+            <i class="fa-solid fa-compass"></i> <span>First-Time Guide</span>
+          </button>
+          <span style="color: #cbd5e1; font-size: 0.8rem;">•</span>
+          <button type="button" onclick="openModal('modal-terms-conditions')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.35rem;">
+            <i class="fa-solid fa-file-contract"></i> <span>Terms & Conditions</span>
+          </button>
+          <span style="color: #cbd5e1; font-size: 0.8rem;">•</span>
+          <button type="button" onclick="openModal('modal-privacy-policy')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.35rem;">
+            <i class="fa-solid fa-shield-halved"></i> <span>Privacy Policy</span>
+          </button>
+        </div>
+
+        <!-- Official Department Attribution -->
+        <div style="font-size: 0.72rem; color: #94a3b8; line-height: 1.45; font-weight: 500;">
+          <span>&copy; 2026 Nutan Maharashtra Institute of Engineering & Technology (NMIET)</span><br>
+          <span style="color: #64748b; font-weight: 600;">Department of Electronics & Computer Engineering (ECE)</span>
+        </div>
+      </div>
+    `;
+  },
 
   switchTab(tab) {
     this.activeTab = tab;

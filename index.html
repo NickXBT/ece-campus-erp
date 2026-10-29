@@ -29,8 +29,8 @@
   <!-- Clerk Auth JS SDK — deferred, only needed for optional OAuth integration -->
   <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" defer></script>
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="./static/css/main.css?v=100110">
-  <link rel="stylesheet" href="./static/css/timetable.css?v=100110">
+  <link rel="stylesheet" href="./static/css/main.css?v=100120">
+  <link rel="stylesheet" href="./static/css/timetable.css?v=100120">
 </head>
 <body>
   <!-- User-Designed First-Time Launch Splash Screen ("ECE ERP") -->
@@ -131,6 +131,13 @@
           </div>
         </div>
         <div class="sidebar-footer-actions">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 0.65rem; margin-bottom: 0.45rem; font-size: 0.72rem; font-weight: 600;">
+            <a href="javascript:void(0)" onclick="openModal('modal-terms-conditions')" style="color: #64748b; text-decoration: none;" title="View Terms & Conditions">Terms</a>
+            <span style="color: #cbd5e1;">&bull;</span>
+            <a href="javascript:void(0)" onclick="openModal('modal-privacy-policy')" style="color: #64748b; text-decoration: none;" title="View Privacy Policy">Privacy</a>
+            <span style="color: #cbd5e1;">&bull;</span>
+            <a href="javascript:void(0)" onclick="openModal('modal-first-time-guide')" style="color: #2563eb; text-decoration: none;" title="First-Time Guide">Guide</a>
+          </div>
           <button type="button" class="btn btn-sidebar-logout" id="btn-sidebar-logout" onclick="App.closeMobileMenu(); App.logout();" title="Sign out of account">
             <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
           </button>
@@ -1035,6 +1042,229 @@
     </div>
   </div>
 
+    <!-- First-Time Login Guide Modal -->
+  <div class="modal-overlay" id="modal-first-time-guide" style="z-index: 999999; backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.75);">
+    <div class="modal-content" style="max-width: 600px; border-radius: 24px; border: 2px solid #3b82f6; padding: 2rem 1.85rem; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.35);">
+      <!-- Header -->
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1.5px solid #bfdbfe; flex-shrink: 0;">
+            <i class="fa-solid fa-compass"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-heading); font-weight: 800; color: #0f172a; margin: 0; font-size: 1.3rem;">First-Time Login Guide</h3>
+            <p style="margin: 0.15rem 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">Step-by-step onboarding walkthrough for ECE Students &amp; Faculty</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-first-time-guide')" style="font-size: 1.5rem; color: #94a3b8; background: none; border: none; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <!-- Step Cards Container -->
+      <div style="display: flex; flex-direction: column; gap: 0.85rem; max-height: 58vh; overflow-y: auto; padding-right: 0.25rem;">
+        <!-- Step 1 -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 0.85rem 1rem; display: flex; gap: 0.85rem; align-items: flex-start;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">1</div>
+          <div>
+            <h4 style="margin: 0 0 0.25rem; font-size: 0.9rem; font-weight: 800; color: #0f172a;">Select Your Login Section</h4>
+            <p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.45;">
+              On the Sign In page, choose your correct section: <strong>Division A</strong> or <strong>Division B</strong> (students), or <strong>HOD &amp; Faculty Portal</strong>. Strict section enforcement connects you to your division's data.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 0.85rem 1rem; display: flex; gap: 0.85rem; align-items: flex-start;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">2</div>
+          <div>
+            <h4 style="margin: 0 0 0.25rem; font-size: 0.9rem; font-weight: 800; color: #0f172a;">Enter Your Official PRN or Email</h4>
+            <p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.45;">
+              Enter your permanent college PRN number (e.g., <code style="background: #e2e8f0; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; color: #1e3a8a;">U251H001</code>) or your registered university email address.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1.5px solid #93c5fd; border-radius: 14px; padding: 0.85rem 1rem; display: flex; gap: 0.85rem; align-items: flex-start;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">3</div>
+          <div>
+            <h4 style="margin: 0 0 0.25rem; font-size: 0.9rem; font-weight: 800; color: #166534;">Use Default Temporary Password</h4>
+            <p style="margin: 0; font-size: 0.82rem; color: #15803d; line-height: 1.45;">
+              For pre-enrolled students logging in for the first time, your default temporary password is:
+            </p>
+            <div style="margin-top: 0.4rem; display: inline-flex; align-items: center; gap: 0.5rem; background: #ffffff; border: 1.5px solid #86efac; padding: 0.35rem 0.75rem; border-radius: 8px; font-family: monospace; font-weight: 800; font-size: 0.95rem; color: #15803d;">
+              <i class="fa-solid fa-key"></i> Student@123
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 0.85rem 1rem; display: flex; gap: 0.85rem; align-items: flex-start;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">4</div>
+          <div>
+            <h4 style="margin: 0 0 0.25rem; font-size: 0.9rem; font-weight: 800; color: #0f172a;">Complete Security Onboarding</h4>
+            <p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.45;">
+              Upon signing in, you will be prompted to change your temporary password to a strong personal password and update your profile email to receive notifications and certificate approvals.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 0.85rem 1rem; display: flex; gap: 0.85rem; align-items: flex-start;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">5</div>
+          <div>
+            <h4 style="margin: 0 0 0.25rem; font-size: 0.9rem; font-weight: 800; color: #0f172a;">New Registration / Direct Second Year</h4>
+            <p style="margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.45;">
+              If your PRN is not recognized, click <strong>Student Sign Up</strong> on the login screen to register your details. Once submitted, your registration will be reviewed and approved by the HOD.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer button -->
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1.5px solid #f1f5f9; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-primary" onclick="closeModal('modal-first-time-guide')" style="padding: 0.65rem 1.4rem; font-weight: 800; border-radius: 12px;">
+          <i class="fa-solid fa-check"></i> <span>Got It, Proceed to Login</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms & Conditions Modal -->
+  <div class="modal-overlay" id="modal-terms-conditions" style="z-index: 999999; backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.75);">
+    <div class="modal-content" style="max-width: 650px; border-radius: 24px; border: 2px solid #cbd5e1; padding: 2rem 1.85rem; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);">
+      <!-- Header -->
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); color: #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1.5px solid #cbd5e1; flex-shrink: 0;">
+            <i class="fa-solid fa-file-contract"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-heading); font-weight: 800; color: #0f172a; margin: 0; font-size: 1.3rem;">Terms &amp; Conditions</h3>
+            <p style="margin: 0.15rem 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">Academic ERP Usage Policy &bull; NMIET ECE Department</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-terms-conditions')" style="font-size: 1.5rem; color: #94a3b8; background: none; border: none; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <!-- Content -->
+      <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 58vh; overflow-y: auto; padding-right: 0.35rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-gavel" style="color: #2563eb;"></i> 1. Acceptance of Academic Terms</h4>
+          <p style="margin: 0; color: #475569;">
+            By accessing and logging into the ECE Campus ERP portal, you agree to adhere strictly to the academic code of conduct and institutional IT policies of Nutan Maharashtra Institute of Engineering &amp; Technology (NMIET), Pune.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-user-shield" style="color: #2563eb;"></i> 2. Authorized Institutional Access Only</h4>
+          <p style="margin: 0; color: #475569;">
+            This portal is reserved exclusively for enrolled students, verified faculty, and departmental staff of the Electronics &amp; Computer Engineering department. Sharing account credentials, impersonation, or unauthorized access attempts is strictly prohibited.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-certificate" style="color: #2563eb;"></i> 3. Integrity of Uploads &amp; Certificate Verification</h4>
+          <p style="margin: 0; color: #475569;">
+            All co-curricular, sports, hackathon, and technical event certificates uploaded for attendance compensation must be genuine and verifiable. Submission of forged, falsified, or tampered certificates is treated as academic malpractice, resulting in permanent cancellation of attendance credits and referral to the College Disciplinary Committee.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-book-open" style="color: #2563eb;"></i> 4. Coursework, Deadlines &amp; Permanent Deletion</h4>
+          <p style="margin: 0; color: #475569;">
+            Assignments must be submitted before scheduled deadlines. Submissions are linked securely to authenticated student records. Authorized faculty retain administrative rights to evaluate, score, or permanently delete obsolete assignments and associated submission files.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-shield-virus" style="color: #2563eb;"></i> 5. System Security &amp; Non-Abuse</h4>
+          <p style="margin: 0; color: #475569;">
+            Users must not attempt SQL injection, script tampering, automated scraping, or denial of service against the ERP APIs. Security logs and audit trails are recorded for all transactions and administrative actions.
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #64748b;">
+          <i class="fa-solid fa-clock"></i> <strong>Revision:</strong> Version 2.4 &bull; Effective Academic Year 2025–2026 &bull; Head of Department, ECE (NMIET)
+        </div>
+      </div>
+
+      <!-- Footer button -->
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1.5px solid #f1f5f9; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terms-conditions')" style="padding: 0.65rem 1.4rem; font-weight: 800; border-radius: 12px;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Policy Modal -->
+  <div class="modal-overlay" id="modal-privacy-policy" style="z-index: 999999; backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.75);">
+    <div class="modal-content" style="max-width: 650px; border-radius: 24px; border: 2px solid #cbd5e1; padding: 2rem 1.85rem; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);">
+      <!-- Header -->
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; border-bottom: 1.5px solid #f1f5f9; padding-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border: 1.5px solid #bbf7d0; flex-shrink: 0;">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-heading); font-weight: 800; color: #0f172a; margin: 0; font-size: 1.3rem;">Privacy Policy</h3>
+            <p style="margin: 0.15rem 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">How your academic data and personal information are protected</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-privacy-policy')" style="font-size: 1.5rem; color: #94a3b8; background: none; border: none; cursor: pointer; line-height: 1;">&times;</button>
+      </div>
+
+      <!-- Content -->
+      <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 58vh; overflow-y: auto; padding-right: 0.35rem; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-database" style="color: #16a34a;"></i> 1. Information Collected</h4>
+          <p style="margin: 0; color: #475569;">
+            We collect and store official student identification details: University PRN, Student Full Name, Roll Number, Division, Batch, Semester, and Institutional Email. Passwords are securely hashed with industry-standard cryptographic salts and are never stored in plain text.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-chart-line" style="color: #16a34a;"></i> 2. Academic Purpose &amp; Processing</h4>
+          <p style="margin: 0; color: #475569;">
+            Your data is processed exclusively for official college academic activities: certificate verification, attendance compensation processing, timetable management, assignment submissions, and NAAC/NBA departmental reporting.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-lock" style="color: #16a34a;"></i> 3. Data Confidentiality &amp; Peer Isolation</h4>
+          <p style="margin: 0; color: #475569;">
+            Student records are strictly isolated. Other students cannot view, search, or download your personal submissions, uploaded certificates, or contact details. Only authenticated teachers and the Head of Department have role-based administrative access.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-ban" style="color: #16a34a;"></i> 4. No Third-Party Commercial Sharing</h4>
+          <p style="margin: 0; color: #475569;">
+            The Department does not sell, lease, or monetize student or faculty data. No third-party commercial advertising trackers or marketing analytics are deployed on this portal.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="margin: 0 0 0.35rem; font-size: 0.92rem; font-weight: 800; color: #0f172a;"><i class="fa-solid fa-pen-to-square" style="color: #16a34a;"></i> 5. Profile Corrections &amp; Rights</h4>
+          <p style="margin: 0; color: #475569;">
+            Students have the right to view their academic records, update their profile settings (including email and password), and request correction of academic details through their Teacher Guardian or HOD.
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #64748b;">
+          <i class="fa-solid fa-user-lock"></i> <strong>Data Protection Officer:</strong> NMIET Department of ECE &bull; Pune, Maharashtra
+        </div>
+      </div>
+
+      <!-- Footer button -->
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1.5px solid #f1f5f9; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-privacy-policy')" style="padding: 0.65rem 1.4rem; font-weight: 800; border-radius: 12px;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1045,15 +1275,15 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-storage-compat.js"></script>
 
   <!-- JavaScript Modules with Cache Buster v=100060 -->
-  <script src="./static/js/api.js?v=100110"></script>
-  <script src="./static/js/utils/toast.js?v=100110"></script>
-  <script src="./static/js/utils/exporter.js?v=100110"></script>
-  <script src="./static/js/views/auth.js?v=100110"></script>
-  <script src="./static/js/views/student.js?v=100110"></script>
-  <script src="./static/js/views/teacher.js?v=100110"></script>
-  <script src="./static/js/views/hod.js?v=100110"></script>
-  <script src="./static/js/views/timetable.js?v=100110"></script>
-  <script src="./static/js/views/reports.js?v=100110"></script>
-  <script src="./static/js/app.js?v=100110"></script>
+  <script src="./static/js/api.js?v=100120"></script>
+  <script src="./static/js/utils/toast.js?v=100120"></script>
+  <script src="./static/js/utils/exporter.js?v=100120"></script>
+  <script src="./static/js/views/auth.js?v=100120"></script>
+  <script src="./static/js/views/student.js?v=100120"></script>
+  <script src="./static/js/views/teacher.js?v=100120"></script>
+  <script src="./static/js/views/hod.js?v=100120"></script>
+  <script src="./static/js/views/timetable.js?v=100120"></script>
+  <script src="./static/js/views/reports.js?v=100120"></script>
+  <script src="./static/js/app.js?v=100120"></script>
 </body>
 </html>
