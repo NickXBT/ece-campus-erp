@@ -14,138 +14,96 @@ const AuthView = {
   renderDesktopHero() {
     return `
       <div class="login-desktop-hero">
-        <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-          <!-- Department Badge -->
-          <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.7rem; font-weight: 800; padding: 0.3rem 0.8rem; border-radius: 9999px; letter-spacing: 0.6px; text-transform: uppercase; width: fit-content;">
-            <span style="width: 7px; height: 7px; border-radius: 50%; background: #2563eb;"></span>
-            <span>NUTAN MAHARASHTRA INSTITUTE OF ENGINEERING AND TECHNOLOGY (NMIET)</span>
+        <!-- Top Institutional Brand Header -->
+        <div style="display: flex; flex-direction: column; gap: 0.65rem; z-index: 2;">
+          <!-- Institution Pill -->
+          <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #eff6ff; border: 1.2px solid #bfdbfe; color: #1d4ed8; font-size: 0.72rem; font-weight: 800; padding: 0.35rem 0.9rem; border-radius: 9999px; letter-spacing: 0.6px; text-transform: uppercase; width: fit-content; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.08);">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; box-shadow: 0 0 6px #2563eb;"></span>
+            <span>Nutan Maharashtra Institute of Engineering &amp; Technology (NMIET)</span>
           </div>
 
-          <!-- Hero Header -->
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #1d4ed8, #1e40af); color: #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 6px 16px rgba(29, 78, 216, 0.25); flex-shrink: 0;">
+          <!-- Hero Brand Title -->
+          <div style="display: flex; align-items: center; gap: 0.85rem; margin-top: 0.15rem;">
+            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #ffffff; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.55rem; box-shadow: 0 8px 20px rgba(29, 78, 216, 0.3); flex-shrink: 0; border: 1.5px solid rgba(255, 255, 255, 0.25);">
               <i class="fa-solid fa-microchip"></i>
             </div>
             <div>
-              <h1 style="font-family: var(--font-heading); font-size: 1.55rem; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.4px; margin: 0;">
+              <h1 style="font-family: var(--font-heading); font-size: 1.75rem; font-weight: 900; color: #0f172a; line-height: 1.1; letter-spacing: -0.5px; margin: 0;">
                 ECE ERP
               </h1>
-              <span style="font-size: 0.76rem; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 1px;">
-                Electronics &amp; Computer Engineering (NMIET)
+              <span style="font-size: 0.8rem; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 1.1px;">
+                Department of Electronics &amp; Computer Engineering
               </span>
             </div>
           </div>
 
-          <p style="color: #475569; font-size: 0.8rem; line-height: 1.45; margin: 0;">
-            Official Academic &amp; Student Activity Management Portal. Certificate approvals, attendance compensation tracking, and department administration.
+          <p style="color: #475569; font-size: 0.84rem; line-height: 1.5; margin: 0.1rem 0 0 0; max-width: 520px;">
+            The central institutional academic gateway for automated certificate evaluation, lecture attendance credit compensation, and division roster administration.
           </p>
-
-          <!-- Desktop Feature Highlights Grid (Compact & Proportional) -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.15rem;">
-            <div style="background: #ffffff; border: 1.2px solid #e2e8f0; padding: 0.55rem 0.75rem; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 0.6rem;">
-              <div style="width: 28px; height: 28px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
-                <i class="fa-solid fa-award"></i>
-              </div>
-              <div>
-                <h4 style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin: 0;">Certificate Portal</h4>
-                <p style="font-size: 0.68rem; color: #64748b; margin: 0; line-height: 1.25;">Upload co-curricular records.</p>
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1.2px solid #e2e8f0; padding: 0.55rem 0.75rem; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 0.6rem;">
-              <div style="width: 28px; height: 28px; background: #fef3c7; color: #d97706; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
-                <i class="fa-solid fa-calendar-check"></i>
-              </div>
-              <div>
-                <h4 style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin: 0;">Attendance Credit</h4>
-                <p style="font-size: 0.68rem; color: #64748b; margin: 0; line-height: 1.25;">Automated compensation.</p>
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1.2px solid #e2e8f0; padding: 0.55rem 0.75rem; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 0.6rem;">
-              <div style="width: 28px; height: 28px; background: #f0fdf4; color: #16a34a; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
-                <i class="fa-solid fa-shield-halved"></i>
-              </div>
-              <div>
-                <h4 style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin: 0;">Strict Division Auth</h4>
-                <p style="font-size: 0.68rem; color: #64748b; margin: 0; line-height: 1.25;">Div A, Div B &amp; HOD Desk.</p>
-              </div>
-            </div>
-
-            <div style="background: #ffffff; border: 1.2px solid #e2e8f0; padding: 0.55rem 0.75rem; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 0.6rem;">
-              <div style="width: 28px; height: 28px; background: #f3e8ff; color: #9333ea; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">
-                <i class="fa-solid fa-file-zipper"></i>
-              </div>
-              <div>
-                <h4 style="font-size: 0.78rem; font-weight: 800; color: #0f172a; margin: 0;">HOD ZIP Exporter</h4>
-                <p style="font-size: 0.68rem; color: #64748b; margin: 0; line-height: 1.25;">Bulk export verified files.</p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <!-- ECE Animated Circuit & Tech Illustration Centerpiece (Auto-scaled for Laptop Displays) -->
-        <div class="ece-hero-interactive-centerpiece" style="margin: 0.5rem 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+        <!-- Center Animated ECE Silicon & Architecture Centerpiece -->
+        <div class="ece-hero-interactive-centerpiece" style="margin: 0.65rem 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; z-index: 2;">
           <style>
             @keyframes ecePulseSlow {
-              0%, 100% { transform: scale(1); opacity: 0.94; filter: drop-shadow(0 0 14px rgba(37, 99, 235, 0.28)); }
-              50% { transform: scale(1.02); opacity: 1; filter: drop-shadow(0 0 24px rgba(37, 99, 235, 0.5)); }
+              0%, 100% { transform: scale(1); opacity: 0.96; filter: drop-shadow(0 0 18px rgba(37, 99, 235, 0.3)); }
+              50% { transform: scale(1.025); opacity: 1; filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.55)); }
             }
             @keyframes eceDashFlow {
-              0% { stroke-dashoffset: 80; }
+              0% { stroke-dashoffset: 90; }
               100% { stroke-dashoffset: 0; }
             }
             @keyframes eceDashFlowRev {
               0% { stroke-dashoffset: 0; }
-              100% { stroke-dashoffset: 80; }
+              100% { stroke-dashoffset: 90; }
             }
             @keyframes eceFloatCard1 {
-              0%, 100% { transform: translateY(0px) rotate(0deg); }
-              50% { transform: translateY(-5px) rotate(-0.5deg); }
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-7px); }
             }
             @keyframes eceFloatCard2 {
-              0%, 100% { transform: translateY(0px) rotate(0deg); }
-              50% { transform: translateY(5px) rotate(0.5deg); }
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(7px); }
             }
             @keyframes eceSignalPulse {
-              0%, 100% { r: 3.5; opacity: 0.4; }
-              50% { r: 5.5; opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
+              0%, 100% { r: 3.5; opacity: 0.45; }
+              50% { r: 6; opacity: 1; filter: drop-shadow(0 0 10px #38bdf8); }
             }
           </style>
 
-          <div style="width: 100%; max-width: 480px; position: relative; padding: 0.25rem 0;">
-            <!-- Floating Badge Left (Automated Attendance) -->
-            <div style="position: absolute; top: 0px; left: 0px; z-index: 3; animation: eceFloatCard1 4s ease-in-out infinite; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1.2px solid #bfdbfe; border-radius: 12px; padding: 0.35rem 0.65rem; box-shadow: 0 6px 18px -4px rgba(37, 99, 235, 0.15); display: flex; align-items: center; gap: 0.45rem;">
-              <div style="width: 24px; height: 24px; border-radius: 8px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 1px solid #bfdbfe;">
+          <div style="width: 100%; max-width: 520px; position: relative; padding: 0.4rem 0;">
+            <!-- Floating Badge Left (Attendance Credit) -->
+            <div style="position: absolute; top: 0px; left: -5px; z-index: 4; animation: eceFloatCard1 4s ease-in-out infinite; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1.5px solid #bfdbfe; border-radius: 14px; padding: 0.45rem 0.85rem; box-shadow: 0 12px 28px -6px rgba(37, 99, 235, 0.18); display: flex; align-items: center; gap: 0.6rem;">
+              <div style="width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; border: 1.2px solid #bfdbfe; flex-shrink: 0;">
                 <i class="fa-solid fa-award"></i>
               </div>
               <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: #1e3a8a; line-height: 1.1;">Attendance Credit</div>
-                <div style="font-size: 0.62rem; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 0.2rem;">
-                  <span style="width: 5px; height: 5px; border-radius: 50%; background: #16a34a; display: inline-block;"></span> 100% Verified
+                <div style="font-size: 0.74rem; font-weight: 800; color: #1e3a8a; line-height: 1.2;">Attendance Credit</div>
+                <div style="font-size: 0.65rem; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 0.25rem;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a; display: inline-block;"></span> 100% Automated
                 </div>
               </div>
             </div>
 
-            <!-- Floating Badge Right (One-Click Approvals) -->
-            <div style="position: absolute; top: 8px; right: 0px; z-index: 3; animation: eceFloatCard2 4.5s ease-in-out infinite; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1.2px solid #bbf7d0; border-radius: 12px; padding: 0.35rem 0.65rem; box-shadow: 0 6px 18px -4px rgba(22, 163, 74, 0.15); display: flex; align-items: center; gap: 0.45rem;">
-              <div style="width: 24px; height: 24px; border-radius: 8px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 1px solid #bbf7d0;">
+            <!-- Floating Badge Right (HOD Approval) -->
+            <div style="position: absolute; top: 8px; right: -5px; z-index: 4; animation: eceFloatCard2 4.5s ease-in-out infinite; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1.5px solid #bbf7d0; border-radius: 14px; padding: 0.45rem 0.85rem; box-shadow: 0 12px 28px -6px rgba(22, 163, 74, 0.18); display: flex; align-items: center; gap: 0.6rem;">
+              <div style="width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; border: 1.2px solid #bbf7d0; flex-shrink: 0;">
                 <i class="fa-solid fa-signature"></i>
               </div>
               <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: #166534; line-height: 1.1;">HOD Signature</div>
-                <div style="font-size: 0.62rem; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 0.2rem;">
-                  <i class="fa-solid fa-bolt" style="font-size: 0.58rem;"></i> Instant Approval
+                <div style="font-size: 0.74rem; font-weight: 800; color: #166534; line-height: 1.2;">HOD Signature</div>
+                <div style="font-size: 0.65rem; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 0.25rem;">
+                  <i class="fa-solid fa-bolt" style="font-size: 0.62rem;"></i> Instant Approval
                 </div>
               </div>
             </div>
 
             <!-- Central Animated ECE Circuit & Microchip SVG -->
-            <svg viewBox="0 0 520 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; max-height: clamp(100px, 16vh, 150px); filter: drop-shadow(0 8px 24px rgba(37, 99, 235, 0.08));">
+            <svg viewBox="0 0 520 210" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; max-height: clamp(125px, 20vh, 185px); filter: drop-shadow(0 12px 32px rgba(37, 99, 235, 0.12));">
               <defs>
                 <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stop-color="#1e3a8a" />
-                  <stop offset="50%" stop-color="#1d4ed8" />
+                  <stop offset="45%" stop-color="#1d4ed8" />
                   <stop offset="100%" stop-color="#2563eb" />
                 </linearGradient>
                 <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -154,102 +112,102 @@ const AuthView = {
                 </linearGradient>
               </defs>
 
-              <!-- Ambient Glow -->
-              <circle cx="260" cy="100" r="85" fill="#3b82f6" opacity="0.08" />
+              <!-- Radial Ambient Glow Behind Silicon -->
+              <circle cx="260" cy="105" r="95" fill="#3b82f6" opacity="0.1" />
 
               <!-- Circuit Traces Left -->
-              <path d="M 60 35 L 140 35 L 180 75 L 205 75" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2s linear infinite;" />
-              <path d="M 40 100 L 150 100 L 185 100 L 205 100" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlow 1.6s linear infinite;" />
-              <path d="M 70 165 L 150 165 L 185 125 L 205 125" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2.2s linear infinite;" />
+              <path d="M 50 35 L 135 35 L 180 78 L 205 78" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2s linear infinite;" />
+              <path d="M 30 105 L 145 105 L 185 105 L 205 105" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlow 1.6s linear infinite;" />
+              <path d="M 60 175 L 145 175 L 185 132 L 205 132" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2.2s linear infinite;" />
 
               <!-- Circuit Traces Right -->
-              <path d="M 460 35 L 380 35 L 340 75 L 315 75" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2s linear infinite;" />
-              <path d="M 480 100 L 370 100 L 335 100 L 315 100" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlowRev 1.6s linear infinite;" />
-              <path d="M 450 165 L 370 165 L 335 125 L 315 125" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2.2s linear infinite;" />
+              <path d="M 470 35 L 385 35 L 340 78 L 315 78" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2s linear infinite;" />
+              <path d="M 490 105 L 375 105 L 335 105 L 315 105" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlowRev 1.6s linear infinite;" />
+              <path d="M 460 175 L 375 175 L 335 132 L 315 132" stroke="#93c5fd" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2.2s linear infinite;" />
 
               <!-- Glowing Circuit Connection Nodes -->
-              <circle cx="60" cy="35" r="4" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite;" />
-              <circle cx="40" cy="100" r="4.5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.5s;" />
-              <circle cx="70" cy="165" r="4" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 0.9s;" />
+              <circle cx="50" cy="35" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite;" />
+              <circle cx="30" cy="105" r="5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.5s;" />
+              <circle cx="60" cy="175" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 0.9s;" />
 
-              <circle cx="460" cy="35" r="4" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite 0.3s;" />
-              <circle cx="480" cy="100" r="4.5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.7s;" />
-              <circle cx="450" cy="165" r="4" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 1.1s;" />
+              <circle cx="470" cy="35" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite 0.3s;" />
+              <circle cx="490" cy="105" r="5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.7s;" />
+              <circle cx="460" cy="175" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 1.1s;" />
 
-              <!-- Microchip Outer Lead Pins (Top & Bottom) -->
-              <g stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round">
+              <!-- Microchip Lead Pins -->
+              <g stroke="#cbd5e1" stroke-width="2.8" stroke-linecap="round">
                 <!-- Top Pins -->
-                <line x1="225" y1="55" x2="225" y2="44" />
-                <line x1="240" y1="55" x2="240" y2="44" />
-                <line x1="260" y1="55" x2="260" y2="40" stroke="#3b82f6" />
-                <line x1="280" y1="55" x2="280" y2="44" />
-                <line x1="295" y1="55" x2="295" y2="44" />
+                <line x1="225" y1="58" x2="225" y2="45" />
+                <line x1="240" y1="58" x2="240" y2="45" />
+                <line x1="260" y1="58" x2="260" y2="41" stroke="#3b82f6" />
+                <line x1="280" y1="58" x2="280" y2="45" />
+                <line x1="295" y1="58" x2="295" y2="45" />
                 <!-- Bottom Pins -->
-                <line x1="225" y1="145" x2="225" y2="156" />
-                <line x1="240" y1="145" x2="240" y2="156" />
-                <line x1="260" y1="145" x2="260" y2="160" stroke="#3b82f6" />
-                <line x1="280" y1="145" x2="280" y2="156" />
-                <line x1="295" y1="145" x2="295" y2="156" />
+                <line x1="225" y1="152" x2="225" y2="165" />
+                <line x1="240" y1="152" x2="240" y2="165" />
+                <line x1="260" y1="152" x2="260" y2="169" stroke="#3b82f6" />
+                <line x1="280" y1="152" x2="280" y2="165" />
+                <line x1="295" y1="152" x2="295" y2="165" />
                 <!-- Left Pins -->
-                <line x1="205" y1="75" x2="195" y2="75" stroke="#2563eb" />
-                <line x1="205" y1="90" x2="195" y2="90" />
-                <line x1="205" y1="100" x2="192" y2="100" stroke="#3b82f6" />
-                <line x1="205" y1="110" x2="195" y2="110" />
-                <line x1="205" y1="125" x2="195" y2="125" stroke="#2563eb" />
+                <line x1="205" y1="78" x2="193" y2="78" stroke="#2563eb" />
+                <line x1="205" y1="92" x2="193" y2="92" />
+                <line x1="205" y1="105" x2="190" y2="105" stroke="#3b82f6" />
+                <line x1="205" y1="118" x2="193" y2="118" />
+                <line x1="205" y1="132" x2="193" y2="132" stroke="#2563eb" />
                 <!-- Right Pins -->
-                <line x1="315" y1="75" x2="325" y2="75" stroke="#2563eb" />
-                <line x1="315" y1="90" x2="325" y2="90" />
-                <line x1="315" y1="100" x2="328" y2="100" stroke="#3b82f6" />
-                <line x1="315" y1="110" x2="325" y2="110" />
-                <line x1="315" y1="125" x2="325" y2="125" stroke="#2563eb" />
+                <line x1="315" y1="78" x2="327" y2="78" stroke="#2563eb" />
+                <line x1="315" y1="92" x2="327" y2="92" />
+                <line x1="315" y1="105" x2="330" y2="105" stroke="#3b82f6" />
+                <line x1="315" y1="118" x2="327" y2="118" />
+                <line x1="315" y1="132" x2="327" y2="132" stroke="#2563eb" />
               </g>
 
               <!-- Central Microprocessor Unit (Chip Body) -->
-              <g style="animation: ecePulseSlow 4s ease-in-out infinite; transform-origin: 260px 100px;">
+              <g style="animation: ecePulseSlow 4s ease-in-out infinite; transform-origin: 260px 105px;">
                 <!-- Outer Carrier Package -->
-                <rect x="205" y="55" width="110" height="90" rx="14" fill="#0f172a" stroke="#3b82f6" stroke-width="2" />
+                <rect x="205" y="58" width="110" height="94" rx="16" fill="#0f172a" stroke="#3b82f6" stroke-width="2.5" />
                 
                 <!-- Silicon Die Internal Core -->
-                <rect x="217" y="65" width="86" height="70" rx="8" fill="url(#chipGrad)" stroke="#60a5fa" stroke-width="1.2" />
+                <rect x="217" y="69" width="86" height="72" rx="10" fill="url(#chipGrad)" stroke="#60a5fa" stroke-width="1.5" />
 
                 <!-- Silicon Wafer Microgrid Lines -->
-                <path d="M 227 65 L 227 135 M 243 65 L 243 135 M 260 65 L 260 135 M 277 65 L 277 135 M 293 65 L 293 135" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" />
-                <path d="M 217 78 L 303 78 M 217 92 L 303 92 M 217 106 L 303 106 M 217 120 L 303 120" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" />
+                <path d="M 227 69 L 227 141 M 243 69 L 243 141 M 260 69 L 260 141 M 277 69 L 277 141 M 293 69 L 293 141" stroke="rgba(255,255,255,0.14)" stroke-width="0.9" />
+                <path d="M 217 83 L 303 83 M 217 97 L 303 97 M 217 111 L 303 111 M 217 125 L 303 125" stroke="rgba(255,255,255,0.14)" stroke-width="0.9" />
 
                 <!-- Gold Corner Accent Marks -->
-                <circle cx="223" cy="71" r="2.5" fill="url(#goldGrad)" />
-                <circle cx="297" cy="71" r="2.5" fill="url(#goldGrad)" />
-                <circle cx="223" cy="129" r="2.5" fill="url(#goldGrad)" />
-                <circle cx="297" cy="129" r="2.5" fill="url(#goldGrad)" />
+                <circle cx="223" cy="75" r="2.8" fill="url(#goldGrad)" />
+                <circle cx="297" cy="75" r="2.8" fill="url(#goldGrad)" />
+                <circle cx="223" cy="135" r="2.8" fill="url(#goldGrad)" />
+                <circle cx="297" cy="135" r="2.8" fill="url(#goldGrad)" />
 
                 <!-- Central Microchip Emblem -->
-                <rect x="238" y="80" width="44" height="38" rx="7" fill="#0f172a" stroke="#93c5fd" stroke-width="1" />
+                <rect x="238" y="85" width="44" height="40" rx="8" fill="#0f172a" stroke="#93c5fd" stroke-width="1.2" />
                 
                 <!-- Microchip CPU Labels -->
-                <text x="260" y="96" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="8.5" fill="#ffffff" text-anchor="middle" letter-spacing="1">ECE</text>
-                <text x="260" y="108" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="6.8" fill="#60a5fa" text-anchor="middle" letter-spacing="0.5">NMIET</text>
+                <text x="260" y="101" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="9" fill="#ffffff" text-anchor="middle" letter-spacing="1">ECE</text>
+                <text x="260" y="113" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="7" fill="#60a5fa" text-anchor="middle" letter-spacing="0.5">NMIET</text>
 
                 <!-- Status LED on Chip -->
-                <circle cx="260" cy="123" r="2" fill="#4ade80" />
+                <circle cx="260" cy="129" r="2.2" fill="#4ade80" />
               </g>
             </svg>
 
             <!-- Floating Badge Bottom (Campus Database Sync) -->
-            <div style="position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%); z-index: 3; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1.2px solid #e2e8f0; border-radius: 30px; padding: 0.25rem 0.8rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04); display: flex; align-items: center; gap: 0.45rem; white-space: nowrap;">
-              <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; display: inline-block;"></span>
-              <span style="font-size: 0.7rem; font-weight: 800; color: #1e3a8a;">Division A &amp; B Academic Ledger Active</span>
+            <div style="position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%); z-index: 4; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1.5px solid #e2e8f0; border-radius: 30px; padding: 0.3rem 0.95rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05); display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; display: inline-block;"></span>
+              <span style="font-size: 0.72rem; font-weight: 800; color: #1e3a8a;">Division A &amp; B Academic Ledger Active</span>
               <span style="color: #cbd5e1;">&bull;</span>
-              <span style="font-size: 0.66rem; font-weight: 700; color: #64748b;">AY 2025–2026</span>
+              <span style="font-size: 0.68rem; font-weight: 700; color: #64748b;">AY 2025–2026</span>
             </div>
           </div>
         </div>
 
-        <!-- Desktop Hero Footer Badge -->
-        <div style="border-top: 1px solid #e2e8f0; padding-top: 0.45rem; margin-top: 0.35rem; display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 0.74rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.35rem;">
+        <!-- Institutional Footer -->
+        <div style="border-top: 1.2px solid #e2e8f0; padding-top: 0.55rem; display: flex; align-items: center; justify-content: space-between; z-index: 2;">
+          <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.4rem;">
             <i class="fa-solid fa-building-columns" style="color: #2563eb;"></i> NMIET Dept. of Electronics &amp; Computer Engineering
           </span>
-          <span style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.68rem; font-weight: 800; padding: 0.18rem 0.55rem; border-radius: 20px;">
+          <span style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 0.7rem; font-weight: 800; padding: 0.22rem 0.65rem; border-radius: 20px;">
             v2.5 LIVE
           </span>
         </div>
@@ -264,117 +222,117 @@ const AuthView = {
       <div class="login-wrapper">
         <div class="login-container-responsive">
           ${this.renderDesktopHero()}
-          <div class="login-card-wrap" style="flex-direction: column;">
-            <div class="login-card">
-              <!-- Compact Unified Header -->
-              <div style="text-align: center; margin-bottom: 0.65rem;">
-                <div style="display: inline-flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                  <div class="brand-icon" style="margin: 0; width: 34px; height: 34px; font-size: 1.15rem; border-radius: 10px;">
+          <div class="login-card-wrap">
+            <div style="width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center;">
+              <div class="login-card">
+                <!-- Premium Header -->
+                <div style="text-align: center; margin-bottom: 0.85rem;">
+                  <div class="brand-icon" style="margin: 0 auto 0.45rem; width: 44px; height: 44px; font-size: 1.35rem; border-radius: 12px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; border: 1.5px solid #bfdbfe; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);">
                     <i class="fa-solid fa-microchip"></i>
                   </div>
-                  <div style="text-align: left;">
-                    <h2 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.1; margin: 0;">ECE ERP</h2>
-                    <p style="color: var(--text-muted); font-size: 0.72rem; margin: 0.1rem 0 0 0;">Student Activity &amp; Timetable Portal</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Auth Mode Toggle Tabs (Compact) -->
-              <div style="display: flex; background: #f1f5f9; padding: 0.2rem; border-radius: var(--radius-full); margin-bottom: 0.65rem; border: 1px solid var(--border-color); gap: 0.2rem;">
-                <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.76rem; padding: 0.42rem 0.35rem;" onclick="AuthView.switchTab('login')">
-                  <i class="fa-solid fa-right-to-bracket"></i> Sign In
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.76rem; border: none; background: transparent; color: var(--text-muted); padding: 0.42rem 0.35rem;" onclick="AuthView.switchTab('register')">
-                  <i class="fa-solid fa-user-plus"></i> Student Sign Up
-                </button>
-              </div>
-
-              <!-- Strict Login Section Selection Tabs (Compact) -->
-              <div style="margin-bottom: 0.65rem; background: #f8fafc; border: 1.2px solid var(--border-color); padding: 0.55rem; border-radius: 12px;">
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #1e3a8a; font-weight: 800; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.25rem;">
-                  <span><i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Select Section:</span>
-                  <span id="login-section-badge" style="background: #2563eb; color: #ffffff; font-size: 0.62rem; padding: 0.12rem 0.45rem; border-radius: 20px; font-weight: 800;">STRICT AUTH</span>
+                  <h2 style="font-family: var(--font-heading); font-size: 1.35rem; font-weight: 900; color: var(--text-main); line-height: 1.15; margin: 0; letter-spacing: -0.3px;">Sign In to ECE ERP</h2>
+                  <p style="color: var(--text-muted); font-size: 0.75rem; margin: 0.2rem 0 0 0; font-weight: 500;">Official Student &amp; Faculty Academic Portal</p>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
-                    <!-- Div A Option Button -->
-                    <button type="button" id="btn-login-option-a" onclick="AuthView.selectLoginPortal('DIV_A')"
-                      style="padding: 0.48rem 0.35rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.3rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 1.5px solid #1e40af; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.2px solid var(--border-color);' }">
-                      <i class="fa-solid ${ selectedPortal === 'DIV_A' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
-                      <span>Division A</span>
-                    </button>
-
-                    <!-- Div B Option Button -->
-                    <button type="button" id="btn-login-option-b" onclick="AuthView.selectLoginPortal('DIV_B')"
-                      style="padding: 0.48rem 0.35rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.3rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 1.5px solid #92400e; box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.2px solid var(--border-color);' }">
-                      <i class="fa-solid ${ selectedPortal === 'DIV_B' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
-                      <span>Division B</span>
-                    </button>
-                  </div>
-
-                  <!-- HOD Option Button -->
-                  <button type="button" id="btn-login-option-hod" onclick="AuthView.selectLoginPortal('HOD')"
-                    style="padding: 0.48rem 0.35rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 1.5px solid #166534; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.2px solid var(--border-color);' }">
-                    <i class="fa-solid ${ selectedPortal === 'HOD' ? 'fa-shield-halved' : 'fa-chalkboard-user' }"></i>
-                    <span>HOD &amp; Faculty Portal</span>
+                <!-- Auth Mode Toggle Tabs (Sign In / Sign Up) -->
+                <div style="display: flex; background: #f1f5f9; padding: 0.25rem; border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid var(--border-color); gap: 0.25rem;">
+                  <button type="button" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; font-weight: 800; padding: 0.45rem 0.35rem; border-radius: 9px;" onclick="AuthView.switchTab('login')">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center; font-size: 0.78rem; font-weight: 700; border: none; background: transparent; color: var(--text-muted); padding: 0.45rem 0.35rem; border-radius: 9px;" onclick="AuthView.switchTab('register')">
+                    <i class="fa-solid fa-user-plus"></i> Student Sign Up
                   </button>
                 </div>
 
-                <!-- Dynamic Live Section Verification Indicator -->
-                <div id="login-section-notice" style="margin-top: 0.35rem; font-size: 0.7rem; font-weight: 700; text-align: center; border-radius: 6px; padding: 0.28rem 0.45rem; transition: all 0.3s ease; ${
-                  selectedPortal === 'DIV_A' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;' :
-                  (selectedPortal === 'DIV_B' ? 'background: #fffbeb; border: 1px solid #fde68a; color: #b45309;' :
-                  'background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;')
-                }">
-                  ${
-                    selectedPortal === 'DIV_A' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division A Student</strong>' :
-                    (selectedPortal === 'DIV_B' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division B Student</strong>' :
-                    '<i class="fa-solid fa-shield-halved"></i> Strict Section: <strong>HOD &amp; Faculty Desk</strong>')
-                  }
-                </div>
-              </div>
+                <!-- Strict Login Section Selection Tabs -->
+                <div style="margin-bottom: 0.75rem; background: #f8fafc; border: 1.5px solid var(--border-color); padding: 0.65rem 0.75rem; border-radius: 14px;">
+                  <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.6px; color: #1e3a8a; font-weight: 800; margin-bottom: 0.45rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.25rem;">
+                    <span><i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Select Login Section:</span>
+                    <span id="login-section-badge" style="background: #2563eb; color: #ffffff; font-size: 0.64rem; padding: 0.14rem 0.5rem; border-radius: 20px; font-weight: 800;">STRICT ENFORCEMENT</span>
+                  </div>
 
-              <!-- Pre-Enrolled Student Guidance Banner (Slim & Compact) -->
-              <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.2px solid #93c5fd; border-radius: 10px; padding: 0.45rem 0.65rem; margin-bottom: 0.65rem; font-size: 0.74rem; color: #1e3a8a; line-height: 1.35; display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                  <i class="fa-solid fa-key" style="color: #2563eb; font-size: 0.8rem;"></i>
-                  <span>Default Pass: <strong>Student@123</strong> (Enter PRN)</span>
-                </div>
-                <button type="button" onclick="openModal('modal-first-time-guide')" style="background: #ffffff; color: #1d4ed8; border: 1px solid #93c5fd; font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
-                  <span>5-Step Guide</span> <i class="fa-solid fa-arrow-right" style="font-size: 0.6rem;"></i>
-                </button>
-              </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem;">
+                      <!-- Div A Button -->
+                      <button type="button" id="btn-login-option-a" onclick="AuthView.selectLoginPortal('DIV_A')"
+                        style="padding: 0.52rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_A' ? 'background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: 1.8px solid #1e40af; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                        <i class="fa-solid ${ selectedPortal === 'DIV_A' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
+                        <span>Division A</span>
+                      </button>
 
-              <form id="form-login" onsubmit="AuthView.handleLogin(event)">
-                <div class="form-group" style="margin-bottom: 0.55rem;">
-                  <label style="font-size: 0.76rem; font-weight: 700; margin-bottom: 0.2rem;"><i class="fa-solid fa-user-tag" style="color: var(--primary);"></i> PRN Number / Email</label>
-                  <input type="text" id="login-email" class="form-control" placeholder="e.g. U251H001 or email" required value="" style="padding: 0.48rem 0.65rem; font-size: 0.84rem; height: auto;">
-                </div>
+                      <!-- Div B Button -->
+                      <button type="button" id="btn-login-option-b" onclick="AuthView.selectLoginPortal('DIV_B')"
+                        style="padding: 0.52rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.35rem; ${ selectedPortal === 'DIV_B' ? 'background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; border: 1.8px solid #92400e; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                        <i class="fa-solid ${ selectedPortal === 'DIV_B' ? 'fa-circle-check' : 'fa-circle-user' }"></i>
+                        <span>Division B</span>
+                      </button>
+                    </div>
 
-                <div class="form-group" style="margin-bottom: 0.55rem;">
-                  <label style="font-size: 0.76rem; font-weight: 700; margin-bottom: 0.2rem;"><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Password</label>
-                  <div class="password-toggle-group">
-                    <input type="password" id="login-password" class="form-control" placeholder="Enter password" required value="" style="padding: 0.48rem 0.65rem; font-size: 0.84rem; height: auto;">
-                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide Password">
-                      <i class="fa-solid fa-eye"></i>
+                    <!-- HOD Button -->
+                    <button type="button" id="btn-login-option-hod" onclick="AuthView.selectLoginPortal('HOD')"
+                      style="padding: 0.52rem 0.35rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem; ${ selectedPortal === 'HOD' ? 'background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: 1.8px solid #166534; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);' : 'background: #ffffff; color: var(--text-main); border: 1.5px solid var(--border-color);' }">
+                      <i class="fa-solid ${ selectedPortal === 'HOD' ? 'fa-shield-halved' : 'fa-chalkboard-user' }"></i>
+                      <span>HOD &amp; Faculty Portal</span>
                     </button>
+                  </div>
+
+                  <!-- Live Notice Indicator -->
+                  <div id="login-section-notice" style="margin-top: 0.4rem; font-size: 0.72rem; font-weight: 700; text-align: center; border-radius: 8px; padding: 0.32rem 0.5rem; transition: all 0.3s ease; ${
+                    selectedPortal === 'DIV_A' ? 'background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;' :
+                    (selectedPortal === 'DIV_B' ? 'background: #fffbeb; border: 1px solid #fde68a; color: #b45309;' :
+                    'background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534;')
+                  }">
+                    ${
+                      selectedPortal === 'DIV_A' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division A Student</strong>' :
+                      (selectedPortal === 'DIV_B' ? '<i class="fa-solid fa-lock"></i> Strict Section: <strong>Division B Student</strong>' :
+                      '<i class="fa-solid fa-shield-halved"></i> Strict Section: <strong>HOD &amp; Faculty Desk</strong>')
+                    }
                   </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; font-size: 0.78rem;">
-                  <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer; color: var(--text-muted);">
-                    <input type="checkbox" checked> Remember Me
-                  </label>
-                  <a href="javascript:void(0)" style="font-weight: 700; color: var(--primary);" onclick="AuthView.switchTab('forgot')">Forgot Password?</a>
+                <!-- Pre-Enrolled Student Guidance Banner -->
+                <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd; border-radius: 12px; padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.76rem; color: #1e3a8a; line-height: 1.4; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 0.45rem;">
+                    <i class="fa-solid fa-key" style="color: #2563eb; font-size: 0.85rem;"></i>
+                    <span>Default Pass: <strong>Student@123</strong> (Enter PRN)</span>
+                  </div>
+                  <button type="button" onclick="openModal('modal-first-time-guide')" style="background: #ffffff; color: #1d4ed8; border: 1.2px solid #93c5fd; font-size: 0.7rem; font-weight: 800; padding: 0.22rem 0.55rem; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <span>5-Step Guide</span> <i class="fa-solid fa-arrow-right" style="font-size: 0.6rem;"></i>
+                  </button>
                 </div>
 
-                <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.62rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;">
-                  Sign In to Portal <i class="fa-solid fa-arrow-right"></i>
-                </button>
-              </form>
+                <form id="form-login" onsubmit="AuthView.handleLogin(event)">
+                  <div class="form-group" style="margin-bottom: 0.65rem;">
+                    <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.25rem;"><i class="fa-solid fa-user-tag" style="color: var(--primary);"></i> PRN Number / Email</label>
+                    <input type="text" id="login-email" class="form-control" placeholder="e.g. U251H001 or registered email" required value="" style="padding: 0.55rem 0.75rem; font-size: 0.86rem; border-radius: 10px;">
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 0.65rem;">
+                    <label style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.25rem;"><i class="fa-solid fa-lock" style="color: var(--primary);"></i> Password</label>
+                    <div class="password-toggle-group">
+                      <input type="password" id="login-password" class="form-control" placeholder="Enter password" required value="" style="padding: 0.55rem 0.75rem; font-size: 0.86rem; border-radius: 10px;">
+                      <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide Password">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.8rem;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-muted); font-weight: 600;">
+                      <input type="checkbox" checked> Remember Me
+                    </label>
+                    <a href="javascript:void(0)" style="font-weight: 700; color: var(--primary);" onclick="AuthView.switchTab('forgot')">Forgot Password?</a>
+                  </div>
+
+                  <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.72rem; font-size: 0.9rem; font-weight: 800; border-radius: 12px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                    Sign In to Portal <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Sleek Floating Legal & Help Bar -->
+              ${this.renderAuthFooter()}
             </div>
-            ${this.renderAuthFooter()}
           </div>
         </div>
       </div>
@@ -538,26 +496,26 @@ const AuthView = {
 
   renderAuthFooter() {
     return `
-      <div class="auth-app-footer" style="margin-top: 0.55rem; text-align: center; font-family: var(--font-body); width: 100%;">
+      <div class="auth-app-footer" style="margin-top: 0.75rem; text-align: center; font-family: var(--font-body); width: 100%;">
         <!-- Quick App Help & Legal Bar -->
-        <div style="background: #ffffff; border: 1.2px solid #e2e8f0; border-radius: 12px; padding: 0.35rem 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02); margin-bottom: 0.35rem;">
-          <button type="button" onclick="openModal('modal-first-time-guide')" style="background: none; border: none; color: #2563eb; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.25rem;">
+        <div style="background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px); border: 1.2px solid #e2e8f0; border-radius: 14px; padding: 0.45rem 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.65rem; flex-wrap: wrap; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03); margin-bottom: 0.45rem;">
+          <button type="button" onclick="openModal('modal-first-time-guide')" style="background: none; border: none; color: #2563eb; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.3rem;">
             <i class="fa-solid fa-compass"></i> <span>First-Time Guide</span>
           </button>
-          <span style="color: #cbd5e1; font-size: 0.75rem;">•</span>
-          <button type="button" onclick="openModal('modal-terms-conditions')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.25rem;">
+          <span style="color: #cbd5e1; font-size: 0.8rem;">•</span>
+          <button type="button" onclick="openModal('modal-terms-conditions')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.3rem;">
             <i class="fa-solid fa-file-contract"></i> <span>Terms &amp; Conditions</span>
           </button>
-          <span style="color: #cbd5e1; font-size: 0.75rem;">•</span>
-          <button type="button" onclick="openModal('modal-privacy-policy')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.72rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.25rem;">
+          <span style="color: #cbd5e1; font-size: 0.8rem;">•</span>
+          <button type="button" onclick="openModal('modal-privacy-policy')" style="background: none; border: none; color: #475569; font-weight: 700; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.3rem;">
             <i class="fa-solid fa-shield-halved"></i> <span>Privacy Policy</span>
           </button>
         </div>
 
         <!-- Official Department Attribution -->
-        <div style="font-size: 0.67rem; color: #94a3b8; line-height: 1.25; font-weight: 500;">
+        <div style="font-size: 0.7rem; color: #94a3b8; line-height: 1.35; font-weight: 600;">
           <span>&copy; 2026 Nutan Maharashtra Institute of Engineering &amp; Technology (NMIET)</span> &bull; 
-          <span style="color: #64748b; font-weight: 600;">Department of ECE</span>
+          <span style="color: #64748b; font-weight: 700;">Department of ECE</span>
         </div>
       </div>
     `;
