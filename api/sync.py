@@ -5813,6 +5813,30 @@ def get_db():
     if not data or not isinstance(data, dict):
         data = json.loads(json.dumps(INITIAL_DB_STATE))
 
+    # Real-time Cloud Fallback: Sync assignments and submissions from Firebase RTDB if missing/empty
+    if not data.get("assignments"):
+        try:
+            req = urllib.request.Request("https://ece-campus-erp-default-rtdb.firebaseio.com/assignments.json", headers={"User-Agent": "CampusERP/2.5"})
+            with urllib.request.urlopen(req, timeout=3) as r:
+                raw = json.loads(r.read().decode())
+                if isinstance(raw, dict):
+                    data["assignments"] = list(raw.values())
+                elif isinstance(raw, list):
+                    data["assignments"] = [x for x in raw if isinstance(x, dict)]
+        except Exception:
+            pass
+    if not data.get("assignment_submissions"):
+        try:
+            req = urllib.request.Request("https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions.json", headers={"User-Agent": "CampusERP/2.5"})
+            with urllib.request.urlopen(req, timeout=3) as r:
+                raw = json.loads(r.read().decode())
+                if isinstance(raw, dict):
+                    data["assignment_submissions"] = list(raw.values())
+                elif isinstance(raw, list):
+                    data["assignment_submissions"] = [x for x in raw if isinstance(x, dict)]
+        except Exception:
+            pass
+
     del_ids = set([str(x).upper() for x in data.get("deleted_student_ids", []) + INITIAL_DB_STATE.get("deleted_student_ids", [])])
     data["deleted_student_ids"] = list(del_ids)
 
@@ -5885,6 +5909,101 @@ class handler(BaseHTTPRequestHandler):
                 }).encode("utf-8"))
                 return
 
+            # Assignment Endpoints (GET)
+            if req_path == "/api/assignments":
+                db = get_db()
+                asgns = db.get("assignments", [])
+                del_ids = set([str(x) for x in db.get("deleted_assignment_ids", [])])
+                asgns = [a for a in asgns if str(a.get("id")) not in del_ids]
+
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token) if token else None
+
+                if session_data and session_data.get("role") == "STUDENT":
+                    std_div = (session_data.get("division_name") or "SE(ECE)-A").upper()
+                    filtered = []
+                    for a in asgns:
+                        adiv = (a.get("division") or "ALL").upper()
+                        if adiv == "ALL" or adiv in std_div or std_div in adiv:
+                            filtered.append(a)
+                    asgns = filtered
+
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "assignments": asgns}).encode("utf-8"))
+                return
+
+            if req_path == "/api/assignments/submissions":
+                db = get_db()
+                subs = db.get("assignment_submissions", [])
+                asgn_id = ""
+                if "?" in self.path:
+                    qs = self.path.split("?")[1]
+                    for param in qs.split("&"):
+                        if param.startswith("assignment_id="):
+                            asgn_id = param.split("=")[1]
+                if asgn_id:
+                    subs = [s for s in subs if str(s.get("assignment_id")) == str(asgn_id)]
+
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token) if token else None
+
+                if session_data and session_data.get("role") == "STUDENT":
+                    student_prn = (session_data.get("prn_no") or "").upper().strip()
+                    student_id = str(session_data.get("uid") or "")
+                    subs = [s for s in subs if (student_prn and (s.get("student_prn") or "").upper().strip() == student_prn) or str(s.get("student_id")) == student_id]
+
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "submissions": subs}).encode("utf-8"))
+                return
+
+            if req_path == "/api/assignments/file":
+                import base64
+                db = get_db()
+                item_id = ""
+                file_type = "assignment"
+                if "?" in self.path:
+                    qs = self.path.split("?")[1]
+                    for param in qs.split("&"):
+                        if param.startswith("id="):
+                            item_id = param.split("=")[1]
+                        elif param.startswith("type="):
+                            file_type = param.split("=")[1]
+
+                target_item = None
+                if file_type == "submission":
+                    target_item = next((s for s in db.get("assignment_submissions", []) if str(s.get("id")) == str(item_id)), None)
+                else:
+                    target_item = next((a for a in db.get("assignments", []) if str(a.get("id")) == str(item_id)), None)
+
+                if not target_item or not target_item.get("file_url"):
+                    self._set_headers(404)
+                    self.wfile.write(json.dumps({"success": False, "message": "File not found"}).encode("utf-8"))
+                    return
+
+                furl = target_item.get("file_url", "")
+                fname = target_item.get("file_name", "document.pdf")
+                if furl.startswith("data:"):
+                    header, encoded = furl.split(",", 1)
+                    mime = "application/octet-stream"
+                    if ";" in header:
+                        mime = header.split(";")[0].replace("data:", "")
+                    try:
+                        file_bytes = base64.b64decode(encoded)
+                        self.send_response(200)
+                        self.send_header("Content-Type", mime)
+                        self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+                        self.send_header("Content-Length", str(len(file_bytes)))
+                        self.send_header("Access-Control-Allow-Origin", "*")
+                        self.end_headers()
+                        self.wfile.write(file_bytes)
+                        return
+                    except Exception as ex:
+                        self._set_headers(500)
+                        self.wfile.write(json.dumps({"success": False, "message": str(ex)}).encode("utf-8"))
+                        return
+
             if req_path == "/api/hod/password-requests":
                 auth_header = self.headers.get("Authorization", "")
                 token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
@@ -5934,6 +6053,157 @@ class handler(BaseHTTPRequestHandler):
                 payload = {}
 
             req_path = self.path.split("?")[0]
+
+            # Assignment Endpoints (POST)
+            if req_path == "/api/assignments":
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token) if token else None
+
+                title = (payload.get("title") or "").strip()
+                subject = (payload.get("subject") or "").strip()
+                if not title or not subject:
+                    self._set_headers(400)
+                    self.wfile.write(json.dumps({"success": False, "message": "Title and Subject are required"}).encode("utf-8"))
+                    return
+
+                asgn_id = payload.get("id") or ("asgn_" + str(int(time.time() * 1000)))
+                new_asgn = {
+                    "id": asgn_id,
+                    "title": title,
+                    "subject": subject,
+                    "division": payload.get("division", "ALL"),
+                    "batch": payload.get("batch", "ALL"),
+                    "issue_date": payload.get("issue_date", time.strftime("%Y-%m-%d")),
+                    "due_date": payload.get("due_date", ""),
+                    "total_marks": int(payload.get("total_marks", 25) or 25),
+                    "instructions": payload.get("instructions", ""),
+                    "file_url": payload.get("file_url", ""),
+                    "file_name": payload.get("file_name", ""),
+                    "file_size": int(payload.get("file_size", 0) or 0),
+                    "file_type": payload.get("file_type", ""),
+                    "created_by_name": payload.get("created_by_name") or (session_data.get("name") if session_data else "Faculty Member"),
+                    "created_by_role": payload.get("created_by_role") or (session_data.get("role") if session_data else "TEACHER"),
+                    "created_at": payload.get("created_at") or int(time.time() * 1000)
+                }
+
+                db = get_db()
+                db["assignments"] = [a for a in db.get("assignments", []) if str(a.get("id")) != str(asgn_id)]
+                db["assignments"].insert(0, new_asgn)
+                save_db(db)
+
+                # Direct persistence to Firebase RTDB
+                try:
+                    rtdb_url = f"https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/{asgn_id}.json"
+                    rtdb_req = urllib.request.Request(rtdb_url, data=json.dumps(new_asgn).encode("utf-8"), headers={"Content-Type": "application/json"}, method="PUT")
+                    urllib.request.urlopen(rtdb_req, timeout=4)
+                except Exception:
+                    pass
+
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Assignment created & published successfully!", "assignment": new_asgn}).encode("utf-8"))
+                return
+
+            if req_path == "/api/assignments/submit":
+                auth_header = self.headers.get("Authorization", "")
+                token = auth_header.replace("Bearer ", "").strip() if auth_header else ""
+                session_data = auth_handler.verify_session_token(token) if token else None
+
+                asgn_id = payload.get("assignment_id")
+                if not asgn_id:
+                    self._set_headers(400)
+                    self.wfile.write(json.dumps({"success": False, "message": "Assignment ID required"}).encode("utf-8"))
+                    return
+
+                student_prn = (payload.get("student_prn") or (session_data.get("prn_no") if session_data else "") or "").strip().upper()
+                student_id = payload.get("student_id") or (session_data.get("uid") if session_data else "std")
+                sub_id = payload.get("id") or f"sub_{asgn_id}_{student_prn or student_id or int(time.time()*1000)}"
+
+                db = get_db()
+                asgn = next((a for a in db.get("assignments", []) if str(a.get("id")) == str(asgn_id)), None)
+                is_late = False
+                if asgn and asgn.get("due_date"):
+                    try:
+                        due_str = asgn["due_date"]
+                        if "T" not in due_str:
+                            due_str += "T23:59:59"
+                        is_late = time.time() > time.mktime(time.strptime(due_str[:19], "%Y-%m-%dT%H:%M:%S"))
+                    except Exception:
+                        pass
+
+                new_sub = {
+                    "id": sub_id,
+                    "assignment_id": str(asgn_id),
+                    "student_id": student_id,
+                    "student_name": payload.get("student_name") or (session_data.get("name") if session_data else "Student"),
+                    "student_prn": student_prn,
+                    "student_roll": payload.get("student_roll") or (session_data.get("roll_no") if session_data else "N/A"),
+                    "division_name": payload.get("division_name") or (session_data.get("division_name") if session_data else "SE(ECE)-A"),
+                    "batch_name": payload.get("batch_name") or "A1",
+                    "submitted_at": payload.get("submitted_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "is_late": is_late,
+                    "remarks": (payload.get("remarks") or "").strip(),
+                    "file_url": payload.get("file_url", ""),
+                    "file_name": payload.get("file_name", ""),
+                    "file_size": int(payload.get("file_size", 0) or 0),
+                    "file_type": payload.get("file_type", ""),
+                    "status": "SUBMITTED_LATE" if is_late else "SUBMITTED"
+                }
+
+                db["assignment_submissions"] = [s for s in db.get("assignment_submissions", []) if str(s.get("id")) != str(sub_id) and not (str(s.get("assignment_id")) == str(asgn_id) and (s.get("student_prn") == student_prn or str(s.get("student_id")) == str(student_id)))]
+                db["assignment_submissions"].insert(0, new_sub)
+                save_db(db)
+
+                # Direct persistence to Firebase RTDB
+                try:
+                    rtdb_url = f"https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/{sub_id}.json"
+                    rtdb_req = urllib.request.Request(rtdb_url, data=json.dumps(new_sub).encode("utf-8"), headers={"Content-Type": "application/json"}, method="PUT")
+                    urllib.request.urlopen(rtdb_req, timeout=4)
+                except Exception:
+                    pass
+
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Assignment solution submitted successfully!", "submission": new_sub}).encode("utf-8"))
+                return
+
+            if req_path in ("/api/assignments/delete", "/api/assignments/remove"):
+                asgn_id = payload.get("id") or payload.get("assignment_id")
+                if not asgn_id:
+                    self._set_headers(400)
+                    self.wfile.write(json.dumps({"success": False, "message": "Assignment ID is required for deletion"}).encode("utf-8"))
+                    return
+
+                asgn_id_str = str(asgn_id)
+                db = get_db()
+                linked_subs = [s for s in db.get("assignment_submissions", []) if str(s.get("assignment_id")) == asgn_id_str]
+
+                # 1. Permanent removal from database
+                db["assignments"] = [a for a in db.get("assignments", []) if str(a.get("id")) != asgn_id_str]
+                db["assignment_submissions"] = [s for s in db.get("assignment_submissions", []) if str(s.get("assignment_id")) != asgn_id_str]
+                del_set = set(db.get("deleted_assignment_ids", []))
+                del_set.add(asgn_id_str)
+                db["deleted_assignment_ids"] = list(del_set)
+                save_db(db)
+
+                # 2. Permanent Deletion from Firebase RTDB (Assignment + File + all student submissions)
+                try:
+                    del_asgn_req = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/{asgn_id_str}.json", method="DELETE")
+                    urllib.request.urlopen(del_asgn_req, timeout=3)
+                except Exception:
+                    pass
+
+                for sub in linked_subs:
+                    try:
+                        sub_id = sub.get("id")
+                        if sub_id:
+                            del_sub_req = urllib.request.Request(f"https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/{sub_id}.json", method="DELETE")
+                            urllib.request.urlopen(del_sub_req, timeout=3)
+                    except Exception:
+                        pass
+
+                self._set_headers(200)
+                self.wfile.write(json.dumps({"success": True, "message": "Assignment, question paper document, and all student submissions permanently deleted."}).encode("utf-8"))
+                return
 
             # 1. Server-Side Authentication
             if req_path == "/api/auth/login":

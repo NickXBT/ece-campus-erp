@@ -5752,84 +5752,40 @@ if (typeof firebase !== 'undefined' && firebase.initializeApp) {
   }
 }
 
-// Upload assignment file helper supporting PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Images, etc.
+// Real File Upload Helper supporting PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, Images
 async function uploadAssignmentFile(file) {
-  if (!file) return { file_url: '', file_name: '', file_size: 0, storage_path: '' };
+  if (!file) return { file_url: '', file_name: '', file_size: 0, file_type: '', storage_path: '' };
 
-  const sanitizedName = (file.name || 'document').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const MAX_BYTES = 25 * 1024 * 1024; // 25 MB
+  if (file.size > MAX_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+    throw new Error(`File size (${sizeMb} MB) exceeds maximum allowed limit of 25 MB. Please choose a smaller file.`);
+  }
+
+  const allowedExts = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.txt', '.zip', '.png', '.jpg', '.jpeg'];
+  const fileNameLower = (file.name || '').toLowerCase();
+  const hasValidExt = allowedExts.some(ext => fileNameLower.endsWith(ext));
+  if (!hasValidExt) {
+    throw new Error(`Unsupported file type (${file.name}). Supported formats: PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel (XLS/XLSX), Text (TXT), and ZIP.`);
+  }
+
+  const sanitizedName = (file.name || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
   const storagePath = 'assignments/' + timestamp + '_' + sanitizedName;
 
-  // 1. Try Firebase Storage upload with strict 3-second timeout & auto-cancel to prevent UI hanging
-  if (typeof firebaseStorage !== 'undefined' && firebaseStorage && firebaseStorage.ref) {
-    try {
-      const storagePromise = new Promise((resolve, reject) => {
-        let isDone = false;
-        const storageRef = firebaseStorage.ref(storagePath);
-        const uploadTask = storageRef.put(file);
-
-        const timer = setTimeout(() => {
-          if (!isDone) {
-            isDone = true;
-            try { uploadTask.cancel(); } catch (_) {}
-            reject(new Error('Firebase Storage timeout after 3s'));
-          }
-        }, 3000);
-
-        uploadTask.then(
-          async (snapshot) => {
-            if (!isDone) {
-              isDone = true;
-              clearTimeout(timer);
-              try {
-                const downloadUrl = await snapshot.ref.getDownloadURL();
-                resolve({
-                  file_url: downloadUrl,
-                  file_name: file.name,
-                  file_size: file.size,
-                  storage_path: storagePath
-                });
-              } catch (e) {
-                reject(e);
-              }
-            }
-          },
-          (err) => {
-            if (!isDone) {
-              isDone = true;
-              clearTimeout(timer);
-              reject(err);
-            }
-          }
-        );
-      });
-
-      const res = await storagePromise;
-      if (res && res.file_url) return res;
-    } catch (storageErr) {
-      console.warn('Firebase Storage upload skipped/timed out, using fast base64 fallback:', storageErr.message || storageErr);
-    }
-  }
-
-  // 2. Safe Instant Fallback: Base64 DataURL (so uploads never hang, fail, or freeze)
-  return new Promise((resolve) => {
+  // Instant Base64 Data URL conversion (survives page reloads, server restarts, cloud sync)
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       resolve({
         file_url: reader.result,
         file_name: file.name,
         file_size: file.size,
+        file_type: file.type || 'application/octet-stream',
         storage_path: storagePath
       });
     };
-    reader.onerror = () => {
-      resolve({
-        file_url: '',
-        file_name: file.name,
-        file_size: file.size,
-        storage_path: storagePath
-      });
-    };
+    reader.onerror = (e) => reject(new Error('Failed to read file from disk: ' + (e.message || e)));
     reader.readAsDataURL(file);
   });
 }
@@ -6154,23 +6110,28 @@ function saveLocalDB(db) {
       try {
         const dbForLocal = { ...db };
         delete dbForLocal.certificates;
-        if (dbForLocal.assignments && Array.isArray(dbForLocal.assignments)) {
-          dbForLocal.assignments = dbForLocal.assignments.map(a => {
-            if (a && a.file_url && a.file_url.startsWith('data:') && a.file_url.length > 500) {
-              return { ...a, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
-            }
-            return a;
-          });
+        // Preserve real file data in local storage when possible, catch quota gracefully
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
+        } catch (quotaErr) {
+          // If local quota (5MB) exceeded, store metadata locally while preserving real file in memory g_cloudDB
+          const lightLocal = { ...dbForLocal };
+          if (lightLocal.assignments) {
+            lightLocal.assignments = lightLocal.assignments.map(a => ({
+              ...a,
+              file_url: (a.file_url && a.file_url.length > 500) ? 'CACHED_IN_CLOUD' : a.file_url,
+              has_file: !!(a.file_url)
+            }));
+          }
+          if (lightLocal.assignment_submissions) {
+            lightLocal.assignment_submissions = lightLocal.assignment_submissions.map(s => ({
+              ...s,
+              file_url: (s.file_url && s.file_url.length > 500) ? 'CACHED_IN_CLOUD' : s.file_url,
+              has_file: !!(s.file_url)
+            }));
+          }
+          try { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(lightLocal)); } catch (_) {}
         }
-        if (dbForLocal.assignment_submissions && Array.isArray(dbForLocal.assignment_submissions)) {
-          dbForLocal.assignment_submissions = dbForLocal.assignment_submissions.map(s => {
-            if (s && s.file_url && s.file_url.startsWith('data:') && s.file_url.length > 500) {
-              return { ...s, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
-            }
-            return s;
-          });
-        }
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dbForLocal));
       } catch (e) {}
 
       const cleanCopy = JSON.parse(JSON.stringify(db));
@@ -6185,22 +6146,8 @@ function saveLocalDB(db) {
           };
         });
       }
-      if (cleanCopy.assignments && Array.isArray(cleanCopy.assignments)) {
-        cleanCopy.assignments = cleanCopy.assignments.map(a => {
-          if (a && a.file_url && a.file_url.startsWith('data:') && a.file_url.length > 500) {
-            return { ...a, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
-          }
-          return a;
-        });
-      }
-      if (cleanCopy.assignment_submissions && Array.isArray(cleanCopy.assignment_submissions)) {
-        cleanCopy.assignment_submissions = cleanCopy.assignment_submissions.map(s => {
-          if (s && s.file_url && s.file_url.startsWith('data:') && s.file_url.length > 500) {
-            return { ...s, file_url: 'EMBEDDED_IN_RTDB', has_file: true };
-          }
-          return s;
-        });
-      }
+      // Preserve real assignment documents and submissions during sync
+      // Real file data is kept intact for full persistence
       fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -6284,6 +6231,32 @@ function saveLocalDB(db) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(cleanCopy.timetable)
           }).catch(() => {});
+        }
+
+        // Realtime Firebase RTDB Sync: Assignments
+        if (cleanCopy.assignments && cleanCopy.assignments.length > 0) {
+          cleanCopy.assignments.forEach(a => {
+            if (a && a.id) {
+              fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignments/' + a.id + '.json', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(a)
+              }).catch(() => {});
+            }
+          });
+        }
+
+        // Realtime Firebase RTDB Sync: Assignment Submissions
+        if (cleanCopy.assignment_submissions && cleanCopy.assignment_submissions.length > 0) {
+          cleanCopy.assignment_submissions.forEach(s => {
+            if (s && s.id) {
+              fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/' + s.id + '.json', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(s)
+              }).catch(() => {});
+            }
+          });
         }
 
 // password_requests synced securely server-side
@@ -6497,9 +6470,9 @@ function mergeDBs(localDb, cloudDb) {
         asgnMap.set(String(a.id), { ...a });
       } else {
         const mergedA = { ...existing, ...a };
-        if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB') && (existing.file_url && existing.file_url !== 'EMBEDDED_IN_RTDB')) {
+        if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB' || mergedA.file_url === 'CACHED_IN_CLOUD') && (existing.file_url && existing.file_url !== 'EMBEDDED_IN_RTDB' && existing.file_url !== 'CACHED_IN_CLOUD')) {
           mergedA.file_url = existing.file_url;
-        } else if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB') && (a.file_url && a.file_url !== 'EMBEDDED_IN_RTDB')) {
+        } else if ((!mergedA.file_url || mergedA.file_url === 'EMBEDDED_IN_RTDB' || mergedA.file_url === 'CACHED_IN_CLOUD') && (a.file_url && a.file_url !== 'EMBEDDED_IN_RTDB' && a.file_url !== 'CACHED_IN_CLOUD')) {
           mergedA.file_url = a.file_url;
         }
         asgnMap.set(String(a.id), mergedA);
@@ -8697,6 +8670,14 @@ const API = {
         g_cloudDB.assignments = db.assignments;
       }
       saveLocalDB(db);
+      if (typeof saveDB === 'function') saveDB(db);
+
+      // Also notify Python backend /api/assignments
+      fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAsgn)
+      }).catch(() => {});
 
       // 1. Direct AWAITED write to Firebase RTDB assignments node to guarantee immediate cloud persistence!
       try {
@@ -8769,6 +8750,7 @@ const API = {
       const existing = (db.assignments || []).find(a => String(a.id) === String(asgnId));
 
       // 1. INSTANT PERMANENT PURGE from local state, memory cache, and tombstone blacklist
+      const linkedSubs = (db.assignment_submissions || []).filter(s => String(s.assignment_id) === String(asgnId));
       db.assignments = (db.assignments || []).filter(a => String(a.id) !== String(asgnId));
       db.assignment_submissions = (db.assignment_submissions || []).filter(s => String(s.assignment_id) !== String(asgnId));
       db.deleted_assignment_ids = db.deleted_assignment_ids || [];
@@ -8776,6 +8758,21 @@ const API = {
         db.deleted_assignment_ids.push(String(asgnId));
       }
       saveLocalDB(db);
+      if (typeof saveDB === 'function') saveDB(db);
+
+      // Also notify Python backend /api/assignments/delete
+      fetch('/api/assignments/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: asgnId })
+      }).catch(() => {});
+
+      // Delete all student submission records from Firebase RTDB
+      linkedSubs.forEach(s => {
+        if (s && s.id) {
+          fetch('https://ece-campus-erp-default-rtdb.firebaseio.com/assignment_submissions/' + s.id + '.json', { method: 'DELETE' }).catch(() => {});
+        }
+      });
 
       if (typeof g_cloudDB !== 'undefined' && g_cloudDB) {
         g_cloudDB.assignments = (g_cloudDB.assignments || []).filter(a => String(a.id) !== String(asgnId));
@@ -8886,6 +8883,14 @@ const API = {
         db.assignment_submissions.push(newSub);
       }
       saveLocalDB(db);
+      if (typeof saveDB === 'function') saveDB(db);
+
+      // Also notify Python backend /api/assignments/submit
+      fetch('/api/assignments/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSub)
+      }).catch(() => {});
 
       // Save to Firebase RTDB via SDK and REST
       try {
