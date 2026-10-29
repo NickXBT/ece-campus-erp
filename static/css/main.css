@@ -829,7 +829,8 @@ body.login-page-active .main-content,
 @media screen and (min-width: 900px) {
   .login-wrapper {
     background: #ffffff;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
     width: 100%;
     overflow: hidden;
   }
@@ -837,22 +838,25 @@ body.login-page-active .main-content,
   .login-container-responsive {
     flex-direction: row;
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
   }
 
   .login-desktop-hero {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 52%;
-    min-height: 100vh;
+    width: 50%;
+    height: 100vh;
+    max-height: 100vh;
     background: #f8fafc;
     border-right: 1.5px solid var(--border-color);
     color: var(--text-main);
-    padding: 2.25rem 3rem;
+    padding: clamp(0.85rem, 2vh, 1.65rem) clamp(1.25rem, 2.5vw, 2.5rem);
     box-sizing: border-box;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
   }
 
   .login-desktop-hero::before {
@@ -867,19 +871,21 @@ body.login-page-active .main-content,
   }
 
   .login-card-wrap {
-    width: 48%;
-    min-height: 100vh;
+    width: 50%;
+    height: 100vh;
+    max-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2.5rem 3.5rem;
+    padding: clamp(0.65rem, 1.8vh, 1.5rem) clamp(1.25rem, 2.5vw, 2.5rem);
     background: #ffffff;
     box-sizing: border-box;
+    overflow-y: auto;
   }
 
   .login-card {
     width: 100%;
-    max-width: 450px;
+    max-width: 440px;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
