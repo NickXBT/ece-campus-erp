@@ -76,7 +76,168 @@ const AuthView = {
           </div>
         </div>
 
-        <!-- Desktop Hero Footer Badge -->
+
+        <!-- ECE Animated Circuit & Tech Illustration Centerpiece -->
+        <div class="ece-hero-interactive-centerpiece" style="margin: 1.25rem 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+          <style>
+            @keyframes ecePulseSlow {
+              0%, 100% { transform: scale(1); opacity: 0.94; filter: drop-shadow(0 0 16px rgba(37, 99, 235, 0.28)); }
+              50% { transform: scale(1.02); opacity: 1; filter: drop-shadow(0 0 28px rgba(37, 99, 235, 0.5)); }
+            }
+            @keyframes eceDashFlow {
+              0% { stroke-dashoffset: 80; }
+              100% { stroke-dashoffset: 0; }
+            }
+            @keyframes eceDashFlowRev {
+              0% { stroke-dashoffset: 0; }
+              100% { stroke-dashoffset: 80; }
+            }
+            @keyframes eceFloatCard1 {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              50% { transform: translateY(-7px) rotate(-0.5deg); }
+            }
+            @keyframes eceFloatCard2 {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              50% { transform: translateY(6px) rotate(0.5deg); }
+            }
+            @keyframes eceSignalPulse {
+              0%, 100% { r: 4; opacity: 0.4; }
+              50% { r: 6; opacity: 1; filter: drop-shadow(0 0 8px #38bdf8); }
+            }
+          </style>
+
+          <div style="width: 100%; max-width: 520px; position: relative; padding: 0.5rem 0;">
+            <!-- Floating Badge Left (Automated Attendance) -->
+            <div style="position: absolute; top: 8px; left: 0px; z-index: 3; animation: eceFloatCard1 4s ease-in-out infinite; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px); border: 1.5px solid #bfdbfe; border-radius: 14px; padding: 0.5rem 0.85rem; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.15); display: flex; align-items: center; gap: 0.6rem;">
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; border: 1px solid #bfdbfe;">
+                <i class="fa-solid fa-award"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.74rem; font-weight: 800; color: #1e3a8a; line-height: 1.2;">Attendance Credit</div>
+                <div style="font-size: 0.68rem; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 0.25rem;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #16a34a; display: inline-block;"></span> 100% Verified
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Badge Right (One-Click Approvals) -->
+            <div style="position: absolute; top: 18px; right: 0px; z-index: 3; animation: eceFloatCard2 4.5s ease-in-out infinite; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px); border: 1.5px solid #bbf7d0; border-radius: 14px; padding: 0.5rem 0.85rem; box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.15); display: flex; align-items: center; gap: 0.6rem;">
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; border: 1px solid #bbf7d0;">
+                <i class="fa-solid fa-signature"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.74rem; font-weight: 800; color: #166534; line-height: 1.2;">HOD Signature</div>
+                <div style="font-size: 0.68rem; font-weight: 700; color: #2563eb; display: flex; align-items: center; gap: 0.25rem;">
+                  <i class="fa-solid fa-bolt" style="font-size: 0.65rem;"></i> Instant Approval
+                </div>
+              </div>
+            </div>
+
+            <!-- Central Animated ECE Circuit & Microchip SVG -->
+            <svg viewBox="0 0 520 220" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; max-height: 210px; filter: drop-shadow(0 12px 30px rgba(37, 99, 235, 0.08));">
+              <defs>
+                <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e3a8a" />
+                  <stop offset="50%" stop-color="#1d4ed8" />
+                  <stop offset="100%" stop-color="#2563eb" />
+                </linearGradient>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#fbbf24" />
+                </linearGradient>
+              </defs>
+
+              <!-- Ambient Glow -->
+              <circle cx="260" cy="110" r="95" fill="#3b82f6" opacity="0.08" />
+
+              <!-- Circuit Traces Left -->
+              <path d="M 60 40 L 140 40 L 180 85 L 205 85" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2s linear infinite;" />
+              <path d="M 40 110 L 150 110 L 185 110 L 205 110" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlow 1.6s linear infinite;" />
+              <path d="M 70 180 L 150 180 L 185 135 L 205 135" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlow 2.2s linear infinite;" />
+
+              <!-- Circuit Traces Right -->
+              <path d="M 460 40 L 380 40 L 340 85 L 315 85" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2s linear infinite;" />
+              <path d="M 480 110 L 370 110 L 335 110 L 315 110" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="8 5" style="animation: eceDashFlowRev 1.6s linear infinite;" />
+              <path d="M 450 180 L 370 180 L 335 135 L 315 135" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 4" style="animation: eceDashFlowRev 2.2s linear infinite;" />
+
+              <!-- Glowing Circuit Connection Nodes -->
+              <circle cx="60" cy="40" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite;" />
+              <circle cx="40" cy="110" r="5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.5s;" />
+              <circle cx="70" cy="180" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 0.9s;" />
+
+              <circle cx="460" cy="40" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.5s ease-in-out infinite 0.3s;" />
+              <circle cx="480" cy="110" r="5" fill="#38bdf8" style="animation: eceSignalPulse 2s ease-in-out infinite 0.7s;" />
+              <circle cx="450" cy="180" r="4.5" fill="#2563eb" style="animation: eceSignalPulse 2.2s ease-in-out infinite 1.1s;" />
+
+              <!-- Microchip Outer Lead Pins (Top & Bottom) -->
+              <g stroke="#cbd5e1" stroke-width="3" stroke-linecap="round">
+                <!-- Top Pins -->
+                <line x1="225" y1="60" x2="225" y2="48" />
+                <line x1="240" y1="60" x2="240" y2="48" />
+                <line x1="260" y1="60" x2="260" y2="44" stroke="#3b82f6" />
+                <line x1="280" y1="60" x2="280" y2="48" />
+                <line x1="295" y1="60" x2="295" y2="48" />
+                <!-- Bottom Pins -->
+                <line x1="225" y1="160" x2="225" y2="172" />
+                <line x1="240" y1="160" x2="240" y2="172" />
+                <line x1="260" y1="160" x2="260" y2="176" stroke="#3b82f6" />
+                <line x1="280" y1="160" x2="280" y2="172" />
+                <line x1="295" y1="160" x2="295" y2="172" />
+                <!-- Left Pins -->
+                <line x1="205" y1="80" x2="195" y2="80" stroke="#2563eb" />
+                <line x1="205" y1="95" x2="195" y2="95" />
+                <line x1="205" y1="110" x2="192" y2="110" stroke="#3b82f6" />
+                <line x1="205" y1="125" x2="195" y2="125" />
+                <line x1="205" y1="140" x2="195" y2="140" stroke="#2563eb" />
+                <!-- Right Pins -->
+                <line x1="315" y1="80" x2="325" y2="80" stroke="#2563eb" />
+                <line x1="315" y1="95" x2="325" y2="95" />
+                <line x1="315" y1="110" x2="328" y2="110" stroke="#3b82f6" />
+                <line x1="315" y1="125" x2="325" y2="125" />
+                <line x1="315" y1="140" x2="325" y2="140" stroke="#2563eb" />
+              </g>
+
+              <!-- Central Microprocessor Unit (Chip Body) -->
+              <g style="animation: ecePulseSlow 4s ease-in-out infinite; transform-origin: 260px 110px;">
+                <!-- Outer Carrier Package -->
+                <rect x="205" y="60" width="110" height="100" rx="16" fill="#0f172a" stroke="#3b82f6" stroke-width="2.5" />
+                
+                <!-- Silicon Die Internal Core -->
+                <rect x="217" y="72" width="86" height="76" rx="10" fill="url(#chipGrad)" stroke="#60a5fa" stroke-width="1.5" />
+
+                <!-- Silicon Wafer Microgrid Lines -->
+                <path d="M 227 72 L 227 148 M 243 72 L 243 148 M 260 72 L 260 148 M 277 72 L 277 148 M 293 72 L 293 148" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+                <path d="M 217 87 L 303 87 M 217 102 L 303 102 M 217 117 L 303 117 M 217 132 L 303 132" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+
+                <!-- Gold Corner Accent Marks -->
+                <circle cx="223" cy="78" r="3" fill="url(#goldGrad)" />
+                <circle cx="297" cy="78" r="3" fill="url(#goldGrad)" />
+                <circle cx="223" cy="142" r="3" fill="url(#goldGrad)" />
+                <circle cx="297" cy="142" r="3" fill="url(#goldGrad)" />
+
+                <!-- Central Microchip Emblem -->
+                <rect x="238" y="89" width="44" height="42" rx="8" fill="#0f172a" stroke="#93c5fd" stroke-width="1.2" />
+                
+                <!-- Microchip CPU Labels -->
+                <text x="260" y="108" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="9" fill="#ffffff" text-anchor="middle" letter-spacing="1">ECE</text>
+                <text x="260" y="120" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="7" fill="#60a5fa" text-anchor="middle" letter-spacing="0.5">NMIET</text>
+
+                <!-- Status LED on Chip -->
+                <circle cx="260" cy="136" r="2.5" fill="#4ade80" />
+              </g>
+            </svg>
+
+            <!-- Floating Badge Bottom (Campus Database Sync) -->
+            <div style="position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); z-index: 3; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1.5px solid #e2e8f0; border-radius: 30px; padding: 0.35rem 0.95rem; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; display: inline-block;"></span>
+              <span style="font-size: 0.73rem; font-weight: 800; color: #1e3a8a;">Division A &amp; B Academic Ledger Active</span>
+              <span style="color: #cbd5e1;">&bull;</span>
+              <span style="font-size: 0.7rem; font-weight: 700; color: #64748b;">Academic Year 2025–2026</span>
+            </div>
+          </div>
+        </div>
+
+                <!-- Desktop Hero Footer Badge -->
         <div style="border-top: 1px solid #e2e8f0; padding-top: 0.95rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between;">
           <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.4rem;">
             <i class="fa-solid fa-building-columns" style="color: #2563eb;"></i> NMIET Dept. of Electronics & Computer Engineering
