@@ -1,4 +1,4 @@
-# 🎓 NMIET ECE Campus ERP System
+# 🎓 NMIET ECE ERP System
 
 [![Live Production](https://img.shields.io/badge/Production-Live-success?style=for-the-badge&logo=vercel)](https://ece-campus-erp-8qn9.vercel.app)
 [![Department](https://img.shields.io/badge/Department-Electronics%20%26%20Computer%20Engineering-blue?style=for-the-badge)](https://nmiet.edu.in)
