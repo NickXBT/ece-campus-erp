@@ -34,15 +34,7 @@ The Campus ERP system provides granular, role-based workflows for students, teac
 - **Academic Dashboard:** Real-time subject-wise attendance metrics, internal assessment scores, university notices, and daily timetable.
 
 ### 2. 👩‍🏫 Faculty Portal
-- **Verified Faculty Roster (8 Designated Department Members):**
-  - Dr. Dhanashree Kulkarni (HOD)
-  - Prof. P.B. Patil
-  - Dr. Vrushali Gujar
-  - Prof. Ashwini B.
-  - Prof. S.K. Mohite
-  - Prof. R.D. Joshi
-  - Prof. M.V. Kulkarni
-  - Prof. N.A. Salunke
+- **Verified Faculty Roster**
 - **Daily Attendance Marking Engine:** Lecture, practical, and tutorial attendance recording with single-click bulk submission and instant percentage recalculation.
 - **Continuous Assessment:** Submission of test scores, term work, and practical evaluation.
 - **Certificate Verification Desk:** Real-time review, approval, or rejection of student achievement submissions.
